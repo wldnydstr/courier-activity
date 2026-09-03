@@ -14,3 +14,5 @@
 .status-chart-bar{height:100%;width:0;background:#17181b;border-radius:999px;transition:width .35s ease}
 .status-chart-value{text-align:right;font-size:13px;font-weight:800}
 @media(max-width:560px){.status-chart-row{grid-template-columns:120px 1fr 34px;gap:9px}.status-chart-label{font-size:12px}}
+
+.welcome-user{font-size:.78em;line-height:1.15}

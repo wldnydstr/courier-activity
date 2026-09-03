@@ -93,13 +93,23 @@ function showActiveState(activity){
   }
 }
 
+function setWelcome(name){
+  const hour = new Date().getHours();
+  let greeting = "Selamat malam";
+  let emoji = "🌙";
+  if(hour >= 5 && hour < 11){ greeting = "Selamat pagi"; emoji = "☀️"; }
+  else if(hour >= 11 && hour < 15){ greeting = "Selamat siang"; emoji = "🌤️"; }
+  else if(hour >= 15 && hour < 18){ greeting = "Selamat sore"; emoji = "🌤️"; }
+  $("welcomeName").innerHTML = `${escapeHtml(greeting)} ${emoji}<br><span class="welcome-user">${escapeHtml(name)}</span>`;
+}
+
 async function handleLogin(e){
   e.preventDefault();msg("loginMsg","Lagi ngecek...");
   try{
     const data=await api("login",{idPengguna:$("loginId").value.trim(),pin:$("loginPin").value.trim()});
     state.user=data.user;
     $("loginView").classList.add("hidden");$("appView").classList.remove("hidden");
-    $("welcomeName").textContent=data.user.nama;$("roleLabel").textContent=data.user.peran;setupNav(data.user.peran);
+    setWelcome(data.user.nama);setupNav(data.user.peran);
     if(data.user.peran==="Kurir"){await loadLocations();setView("courierView");}
     else{setView("dashboardView");await loadDashboard();}
   }catch(err){msg("loginMsg",err.message)}
@@ -169,13 +179,13 @@ function renderDashboard(data){
   renderStatusChart(stats);
   $("statTotal").textContent=stats.total||0;$("statPending").textContent=stats.menungguBerangkat||0;$("statDriving").textContent=stats.lagiJalan||0;$("statProgress").textContent=stats.lagiDiproses||0;$("statDone").textContent=stats.selesai||0;
   const rows=data.activities||[];
-  $("dashboardTable").innerHTML=rows.map(a=>`<tr><td>${statusClass(a.status)}</td><td>${escapeHtml(a.nama)}</td><td>${escapeHtml(a.jenisPekerjaan)}</td><td>${escapeHtml(a.asal)} → ${escapeHtml(a.tujuan)}</td><td>${escapeHtml(a.waktuBerangkat||"-")}</td><td>${escapeHtml(a.waktuDatang||"-")}</td><td>${escapeHtml(a.waktuSelsai||"-")}</td><td>${escapeHtml(a.hasil||"-")}</td><td>${escapeHtml(a.keterangan||"-")}</td></tr>`).join("");
+  $("dashboardTable").innerHTML=rows.map(a=>`<tr><td>${statusClass(a.status)}</td><td>${escapeHtml(a.kurir)}</td><td>${escapeHtml(a.pekerjaan)}</td><td>${escapeHtml(a.asal)} → ${escapeHtml(a.tujuan)}</td><td>${escapeHtml(a.berangkat||"-")}</td><td>${escapeHtml(a.datang||"-")}</td><td>${escapeHtml(a.selesai||"-")}</td><td>${escapeHtml(a.hasil||"-")}</td><td>${escapeHtml(a.keterangan||"-")}</td></tr>`).join("");
   $("dashboardEmpty").classList.toggle("hidden",rows.length>0);
 }
 
 async function loadDashboard(){
   msg("dashboardMsg","Lagi ambil data aktivitas...");
-  try{const data=await api("getDashboard",{user:state.user});renderDashboard(data);msg("dashboardMsg","");}
+  try{const data=await api("getDashboard",{idPengguna:state.user.id});renderDashboard(data);msg("dashboardMsg","");}
   catch(err){msg("dashboardMsg",err.message);}
 }
 
@@ -197,7 +207,7 @@ function populateReportOptions(data){
 
 async function loadReportOptions(){
   try{
-    const data = await api("getReportOptions",{user:state.user});
+    const data = await api("getReportOptions",{idPengguna:state.user.id});
     populateReportOptions(data);
   }catch(err){
     msg("reportMsg",err.message);
@@ -208,13 +218,13 @@ function renderReport(rows){
   $("reportTable").innerHTML = rows.map(a=>`<tr>
     <td>${escapeHtml(a.idAktivitas)}</td>
     <td>${statusClass(a.status)}</td>
-    <td>${escapeHtml(a.nama)}</td>
-    <td>${escapeHtml(a.jenisPekerjaan)}</td>
+    <td>${escapeHtml(a.kurir)}</td>
+    <td>${escapeHtml(a.pekerjaan)}</td>
     <td>${escapeHtml(a.asal)}</td>
     <td>${escapeHtml(a.tujuan)}</td>
-    <td>${escapeHtml(a.waktuBerangkat||"-")}</td>
-    <td>${escapeHtml(a.waktuDatang||"-")}</td>
-    <td>${escapeHtml(a.waktuSelsai||"-")}</td>
+    <td>${escapeHtml(a.berangkat||"-")}</td>
+    <td>${escapeHtml(a.datang||"-")}</td>
+    <td>${escapeHtml(a.selesai||"-")}</td>
     <td>${escapeHtml(a.hasil||"-")}</td>
     <td>${escapeHtml(a.keterangan||"-")}</td>
   </tr>`).join("");
