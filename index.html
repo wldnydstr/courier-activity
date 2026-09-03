@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Aktivitas Kurir</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -137,6 +140,17 @@
         <div class="stat-card"><span>Lagi Jalan</span><strong id="statDriving">0</strong></div>
         <div class="stat-card"><span>Lagi Diproses</span><strong id="statProgress">0</strong></div>
         <div class="stat-card"><span>Selesai</span><strong id="statDone">0</strong></div>
+      </div>
+
+
+      <div class="card chart-card">
+        <div class="section-title-row">
+          <div>
+            <div class="section-title">Aktivitas berdasarkan status</div>
+            <div class="muted small">Biar kelihatan cepat aktivitas lagi ada di tahap mana.</div>
+          </div>
+        </div>
+        <div id="statusChart" class="status-chart"></div>
       </div>
 
       <div class="card">

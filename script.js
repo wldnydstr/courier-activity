@@ -146,8 +146,27 @@ async function handleComplete(){
 
 function statusClass(status){return `<span class="status-pill">${escapeHtml(status)}</span>`;}
 
+function renderStatusChart(stats){
+  const items = [
+    ["Menunggu Berangkat", Number(stats.menungguBerangkat||0)],
+    ["Lagi Jalan", Number(stats.lagiJalan||0)],
+    ["Lagi Diproses", Number(stats.lagiDiproses||0)],
+    ["Selesai", Number(stats.selesai||0)]
+  ];
+  const max = Math.max(...items.map(x=>x[1]),1);
+  $("statusChart").innerHTML = items.map(([label,value]) => {
+    const width = Math.round((value/max)*100);
+    return `<div class="status-chart-row">
+      <div class="status-chart-label">${escapeHtml(label)}</div>
+      <div class="status-chart-track"><div class="status-chart-bar" style="width:${width}%"></div></div>
+      <div class="status-chart-value">${value}</div>
+    </div>`;
+  }).join("");
+}
+
 function renderDashboard(data){
   const stats=data.stats||{};
+  renderStatusChart(stats);
   $("statTotal").textContent=stats.total||0;$("statPending").textContent=stats.menungguBerangkat||0;$("statDriving").textContent=stats.lagiJalan||0;$("statProgress").textContent=stats.lagiDiproses||0;$("statDone").textContent=stats.selesai||0;
   const rows=data.activities||[];
   $("dashboardTable").innerHTML=rows.map(a=>`<tr><td>${statusClass(a.status)}</td><td>${escapeHtml(a.nama)}</td><td>${escapeHtml(a.jenisPekerjaan)}</td><td>${escapeHtml(a.asal)} → ${escapeHtml(a.tujuan)}</td><td>${escapeHtml(a.waktuBerangkat||"-")}</td><td>${escapeHtml(a.waktuDatang||"-")}</td><td>${escapeHtml(a.waktuSelsai||"-")}</td><td>${escapeHtml(a.hasil||"-")}</td><td>${escapeHtml(a.keterangan||"-")}</td></tr>`).join("");
