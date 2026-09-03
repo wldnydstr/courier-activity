@@ -41,7 +41,7 @@ function fileToBase64(file){
   return new Promise((resolve,reject)=>{
     if(!file)return resolve(null);
     const reader=new FileReader();
-    reader.onload=()=>resolve({name:file.name,mimeType:file.type,base64:reader.result.split(",")[1]});
+    reader.onload=()=>resolve({name:file.name,mimeType:file.type,data:reader.result.split(",")[1]});
     reader.onerror=reject;
     reader.readAsDataURL(file);
   });
@@ -168,17 +168,32 @@ function showActivityInfo(activity){
 
 function showActiveState(activity){
   state.activity=activity;
-  $("activityCard").classList.toggle("hidden",activity.status!=="Selesai");
-  $("activeCard").classList.toggle("hidden",activity.status!=="Lagi Jalan");
-  $("resultCard").classList.toggle("hidden",activity.status!=="Lagi Diproses");
-  if(activity.status==="Lagi Jalan")showActivityInfo(activity);
-  if(activity.status==="Lagi Diproses"){
+  const status=String(activity?.status||"").trim();
+
+  $("activityCard").classList.add("hidden");
+  $("activeCard").classList.add("hidden");
+  $("resultCard").classList.add("hidden");
+
+  if(status==="Lagi Jalan"){
+    $("activeCard").classList.remove("hidden");
     showActivityInfo(activity);
-    $("activeCard").classList.add("hidden");
-    $("resultCard").classList.remove("hidden");
-    $("resultStatus").textContent=activity.status;
-    $("arrivalTime").textContent=`Sampai: ${activity.waktuDatang||"-"}`;
+    return;
   }
+
+  if(status==="Lagi Diproses"){
+    $("resultCard").classList.remove("hidden");
+    $("resultStatus").textContent="Lagi Diproses";
+    $("arrivalTime").textContent=`Sampai: ${activity.waktuDatang||"-"}`;
+    $("activeInfo").innerHTML=`<div class="info-item"><span>Pekerjaan</span><strong>${escapeHtml(activity.jenisPekerjaan||"-")}</strong></div><div class="info-item"><span>Rute</span><strong>${escapeHtml(activity.asal||"-")} → ${escapeHtml(activity.tujuan||"-")}</strong></div><div class="info-item"><span>Berangkat</span><strong>${escapeHtml(activity.waktuBerangkat||"-")}</strong></div><div class="info-item"><span>Status</span><strong>Lagi Diproses</strong></div>`;
+    return;
+  }
+
+  if(status==="Selesai"){
+    $("activityCard").classList.remove("hidden");
+    return;
+  }
+
+  $("activityCard").classList.remove("hidden");
 }
 
 function setWelcome(name){
@@ -272,7 +287,16 @@ async function handleArrival(){
     $("arrivalBtn").disabled=true;msg("arrivalMsg","Lagi nyimpen foto pas sampai...");
     try{
       const data=await api("confirmArrival",{idAktivitas:state.activity.idAktivitas,idPengguna:state.user.id,fotoDatang:await fileToBase64(input.files[0])});
-      state.activity.status=data.status;state.activity.waktuDatang=data.waktuDatang;showActiveState(state.activity);msg("arrivalMsg","");
+      state.activity.status="Lagi Diproses";
+      state.activity.waktuDatang=data.waktuDatang||"-";
+      showActiveState(state.activity);
+      $("hasil").value="";
+      $("keterangan").value="";
+      $("saveResultBtn").classList.remove("hidden");
+      $("saveResultBtn").disabled=false;
+      $("completeBtn").classList.add("hidden");
+      msg("arrivalMsg","");
+      msg("resultMsg","");
     }catch(err){msg("arrivalMsg",err.message);$("arrivalBtn").disabled=false;}
     input.remove();
   };
@@ -339,6 +363,16 @@ function renderActivityChart(rows){
   }).join("");
 }
 
+function displayTimeOnly(value){
+  if(!value)return "-";
+  const text=String(value).trim();
+  const m=text.match(/(?:^|\\s)(\\d{1,2}):(\\d{2})(?::\\d{2})?(?:\\s|$)/);
+  if(m)return `${String(m[1]).padStart(2,"0")}:${m[2]}`;
+  const d=parseActivityDate(text);
+  if(d && !isNaN(d.getTime())) return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+  return text;
+}
+
 function renderDashboard(data){
   requestAnimationFrame(syncDashboardFreeze);
   const allRows=data.activities||[];
@@ -348,8 +382,8 @@ function renderDashboard(data){
   const stats={total:rows.length,menungguBerangkat:rows.filter(a=>a.status==="Menunggu Berangkat").length,lagiJalan:rows.filter(a=>a.status==="Lagi Jalan").length,lagiDiproses:rows.filter(a=>a.status==="Lagi Diproses").length,selesai:rows.filter(a=>a.status==="Selesai").length};
   $("statTotal").textContent = stats.total || 0;$("statJalan").textContent=stats.lagiJalan;$("statProses").textContent=stats.lagiDiproses;$("statSelesai").textContent=stats.selesai;
   renderActivityChart(rows);
-  $("chartSubtitle").textContent=day?`Aktivitas di ${new Date(day+"T00:00:00").toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"})}.`:`Aktivitas per hari dari data yang tersedia.`;
-  $("dashboardTable").innerHTML=rows.map(a=>`<tr><td>${statusClass(a.status)}</td><td>${escapeHtml(a.kurir)}</td><td>${escapeHtml(a.pekerjaan)}</td><td>${escapeHtml(a.asal)} → ${escapeHtml(a.tujuan)}</td><td>${escapeHtml(a.berangkat||"-")}</td><td>${escapeHtml(a.datang||"-")}</td><td>${escapeHtml(a.selesai||"-")}</td><td>${escapeHtml(a.hasil||"-")}</td><td>${escapeHtml(a.keterangan||"-")}</td></tr>`).join("");
+  $("chartSubtitle").textContent="Aktivitas sesuai filter yang dipilih.";
+  $("dashboardTable").innerHTML=rows.map(a=>`<tr><td>${statusClass(a.status)}</td><td>${escapeHtml(a.kurir)}</td><td>${escapeHtml(a.pekerjaan)}</td><td>${escapeHtml(a.asal)} → ${escapeHtml(a.tujuan)}</td><td>${escapeHtml(displayTimeOnly(a.berangkat))}</td><td>${escapeHtml(displayTimeOnly(a.datang))}</td><td>${escapeHtml(displayTimeOnly(a.selesai))}</td><td>${escapeHtml(a.hasil||"-")}</td><td>${escapeHtml(a.keterangan||"-")}</td></tr>`).join("");
   $("dashboardEmpty").classList.toggle("hidden",rows.length>0);
 }
 
