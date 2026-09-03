@@ -37,7 +37,7 @@ function fileToBase64(file){
   return new Promise((resolve,reject)=>{
     if(!file)return resolve(null);
     const reader=new FileReader();
-    reader.onload=()=>resolve({name:file.name,mimeType:file.type,base64:reader.result.split(",")[1]});
+    reader.onload=()=>resolve({name:file.name,mimeType:file.type,data:reader.result.split(",")[1]});
     reader.onerror=reject;
     reader.readAsDataURL(file);
   });
@@ -250,8 +250,8 @@ async function handleCreateActivity(e){
   try{
     const asal=$("asalSearch").value.trim(), tujuan=$("tujuanSearch").value.trim(), pekerjaan=$("jenisPekerjaan").value;
     const data=await api("createActivity",{idPengguna:state.user.id,jenisPekerjaan:pekerjaan,asal,tujuan,fotoDokumen:await fileToBase64($("fotoDokumen").files[0]),fotoBerangkat:await fileToBase64($("fotoBerangkat").files[0])});
-    const departure=await api("confirmDeparture",{idAktivitas:data.idAktivitas,idPengguna:state.user.id});
-    state.activity={idAktivitas:data.idAktivitas,status:departure.status,jenisPekerjaan:pekerjaan,asal,tujuan,waktuBerangkat:departure.waktuBerangkat};
+    const departure=await api("confirmDeparture",{idAktivitas:data.activityId,idPengguna:state.user.id});
+    state.activity={idAktivitas:data.activityId,status:departure.status,jenisPekerjaan:pekerjaan,asal,tujuan,waktuBerangkat:departure.waktuBerangkat};
     $("activityForm").classList.add("hidden");$("activityCard").classList.add("hidden");$("activeCard").classList.remove("hidden");showActivityInfo(state.activity);msg("activityMsg","");
   }catch(err){msg("activityMsg",err.message);checkStart();}
 }
