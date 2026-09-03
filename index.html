@@ -13,10 +13,10 @@
 <main class="app">
   <section id="loginView" class="login-card">
     <h1>Masuk</h1>
-    <p class="muted">Masukin ID dan PIN kamu buat lanjut.</p>
+    <p class="muted">Masukin ID dan password kamu buat lanjut.</p>
     <form id="loginForm">
       <label>ID Pengguna<input id="loginId" autocomplete="username" required></label>
-      <label>PIN<input id="loginPin" type="password" inputmode="numeric" autocomplete="current-password" required></label>
+      <label>Password<input id="loginPin" type="password" inputmode="numeric" autocomplete="current-password" required></label>
       <button class="primary" type="submit">Masuk</button>
       <p id="loginMsg" class="message"></p>
     </form>
@@ -263,7 +263,7 @@
             <label>Nama<input id="userName" required></label>
           </div>
           <div class="two">
-            <label>PIN<input id="userPin" inputmode="numeric" required></label>
+            <label>Password<input id="userPin" inputmode="numeric" required></label>
             <label>Peran<select id="userRole" required><option value="">Pilih peran</option><option>Kurir</option><option>Admin</option><option>Super User</option></select></label>
           </div>
           <button class="primary" type="submit">Tambah Pengguna</button>
