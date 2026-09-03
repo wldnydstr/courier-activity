@@ -410,3 +410,61 @@
     gap: 10px;
   }
 }
+
+/* V32 — alignment seluruh halaman + footer */
+.app {
+  width: min(1180px, calc(100% - 72px));
+  max-width: 1180px;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
+#appView .app-header,
+#appView .nav,
+#appView .dashboard-heading,
+#appView .stats-grid,
+#appView #dashboardView > *,
+#appView #reportView > *,
+#appView #managementView > *,
+#appView #courierView > * {
+  box-sizing: border-box;
+}
+
+#appView #dashboardView > .card,
+#appView #reportView > .card,
+#appView #managementView > .card,
+#appView #courierView > .card {
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+#appView .app-footer {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 36px 0 20px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 400;
+  color: #9a9da3;
+}
+
+#appView .developer-credit {
+  text-align: right;
+  font-size: 12px;
+  font-weight: 400;
+  color: #9a9da3;
+}
+
+@media (max-width: 700px) {
+  .app {
+    width: calc(100% - 24px);
+  }
+}
+
+#appView .topbar .developer-credit {
+  position: static !important;
+  width: auto !important;
+  margin: 0 !important;
+}
