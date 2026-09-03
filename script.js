@@ -301,7 +301,15 @@ async function handleSaveResult(e){
 
 async function handleComplete(){
   $("completeBtn").disabled=true;msg("resultMsg","Lagi nyelesaiin tugas...");
-  try{const data=await api("completeActivity",{idAktivitas:state.activity.idAktivitas,idPengguna:state.user.id});state.activity.status=data.status;state.activity.waktuSelsai=data.waktuSelsai;resetCourierCards();msg("activityMsg","Tugas selesai. Kamu bisa bikin aktivitas baru sekarang.");}
+  try{const data=await api("completeActivity",{idAktivitas:state.activity.idAktivitas,idPengguna:state.user.id});state.activity.status="Selesai";
+      state.activity.waktuSelsai=data.waktuSelsai||"-";
+      resetCourierCards();
+      $("activityCard").classList.remove("hidden");
+      $("activeCard").classList.add("hidden");
+      $("resultCard").classList.add("hidden");
+      $("startBtn").disabled=true;
+      $("activityMsg").textContent="Tugas selesai. Yuk bikin aktivitas baru.";
+      window.scrollTo({top:0,behavior:"smooth"});}
   catch(err){msg("resultMsg",err.message);$("completeBtn").disabled=false;}
 }
 
@@ -355,8 +363,10 @@ function renderActivityChart(rows){
 function displayTimeOnly(value){
   if(!value)return "-";
   const text=String(value).trim();
-  const m=text.match(/(\\d{1,2}):(\\d{2})(?::\\d{2})?/);
+  const m=text.match(/(?:T|\\s)(\\d{1,2}):(\\d{2})(?::\\d{2})?/);
   if(m)return `${String(m[1]).padStart(2,"0")}:${m[2]}`;
+  const d=new Date(text);
+  if(!isNaN(d.getTime()))return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
   return text;
 }
 
