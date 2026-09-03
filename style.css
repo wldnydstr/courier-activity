@@ -221,3 +221,108 @@
     padding-top: 20px;
   }
 }
+
+
+/* Satu lebar kontainer untuk header, navigasi, heading, summary, filter, grafik, dan tabel */
+#appView .app-shell {
+  width: min(100% - 36px, 1180px);
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+#appView .dashboard-sticky-top {
+  left: 0;
+  right: 0;
+  transform: none;
+  width: 100%;
+  box-sizing: border-box;
+  padding-left: max(18px, calc((100vw - 1180px) / 2));
+  padding-right: max(18px, calc((100vw - 1180px) / 2));
+  overflow: hidden;
+}
+
+#appView .dashboard-sticky-top .app-header,
+#appView .dashboard-sticky-top .app-nav,
+#appView .dashboard-sticky-top .dashboard-heading,
+#appView .dashboard-sticky-top .stats-grid {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Area di bawah freeze tidak boleh terlihat di belakangnya */
+#appView .dashboard-sticky-top {
+  box-shadow: 0 12px 24px rgba(0,0,0,.03);
+}
+
+#appView .dashboard-sticky-spacer {
+  width: 100%;
+}
+
+@media (max-width: 700px) {
+  #appView .app-shell {
+    width: calc(100% - 24px);
+  }
+
+  #appView .dashboard-sticky-top {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+/* Summary sekarang 4 kartu setelah Menunggu Berangkat dihapus */
+#appView .stats-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 900px) {
+  #appView .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  #appView .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* V23 — semua area dashboard sejajar kiri-kanan */
+#appView .app-shell {
+  width: calc(100% - 72px);
+  max-width: none;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#appView .dashboard-sticky-top {
+  left: 0;
+  right: 0;
+  width: 100%;
+  box-sizing: border-box;
+  transform: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+#appView .dashboard-sticky-top > * ,
+#appView .dashboard-content > * {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#appView .dashboard-sticky-top .app-header,
+#appView .dashboard-sticky-top .app-nav,
+#appView .dashboard-sticky-top .dashboard-heading,
+#appView .dashboard-sticky-top .stats-grid,
+#appView .dashboard-content .dashboard-filters,
+#appView .dashboard-content .chart-card,
+#appView .dashboard-content .card {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 700px) {
+  #appView .app-shell {
+    width: calc(100% - 24px);
+  }
+}
