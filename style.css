@@ -91,3 +91,115 @@
 #loginView .message{font-size:12px}
 .dashboard-freeze{position:sticky;top:0;z-index:40;background:#f7f7f8;padding:0 0 2px}
 .dashboard-freeze .dashboard-filters{margin-bottom:0}
+
+/* V15 — final topbar, greeting, dan freeze dashboard */
+.topbar-actions{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:7px;
+}
+.topbar-actions .developer-credit{
+  margin-top:0;
+  text-align:right;
+}
+.greeting-text{
+  font-size:22px !important;
+  line-height:1.2;
+  font-weight:800;
+  letter-spacing:-.03em;
+  margin-bottom:4px;
+}
+.welcome-user{
+  font-size:27px !important;
+  line-height:1.2;
+  font-weight:800;
+  letter-spacing:-.03em;
+}
+.dashboard-freeze{
+  position:sticky;
+  top:0;
+  z-index:50;
+  background:#f7f7f8;
+  padding-top:8px;
+  padding-bottom:8px;
+}
+.dashboard-freeze .dashboard-filters{
+  margin-bottom:0;
+}
+@media(max-width:560px){
+  .topbar-actions{align-items:flex-end}
+  .topbar-actions .developer-credit{font-size:11px}
+  .greeting-text{font-size:20px !important}
+  .welcome-user{font-size:24px !important}
+}
+
+/* V16 — tombol Keluar dan credit developer sama-sama rata kanan */
+.app-topbar {
+  align-items: flex-start;
+}
+.app-topbar > .topbar-right {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+.app-topbar .developer-credit {
+  width: 100%;
+  text-align: right;
+  margin-top: 8px;
+}
+
+/* V17 — freeze area sesuai screenshot: header sampai summary */
+#appView .app-shell {
+  position: relative;
+}
+
+#appView .app-header,
+#appView .app-nav,
+#appView .dashboard-heading,
+#appView .stats-grid {
+  position: sticky;
+  z-index: 50;
+}
+
+#appView .app-header {
+  top: 0;
+  background: #f7f7f8;
+}
+
+#appView .app-nav {
+  top: 150px;
+  background: #f7f7f8;
+}
+
+#appView .dashboard-heading {
+  top: 214px;
+  background: #f7f7f8;
+}
+
+#appView .stats-grid {
+  top: 325px;
+  background: #f7f7f8;
+  padding-bottom: 14px;
+}
+
+/* V19 — positioning tombol Keluar & credit saja */
+.app-topbar {
+  position: relative;
+}
+
+.app-topbar .topbar-right {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  gap: 8px;
+}
+
+.app-topbar .developer-credit {
+  width: 100%;
+  text-align: right;
+}
