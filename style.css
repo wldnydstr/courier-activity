@@ -80,3 +80,14 @@
   margin-top: 8px;
   color: #9a9da3;
 }
+
+/* V14 — layout dashboard dan hierarchy tipografi */
+.greeting-text,.welcome-user{display:block;line-height:1.2}
+.greeting-text{font-size:28px;font-weight:800;letter-spacing:-.03em;margin-bottom:5px}
+.welcome-user{font-size:30px;font-weight:800;letter-spacing:-.03em}
+#loginView > p.muted{font-size:14px;line-height:1.5;margin:0 0 12px}
+#loginView form{gap:14px}
+#loginView label{font-size:14px;gap:6px}
+#loginView .message{font-size:12px}
+.dashboard-freeze{position:sticky;top:0;z-index:40;background:#f7f7f8;padding:0 0 2px}
+.dashboard-freeze .dashboard-filters{margin-bottom:0}

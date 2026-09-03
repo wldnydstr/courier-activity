@@ -38,7 +38,7 @@ function setupNav(role){
   $("navReport").classList.toggle("hidden",role!=="Admin"&&role!=="Super User");
   $("navUsers").classList.toggle("hidden",role!=="Super User");
   $("navActivity").onclick=()=>setView("courierView");
-  $("navDashboard").onclick=async()=>{setView("dashboardView");await loadDashboard();};
+  $("navDashboard").onclick=async()=>{setView("dashboardView");setDashboardDefaultDay();await loadDashboard();};
   $("navReport").onclick=async()=>{setView("reportView");await loadReportOptions();await loadReport();};
   $("navUsers").onclick=async()=>{setView("usersView");await loadUsers();};
 }
@@ -100,7 +100,7 @@ function setWelcome(name){
   if(hour >= 5 && hour < 11){ greeting = "Selamat pagi"; emoji = "☀️"; }
   else if(hour >= 11 && hour < 15){ greeting = "Selamat siang"; emoji = "🌤️"; }
   else if(hour >= 15 && hour < 18){ greeting = "Selamat sore"; emoji = "🌤️"; }
-  $("welcomeName").innerHTML = `${escapeHtml(greeting)} ${emoji}<br><span class="welcome-user">${escapeHtml(name)}</span>`;
+  $("welcomeName").innerHTML = `<span class="greeting-text">${escapeHtml(greeting)} ${emoji}</span><span class="welcome-user">${escapeHtml(name)}</span>`;
 }
 
 async function handleLogin(e){
@@ -216,12 +216,14 @@ function renderDashboard(data){
 
 async function loadDashboard(){
   msg("dashboardMsg","Lagi ambil data aktivitas...");
-  try{const data=await api("getDashboard",{idPengguna:state.user.id});state.dashboardActivities=data.activities||[];renderDashboard(data);msg("dashboardMsg","");}
+  try{setDashboardDefaultDay();const data=await api("getDashboard",{idPengguna:state.user.id});state.dashboardActivities=data.activities||[];renderDashboard(data);msg("dashboardMsg","");}
   catch(err){msg("dashboardMsg",err.message);}
 }
 
 function applyDashboardFilters(){renderDashboard({activities:state.dashboardActivities||[]});}
-function resetDashboardFilters(){$("dashboardDate").value="";$("dashboardCourier").value="";applyDashboardFilters();}
+function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
+function setDashboardDefaultDay(){if(!$("dashboardDate").value)$("dashboardDate").value=todayKey();}
+function resetDashboardFilters(){$("dashboardDate").value=todayKey();$("dashboardCourier").value="";applyDashboardFilters();}
 
 
 function populateReportOptions(data){
