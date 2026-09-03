@@ -5,6 +5,7 @@ let sessionExpiryTimer = null;
 const SESSION_LIMIT = 60 * 60 * 1000;
 const SESSION_KEY = "courierSession";
 const SESSION_COOKIE = "courierSession";
+const SESSION_VERSION = 2;
 const $ = id => document.getElementById(id);
 
 function readSession(){
@@ -12,14 +13,14 @@ function readSession(){
     const raw=localStorage.getItem(SESSION_KEY);
     if(raw){
       const saved=JSON.parse(raw);
-      if(saved && saved.user && saved.loginAt) return saved;
+      if(saved && saved.user && saved.loginAt && saved.version===SESSION_VERSION) return saved;
     }
   }catch(e){}
   try{
     const match=document.cookie.match(new RegExp("(?:^|; )"+SESSION_COOKIE.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"=([^;]*)"));
     if(match){
       const saved=JSON.parse(decodeURIComponent(match[1]));
-      if(saved && saved.user && saved.loginAt) return saved;
+      if(saved && saved.user && saved.loginAt && saved.version===SESSION_VERSION) return saved;
     }
   }catch(e){}
   return null;
@@ -28,7 +29,7 @@ function readSession(){
 function writeSession(saved){
   const raw=JSON.stringify(saved);
   try{localStorage.setItem(SESSION_KEY,raw);}catch(e){}
-  try{document.cookie=SESSION_COOKIE+"="+encodeURIComponent(raw)+"; Max-Age=3600; Path=/; SameSite=Lax";}catch(e){}
+  try{document.cookie=SESSION_COOKIE+"="+encodeURIComponent(raw)+"; Path=/; SameSite=Lax";}catch(e){}
 }
 
 function removeStoredSession(){
@@ -102,7 +103,7 @@ function setView(view){
   if(state.user){
     try{
       const saved=readSession();
-      if(saved){saved.lastView=view;writeSession(saved);}
+      if(saved){saved.lastView=view;saved.version=SESSION_VERSION;writeSession(saved);}
     }catch(e){}
   }
 }
@@ -252,7 +253,7 @@ async function handleLogin(e){
   try{
     const data=await api("login",{id:$("loginId").value.trim(),pin:$("loginPin").value.trim()});
     state.user=data.user;
-    const loginAt=Date.now(); writeSession({user:data.user,loginAt,lastView:data.user.peran==="Kurir"?"courierView":"dashboardView"}); scheduleSessionExpiry(loginAt);
+    const loginAt=Date.now(); writeSession({version:SESSION_VERSION,user:data.user,loginAt,lastView:data.user.peran==="Kurir"?"courierView":"dashboardView"}); scheduleSessionExpiry(loginAt);
     $("loginView").classList.add("hidden");$("appView").classList.remove("hidden");
     setWelcome(data.user.nama);setupNav(data.user.peran);
     if(data.user.peran==="Kurir"){await loadLocations();setView("courierView");}
