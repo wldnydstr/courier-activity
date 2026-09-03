@@ -106,7 +106,7 @@ function setWelcome(name){
 async function handleLogin(e){
   e.preventDefault();msg("loginMsg","Lagi ngecek...");
   try{
-    const data=await api("login",{idPengguna:$("loginId").value.trim(),pin:$("loginPin").value.trim()});
+    const data=await api("login",{id:$("loginId").value.trim(),pin:$("loginPin").value.trim()});
     state.user=data.user;
     $("loginView").classList.add("hidden");$("appView").classList.remove("hidden");
     setWelcome(data.user.nama);setupNav(data.user.peran);
@@ -120,8 +120,8 @@ async function handleCreateActivity(e){
   $("startBtn").disabled=true;msg("activityMsg","Lagi nyimpen aktivitas...");
   try{
     const asal=$("asalSearch").value.trim(), tujuan=$("tujuanSearch").value.trim(), pekerjaan=$("jenisPekerjaan").value;
-    const data=await api("createActivity",{user:state.user,jenisPekerjaan:pekerjaan,asal,tujuan,fotoDokumen:await fileToBase64($("fotoDokumen").files[0])});
-    const departure=await api("confirmDeparture",{idAktivitas:data.idAktivitas,fotoBerangkat:await fileToBase64($("fotoBerangkat").files[0])});
+    const data=await api("createActivity",{idPengguna:state.user.id,jenisPekerjaan:pekerjaan,asal,tujuan,fotoDokumen:await fileToBase64($("fotoDokumen").files[0]),fotoBerangkat:await fileToBase64($("fotoBerangkat").files[0])});
+    const departure=await api("confirmDeparture",{idAktivitas:data.idAktivitas,idPengguna:state.user.id});
     state.activity={idAktivitas:data.idAktivitas,status:departure.status,jenisPekerjaan:pekerjaan,asal,tujuan,waktuBerangkat:departure.waktuBerangkat};
     $("activityForm").classList.add("hidden");$("activityCard").classList.add("hidden");$("activeCard").classList.remove("hidden");showActivityInfo(state.activity);msg("activityMsg","");
   }catch(err){msg("activityMsg",err.message);checkStart();}
@@ -133,7 +133,7 @@ async function handleArrival(){
     if(!input.files[0]){input.remove();return;}
     $("arrivalBtn").disabled=true;msg("arrivalMsg","Lagi nyimpen foto pas sampai...");
     try{
-      const data=await api("confirmArrival",{idAktivitas:state.activity.idAktivitas,fotoDatang:await fileToBase64(input.files[0])});
+      const data=await api("confirmArrival",{idAktivitas:state.activity.idAktivitas,idPengguna:state.user.id,fotoDatang:await fileToBase64(input.files[0])});
       state.activity.status=data.status;state.activity.waktuDatang=data.waktuDatang;showActiveState(state.activity);msg("arrivalMsg","");
     }catch(err){msg("arrivalMsg",err.message);$("arrivalBtn").disabled=false;}
     input.remove();
@@ -144,13 +144,13 @@ async function handleSaveResult(e){
   e.preventDefault();
   if(!$("hasil").value){msg("resultMsg","Pilih hasil pekerjaannya dulu, ya.");return;}
   $("saveResultBtn").disabled=true;msg("resultMsg","Lagi nyimpen hasil...");
-  try{await api("saveResult",{idAktivitas:state.activity.idAktivitas,hasil:$("hasil").value,keterangan:$("keterangan").value.trim()});$("saveResultBtn").classList.add("hidden");$("completeBtn").classList.remove("hidden");msg("resultMsg","Hasilnya udah tersimpan. Tinggal selesain tugas.");}
+  try{await api("saveResult",{idAktivitas:state.activity.idAktivitas,idPengguna:state.user.id,hasil:$("hasil").value,keterangan:$("keterangan").value.trim()});$("saveResultBtn").classList.add("hidden");$("completeBtn").classList.remove("hidden");msg("resultMsg","Hasilnya udah tersimpan. Tinggal selesain tugas.");}
   catch(err){msg("resultMsg",err.message);$("saveResultBtn").disabled=false;}
 }
 
 async function handleComplete(){
   $("completeBtn").disabled=true;msg("resultMsg","Lagi nyelesaiin tugas...");
-  try{const data=await api("completeActivity",{idAktivitas:state.activity.idAktivitas});state.activity.status=data.status;state.activity.waktuSelsai=data.waktuSelsai;resetCourierCards();msg("activityMsg","Tugas selesai. Kamu bisa bikin aktivitas baru sekarang.");}
+  try{const data=await api("completeActivity",{idAktivitas:state.activity.idAktivitas,idPengguna:state.user.id});state.activity.status=data.status;state.activity.waktuSelsai=data.waktuSelsai;resetCourierCards();msg("activityMsg","Tugas selesai. Kamu bisa bikin aktivitas baru sekarang.");}
   catch(err){msg("resultMsg",err.message);$("completeBtn").disabled=false;}
 }
 
@@ -236,7 +236,7 @@ async function loadReport(){
   msg("reportMsg","Lagi ambil data report...");
   try{
     const data = await api("getReport",{
-      user:state.user,
+      idPengguna:state.user.id,
       tanggalDari:$("reportDateFrom").value,
       tanggalSampai:$("reportDateTo").value,
       status:$("reportStatus").value,
@@ -265,18 +265,18 @@ function resetReportFilters(){
 async function loadUsers(){
   msg("userMsg","Lagi ambil daftar pengguna...");
   try{
-    const data=await api("getUsers",{user:state.user});
+    const data=await api("getUsers",{idPengguna:state.user.id});
     const list=$("usersList");
     list.innerHTML=(data.users||[]).map(u=>`<div class="user-row"><div class="user-main"><strong>${escapeHtml(u.nama)}</strong><div class="user-meta">${escapeHtml(u.idPengguna)} · ${escapeHtml(u.peran)} · ${u.status?"Aktif":"Nggak aktif"}</div></div><div class="user-actions"><button class="ghost status-user" data-id="${escapeHtml(u.idPengguna)}" data-status="${u.status}">${u.status?"Nonaktifkan":"Aktifkan"}</button><button class="danger delete-user" data-id="${escapeHtml(u.idPengguna)}">Hapus</button></div></div>`).join("")||"<div class='empty'>Belum ada pengguna.</div>";
-    list.querySelectorAll(".status-user").forEach(btn=>btn.onclick=async()=>{btn.disabled=true;try{await api("updateUserStatus",{user:state.user,idPengguna:btn.dataset.id,status:btn.dataset.status!=="true"});await loadUsers();}catch(err){msg("userMsg",err.message);btn.disabled=false;}});
-    list.querySelectorAll(".delete-user").forEach(btn=>btn.onclick=async()=>{if(!confirm("Yakin mau hapus pengguna ini?"))return;btn.disabled=true;try{await api("deleteUser",{user:state.user,idPengguna:btn.dataset.id});await loadUsers();}catch(err){msg("userMsg",err.message);btn.disabled=false;}});
+    list.querySelectorAll(".status-user").forEach(btn=>btn.onclick=async()=>{btn.disabled=true;try{await api("updateUserStatus",{idPengguna:state.user.id,id:btn.dataset.id,status:btn.dataset.status!=="true"});await loadUsers();}catch(err){msg("userMsg",err.message);btn.disabled=false;}});
+    list.querySelectorAll(".delete-user").forEach(btn=>btn.onclick=async()=>{if(!confirm("Yakin mau hapus pengguna ini?"))return;btn.disabled=true;try{await api("deleteUser",{idPengguna:state.user.id,id:btn.dataset.id});await loadUsers();}catch(err){msg("userMsg",err.message);btn.disabled=false;}});
     msg("userMsg","");
   }catch(err){msg("userMsg",err.message)}
 }
 
 async function handleCreateUser(e){
   e.preventDefault();msg("userMsg","Lagi nambahin pengguna...");
-  try{await api("createUser",{user:state.user,idPengguna:$("userId").value.trim(),nama:$("userName").value.trim(),pin:$("userPin").value.trim(),peran:$("userRole").value});$("userForm").reset();msg("userMsg","Pengguna berhasil ditambahkan.");await loadUsers();}
+  try{await api("createUser",{idPengguna:state.user.id,id:$("userId").value.trim(),nama:$("userName").value.trim(),pin:$("userPin").value.trim(),peran:$("userRole").value});$("userForm").reset();msg("userMsg","Pengguna berhasil ditambahkan.");await loadUsers();}
   catch(err){msg("userMsg",err.message)}
 }
 
