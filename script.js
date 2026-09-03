@@ -41,7 +41,7 @@ function fileToBase64(file){
   return new Promise((resolve,reject)=>{
     if(!file)return resolve(null);
     const reader=new FileReader();
-    reader.onload=()=>resolve({name:file.name,mimeType:file.type,data:reader.result.split(",")[1]});
+    reader.onload=()=>resolve({name:file.name,mimeType:file.type,base64:reader.result.split(",")[1]});
     reader.onerror=reject;
     reader.readAsDataURL(file);
   });
@@ -168,32 +168,17 @@ function showActivityInfo(activity){
 
 function showActiveState(activity){
   state.activity=activity;
-  const status=String(activity?.status||"").trim();
-
-  $("activityCard").classList.add("hidden");
-  $("activeCard").classList.add("hidden");
-  $("resultCard").classList.add("hidden");
-
-  if(status==="Lagi Jalan"){
-    $("activeCard").classList.remove("hidden");
+  $("activityCard").classList.toggle("hidden",activity.status!=="Selesai");
+  $("activeCard").classList.toggle("hidden",activity.status!=="Lagi Jalan");
+  $("resultCard").classList.toggle("hidden",activity.status!=="Lagi Diproses");
+  if(activity.status==="Lagi Jalan")showActivityInfo(activity);
+  if(activity.status==="Lagi Diproses"){
     showActivityInfo(activity);
-    return;
-  }
-
-  if(status==="Lagi Diproses"){
+    $("activeCard").classList.add("hidden");
     $("resultCard").classList.remove("hidden");
-    $("resultStatus").textContent="Lagi Diproses";
+    $("resultStatus").textContent=activity.status;
     $("arrivalTime").textContent=`Sampai: ${activity.waktuDatang||"-"}`;
-    $("activeInfo").innerHTML=`<div class="info-item"><span>Pekerjaan</span><strong>${escapeHtml(activity.jenisPekerjaan||"-")}</strong></div><div class="info-item"><span>Rute</span><strong>${escapeHtml(activity.asal||"-")} → ${escapeHtml(activity.tujuan||"-")}</strong></div><div class="info-item"><span>Berangkat</span><strong>${escapeHtml(activity.waktuBerangkat||"-")}</strong></div><div class="info-item"><span>Status</span><strong>Lagi Diproses</strong></div>`;
-    return;
   }
-
-  if(status==="Selesai"){
-    $("activityCard").classList.remove("hidden");
-    return;
-  }
-
-  $("activityCard").classList.remove("hidden");
 }
 
 function setWelcome(name){
@@ -289,7 +274,11 @@ async function handleArrival(){
       const data=await api("confirmArrival",{idAktivitas:state.activity.idAktivitas,idPengguna:state.user.id,fotoDatang:await fileToBase64(input.files[0])});
       state.activity.status="Lagi Diproses";
       state.activity.waktuDatang=data.waktuDatang||"-";
-      showActiveState(state.activity);
+      $("activityCard").classList.add("hidden");
+      $("activeCard").classList.add("hidden");
+      $("resultCard").classList.remove("hidden");
+      $("resultStatus").textContent="Lagi Diproses";
+      $("arrivalTime").textContent=`Sampai: ${state.activity.waktuDatang}`;
       $("hasil").value="";
       $("keterangan").value="";
       $("saveResultBtn").classList.remove("hidden");
@@ -366,10 +355,8 @@ function renderActivityChart(rows){
 function displayTimeOnly(value){
   if(!value)return "-";
   const text=String(value).trim();
-  const m=text.match(/(?:^|\\s)(\\d{1,2}):(\\d{2})(?::\\d{2})?(?:\\s|$)/);
+  const m=text.match(/(\\d{1,2}):(\\d{2})(?::\\d{2})?/);
   if(m)return `${String(m[1]).padStart(2,"0")}:${m[2]}`;
-  const d=parseActivityDate(text);
-  if(d && !isNaN(d.getTime())) return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
   return text;
 }
 
