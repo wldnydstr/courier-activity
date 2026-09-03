@@ -208,7 +208,7 @@ function renderDashboard(data){
   const day=$("dashboardDate").value, courier=$("dashboardCourier").value;
   const rows=allRows.filter(a=>(!courier||a.kurir===courier)&&activityMatchesDay(a,day));
   const stats={total:rows.length,menungguBerangkat:rows.filter(a=>a.status==="Menunggu Berangkat").length,lagiJalan:rows.filter(a=>a.status==="Lagi Jalan").length,lagiDiproses:rows.filter(a=>a.status==="Lagi Diproses").length,selesai:rows.filter(a=>a.status==="Selesai").length};
-  $("statTotal").textContent=stats.total;$("statPending").textContent=stats.menungguBerangkat;$("statDriving").textContent=stats.lagiJalan;$("statProgress").textContent=stats.lagiDiproses;$("statDone").textContent=stats.selesai;
+  $("statTotal").textContent=stats.total;$("statDriving").textContent=stats.lagiJalan;$("statProgress").textContent=stats.lagiDiproses;$("statDone").textContent=stats.selesai;
   renderActivityChart(rows);
   $("chartSubtitle").textContent=day?`Aktivitas di ${new Date(day+"T00:00:00").toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"})}.`:`Aktivitas per hari dari data yang tersedia.`;
   $("dashboardTable").innerHTML=rows.map(a=>`<tr><td>${statusClass(a.status)}</td><td>${escapeHtml(a.kurir)}</td><td>${escapeHtml(a.pekerjaan)}</td><td>${escapeHtml(a.asal)} → ${escapeHtml(a.tujuan)}</td><td>${escapeHtml(a.berangkat||"-")}</td><td>${escapeHtml(a.datang||"-")}</td><td>${escapeHtml(a.selesai||"-")}</td><td>${escapeHtml(a.hasil||"-")}</td><td>${escapeHtml(a.keterangan||"-")}</td></tr>`).join("");

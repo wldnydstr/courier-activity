@@ -134,93 +134,8 @@
   .welcome-user{font-size:24px !important}
 }
 
-/* V16 — tombol Keluar dan credit developer sama-sama rata kanan */
-.app-topbar {
-  align-items: flex-start;
-}
-.app-topbar > .topbar-right {
-  margin-left: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  text-align: right;
-}
-.app-topbar .developer-credit {
-  width: 100%;
-  text-align: right;
-  margin-top: 8px;
-}
 
 
-/* V19 — positioning tombol Keluar & credit saja */
-.app-topbar {
-  position: relative;
-}
-
-.app-topbar .topbar-right {
-  margin-left: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  text-align: right;
-  gap: 8px;
-}
-
-.app-topbar .developer-credit {
-  width: 100%;
-  text-align: right;
-}
-
-/* V20 — satu area freeze utuh dari header sampai bawah summary */
-#appView .dashboard-sticky-top {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: #f7f7f8;
-  padding-bottom: 14px;
-}
-
-#appView .dashboard-sticky-top .topbar,
-#appView .dashboard-sticky-top .nav,
-#appView .dashboard-sticky-top .page-heading,
-#appView .dashboard-sticky-top .stats-grid {
-  position: static !important;
-}
-
-#appView .dashboard-sticky-top .stats-grid {
-  margin-bottom: 0;
-}
-
-/* V21 — area freeze exact: dari paling atas sampai bawah summary */
-#appView .dashboard-sticky-top {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(1180px, calc(100% - 36px));
-  z-index: 1000;
-  background: #f7f7f8;
-  padding-top: 28px;
-  padding-bottom: 14px;
-}
-
-#appView .dashboard-sticky-top .topbar,
-#appView .dashboard-sticky-top .nav,
-#appView .dashboard-sticky-top .page-heading,
-#appView .dashboard-sticky-top .stats-grid {
-  position: static !important;
-}
-
-#appView .dashboard-sticky-spacer {
-  height: var(--dashboard-freeze-height, 0px);
-}
-
-@media (max-width: 600px) {
-  #appView .dashboard-sticky-top {
-    width: calc(100% - 36px);
-    padding-top: 20px;
-  }
-}
 
 
 /* Satu lebar kontainer untuk header, navigasi, heading, summary, filter, grafik, dan tabel */
@@ -286,43 +201,69 @@
   }
 }
 
-/* V23 — semua area dashboard sejajar kiri-kanan */
-#appView .app-shell {
-  width: calc(100% - 72px);
-  max-width: none;
+
+
+/* V25 — layout final: satu garis kiri-kanan + freeze utuh sampai summary */
+.app {
+  width: min(1180px, calc(100% - 36px));
+  box-sizing: border-box;
   margin-left: auto;
   margin-right: auto;
 }
 
 #appView .dashboard-sticky-top {
-  left: 0;
-  right: 0;
-  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: min(1180px, calc(100% - 36px));
   box-sizing: border-box;
-  transform: none;
-  padding-left: 0;
-  padding-right: 0;
+  padding: 28px 18px 14px;
+  margin: 0;
+  z-index: 1000;
+  background: #f7f7f8;
+  box-shadow: 0 14px 24px rgba(0,0,0,.035);
+  overflow: visible;
 }
 
-#appView .dashboard-sticky-top > * ,
-#appView .dashboard-content > * {
+#appView .dashboard-sticky-top .topbar,
+#appView .dashboard-sticky-top .nav,
+#appView .dashboard-sticky-top .page-heading,
+#appView .dashboard-sticky-top .stats-grid {
+  position: static !important;
   width: 100%;
   box-sizing: border-box;
 }
 
-#appView .dashboard-sticky-top .app-header,
-#appView .dashboard-sticky-top .app-nav,
-#appView .dashboard-sticky-top .dashboard-heading,
-#appView .dashboard-sticky-top .stats-grid,
-#appView .dashboard-content .dashboard-filters,
-#appView .dashboard-content .chart-card,
-#appView .dashboard-content .card {
+#appView .dashboard-sticky-top .stats-grid {
+  margin-bottom: 0;
+}
+
+#appView .dashboard-sticky-spacer {
+  width: 100%;
+  height: 0;
+}
+
+#appView .dashboardView,
+#appView #dashboardView {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#appView #dashboardView > .card,
+#appView #dashboardView > .section-title-row {
   width: 100%;
   box-sizing: border-box;
 }
 
 @media (max-width: 700px) {
-  #appView .app-shell {
+  .app {
     width: calc(100% - 24px);
+  }
+
+  #appView .dashboard-sticky-top {
+    width: calc(100% - 24px);
+    padding: 20px 12px 12px;
   }
 }
