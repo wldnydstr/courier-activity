@@ -1,6 +1,8 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbw8XCphf76_VVMSIRDpuVACAppuk5NlxKxQL91hD03nTOIooU0wrM21Wmltbuhay6y9/exec";
 
 let state = { user:null, activity:null, locations:[], dashboardActivities:[] };
+let sessionExpiryTimer = null;
+const SESSION_LIMIT = 60 * 60 * 1000;
 const $ = id => document.getElementById(id);
 const msg = (id,text="") => { if($(id)) $(id).textContent=text; };
 
@@ -22,6 +24,43 @@ function fileToBase64(file){
 }
 
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+
+function clearSession(){
+  if(sessionExpiryTimer){clearTimeout(sessionExpiryTimer);sessionExpiryTimer=null;}
+  localStorage.removeItem("courierSession");
+  state={user:null,activity:null,locations:[],dashboardActivities:[]};
+}
+
+function logoutToLogin(message=""){
+  clearSession();
+  $("appView").classList.add("hidden");
+  $("loginView").classList.remove("hidden");
+  $("loginForm").reset();
+  resetCourierCards();
+  $("resultForm").reset();
+  $("userForm").reset();
+  msg("loginMsg",message);
+}
+
+function scheduleSessionExpiry(loginAt){
+  if(sessionExpiryTimer) clearTimeout(sessionExpiryTimer);
+  const elapsed=Date.now()-Number(loginAt);
+  const remaining=SESSION_LIMIT-elapsed;
+  if(remaining<=0){logoutToLogin("Sesi kamu udah lebih dari 1 jam. Silakan masuk lagi, ya.");return;}
+  sessionExpiryTimer=setTimeout(()=>logoutToLogin("Sesi kamu udah lebih dari 1 jam. Silakan masuk lagi, ya."),remaining);
+}
+
+function checkSessionExpiry(){
+  try{
+    const saved=JSON.parse(localStorage.getItem("courierSession")||"null");
+    if(saved?.loginAt && Date.now()-Number(saved.loginAt)>=SESSION_LIMIT){
+      logoutToLogin("Sesi kamu udah lebih dari 1 jam. Silakan masuk lagi, ya.");
+      return false;
+    }
+    if(saved?.loginAt) scheduleSessionExpiry(saved.loginAt);
+  }catch(e){}
+  return true;
+}
 
 function setView(view){
   ["courierView","dashboardView","reportView","usersView"].forEach(id=>$(id).classList.add("hidden"));
@@ -131,19 +170,24 @@ function setWelcome(name){
 }
 
 async function restoreSession(){
+  let saved=null;
+  try{saved=JSON.parse(localStorage.getItem("courierSession")||"null");}catch(e){saved=null;}
+  if(!saved || !saved.user || !saved.loginAt) return false;
+  if(Date.now()-Number(saved.loginAt)>=SESSION_LIMIT){
+    localStorage.removeItem("courierSession");
+    return false;
+  }
+
+  state.user=saved.user;
+  scheduleSessionExpiry(saved.loginAt);
+  $("loginView").classList.add("hidden");
+  $("appView").classList.remove("hidden");
+  setWelcome(state.user.nama);
+  setupNav(state.user.peran);
+  const lastView=saved.lastView||((state.user.peran==="Kurir")?"courierView":"dashboardView");
+
+  // Gagal mengambil data tidak boleh menghapus sesi. Sesi hanya berakhir setelah 1 jam atau saat user logout.
   try{
-    const saved=JSON.parse(localStorage.getItem("courierSession")||"null");
-    if(!saved || !saved.user || !saved.loginAt) return false;
-    if(Date.now()-Number(saved.loginAt)>=60*60*1000){
-      localStorage.removeItem("courierSession");
-      return false;
-    }
-    state.user=saved.user;
-    $("loginView").classList.add("hidden");
-    $("appView").classList.remove("hidden");
-    setWelcome(state.user.nama);
-    setupNav(state.user.peran);
-    const lastView=saved.lastView||((state.user.peran==="Kurir")?"courierView":"dashboardView");
     if(state.user.peran==="Kurir"){
       await loadLocations();
       setView("courierView");
@@ -159,11 +203,17 @@ async function restoreSession(){
       setView("dashboardView");
       await loadDashboard();
     }
-    return true;
-  }catch(e){
-    localStorage.removeItem("courierSession");
-    return false;
+  }catch(err){
+    if(state.user.peran==="Kurir") setView("courierView");
+    else if(lastView==="reportView") setView("reportView");
+    else if(lastView==="usersView" && state.user.peran==="Super User") setView("usersView");
+    else setView("dashboardView");
+    msg("dashboardMsg",err.message);
+    msg("reportMsg",err.message);
+    msg("activityMsg",err.message);
+    msg("userMsg",err.message);
   }
+  return true;
 }
 
 async function handleLogin(e){
@@ -171,7 +221,7 @@ async function handleLogin(e){
   try{
     const data=await api("login",{id:$("loginId").value.trim(),pin:$("loginPin").value.trim()});
     state.user=data.user;
-    localStorage.setItem("courierSession", JSON.stringify({user:data.user,loginAt:Date.now(),lastView:data.user.peran==="Kurir"?"courierView":"dashboardView"}));
+    const loginAt=Date.now(); localStorage.setItem("courierSession", JSON.stringify({user:data.user,loginAt,lastView:data.user.peran==="Kurir"?"courierView":"dashboardView"})); scheduleSessionExpiry(loginAt);
     $("loginView").classList.add("hidden");$("appView").classList.remove("hidden");
     setWelcome(data.user.nama);setupNav(data.user.peran);
     if(data.user.peran==="Kurir"){await loadLocations();setView("courierView");}
@@ -388,7 +438,7 @@ async function handleCreateUser(e){
 }
 
 $("loginForm").addEventListener("submit",handleLogin);
-$("logoutBtn").addEventListener("click",()=>{localStorage.removeItem("courierSession");state={user:null,activity:null,locations:[]};$("appView").classList.add("hidden");$("loginView").classList.remove("hidden");$("loginForm").reset();resetCourierCards();$("resultForm").reset();$("userForm").reset();msg("loginMsg","");});
+$("logoutBtn").addEventListener("click",()=>logoutToLogin(""));
 setupCombo("asalSearch","asalList");setupCombo("tujuanSearch","tujuanList");
 ["jenisPekerjaan","asalSearch","tujuanSearch","fotoDokumen","fotoBerangkat"].forEach(id=>$(id).addEventListener("input",checkStart));
 $("activityForm").addEventListener("submit",handleCreateActivity);
@@ -415,4 +465,5 @@ function syncDashboardFreeze(){
 window.addEventListener("resize", syncDashboardFreeze);
 window.addEventListener("load", syncDashboardFreeze);
 
+document.addEventListener("visibilitychange",()=>{if(!document.hidden) checkSessionExpiry();});
 restoreSession();
