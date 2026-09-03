@@ -29,6 +29,12 @@ function setView(view){
   ["navActivity","navDashboard","navReport","navUsers"].forEach(id=>$(id).classList.remove("active"));
   const nav={courierView:"navActivity",dashboardView:"navDashboard",reportView:"navReport",usersView:"navUsers"}[view];
   if(nav)$(nav).classList.add("active");
+  if(state.user){
+    try{
+      const saved=JSON.parse(localStorage.getItem("courierSession")||"null");
+      if(saved){saved.lastView=view;localStorage.setItem("courierSession",JSON.stringify(saved));}
+    }catch(e){}
+  }
 }
 
 function setupNav(role){
@@ -54,25 +60,30 @@ function setupCombo(inputId,listId){
   };
   input.addEventListener("focus",render);input.addEventListener("input",render);
   
-function restoreCourierSession(){
-  try{
-    const saved = localStorage.getItem("courierSession");
-    if(!saved) return false;
-    const user = JSON.parse(saved);
-    if(!user || !user.id || !user.role) return false;
-    state.user = user;
-    showApp();
-    return true;
-  }catch(e){
-    localStorage.removeItem("courierSession");
-    return false;
-  }
-}
 
 document.addEventListener("click",e=>{if(!list.contains(e.target)&&e.target!==input)list.classList.add("hidden");});
 }
 
 async function loadLocations(){const data=await api("getLocations");state.locations=data.locations||[];}
+
+async function loadActiveActivity(){
+  try{
+    const data=await api("getActiveActivity",{idPengguna:state.user.id});
+    if(data.activity){
+      state.activity=data.activity;
+      showActiveState(state.activity);
+      if(state.activity.status==="Lagi Diproses"){
+        if(state.activity.hasil){$("hasil").value=state.activity.hasil;}
+        if(state.activity.keterangan){$("keterangan").value=state.activity.keterangan;}
+        if(state.activity.hasil){$("saveResultBtn").classList.add("hidden");$("completeBtn").classList.remove("hidden");}
+      }
+    }else{
+      resetCourierCards();
+    }
+  }catch(err){
+    msg("activityMsg",err.message);
+  }
+}
 
 function checkStart(){
   const ready=!!($('jenisPekerjaan').value&&state.locations.includes($('asalSearch').value.trim())&&state.locations.includes($('tujuanSearch').value.trim())&&$('fotoDokumen').files[0]&&$('fotoBerangkat').files[0]);
@@ -119,12 +130,48 @@ function setWelcome(name){
   $("welcomeName").innerHTML = `<span class="greeting-text">${escapeHtml(greeting)} ${emoji}</span><span class="welcome-user">${escapeHtml(name)}</span>`;
 }
 
+async function restoreSession(){
+  try{
+    const saved=JSON.parse(localStorage.getItem("courierSession")||"null");
+    if(!saved || !saved.user || !saved.loginAt) return false;
+    if(Date.now()-Number(saved.loginAt)>=60*60*1000){
+      localStorage.removeItem("courierSession");
+      return false;
+    }
+    state.user=saved.user;
+    $("loginView").classList.add("hidden");
+    $("appView").classList.remove("hidden");
+    setWelcome(state.user.nama);
+    setupNav(state.user.peran);
+    const lastView=saved.lastView||((state.user.peran==="Kurir")?"courierView":"dashboardView");
+    if(state.user.peran==="Kurir"){
+      await loadLocations();
+      setView("courierView");
+      await loadActiveActivity();
+    }else if(lastView==="reportView"){
+      setView("reportView");
+      await loadReportOptions();
+      await loadReport();
+    }else if(lastView==="usersView" && state.user.peran==="Super User"){
+      setView("usersView");
+      await loadUsers();
+    }else{
+      setView("dashboardView");
+      await loadDashboard();
+    }
+    return true;
+  }catch(e){
+    localStorage.removeItem("courierSession");
+    return false;
+  }
+}
+
 async function handleLogin(e){
   e.preventDefault();msg("loginMsg","Lagi ngecek...");
   try{
     const data=await api("login",{id:$("loginId").value.trim(),pin:$("loginPin").value.trim()});
     state.user=data.user;
-  localStorage.setItem("courierSession", JSON.stringify(state.user));
+    localStorage.setItem("courierSession", JSON.stringify({user:data.user,loginAt:Date.now(),lastView:data.user.peran==="Kurir"?"courierView":"dashboardView"}));
     $("loginView").classList.add("hidden");$("appView").classList.remove("hidden");
     setWelcome(data.user.nama);setupNav(data.user.peran);
     if(data.user.peran==="Kurir"){await loadLocations();setView("courierView");}
@@ -341,7 +388,7 @@ async function handleCreateUser(e){
 }
 
 $("loginForm").addEventListener("submit",handleLogin);
-$("logoutBtn").addEventListener("click",()=>{state={user:null,activity:null,locations:[]};$("appView").classList.add("hidden");$("loginView").classList.remove("hidden");$("loginForm").reset();resetCourierCards();$("resultForm").reset();$("userForm").reset();msg("loginMsg","");});
+$("logoutBtn").addEventListener("click",()=>{localStorage.removeItem("courierSession");state={user:null,activity:null,locations:[]};$("appView").classList.add("hidden");$("loginView").classList.remove("hidden");$("loginForm").reset();resetCourierCards();$("resultForm").reset();$("userForm").reset();msg("loginMsg","");});
 setupCombo("asalSearch","asalList");setupCombo("tujuanSearch","tujuanList");
 ["jenisPekerjaan","asalSearch","tujuanSearch","fotoDokumen","fotoBerangkat"].forEach(id=>$(id).addEventListener("input",checkStart));
 $("activityForm").addEventListener("submit",handleCreateActivity);
@@ -367,3 +414,5 @@ function syncDashboardFreeze(){
 
 window.addEventListener("resize", syncDashboardFreeze);
 window.addEventListener("load", syncDashboardFreeze);
+
+restoreSession();
