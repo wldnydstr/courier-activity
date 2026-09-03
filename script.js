@@ -1,6 +1,6 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbw8XCphf76_VVMSIRDpuVACAppuk5NlxKxQL91hD03nTOIooU0wrM21Wmltbuhay6y9/exec";
 
-let state = { user:null, activity:null, locations:[] };
+let state = { user:null, activity:null, locations:[], dashboardActivities:[] };
 const $ = id => document.getElementById(id);
 const msg = (id,text="") => { if($(id)) $(id).textContent=text; };
 
@@ -156,38 +156,72 @@ async function handleComplete(){
 
 function statusClass(status){return `<span class="status-pill">${escapeHtml(status)}</span>`;}
 
-function renderStatusChart(stats){
-  const items = [
-    ["Menunggu Berangkat", Number(stats.menungguBerangkat||0)],
-    ["Lagi Jalan", Number(stats.lagiJalan||0)],
-    ["Lagi Diproses", Number(stats.lagiDiproses||0)],
-    ["Selesai", Number(stats.selesai||0)]
-  ];
-  const max = Math.max(...items.map(x=>x[1]),1);
-  $("statusChart").innerHTML = items.map(([label,value]) => {
-    const width = Math.round((value/max)*100);
-    return `<div class="status-chart-row">
-      <div class="status-chart-label">${escapeHtml(label)}</div>
-      <div class="status-chart-track"><div class="status-chart-bar" style="width:${width}%"></div></div>
-      <div class="status-chart-value">${value}</div>
-    </div>`;
+function formatDateKey(date){
+  const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,"0"),d=String(date.getDate()).padStart(2,"0");
+  return `${y}-${m}-${d}`;
+}
+
+function parseActivityDate(value){
+  if(!value)return null;
+  const m=String(value).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  if(m)return new Date(Number(m[3]),Number(m[2])-1,Number(m[1]),Number(m[4]||0),Number(m[5]||0),Number(m[6]||0));
+  const d=new Date(value);return isNaN(d.getTime())?null:d;
+}
+
+function activityMatchesDay(a, day){
+  if(!day)return true;
+  return [a.berangkat,a.datang,a.selesai].some(v=>{const d=parseActivityDate(v);return d&&formatDateKey(d)===day;});
+}
+
+function populateDashboardCouriers(rows){
+  const names=[...new Set(rows.map(a=>String(a.kurir||"").trim()).filter(Boolean))].sort();
+  const current=$("dashboardCourier").value;
+  $("dashboardCourier").innerHTML='<option value="">Semua kurir</option>'+names.map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join("");
+  if(names.includes(current))$("dashboardCourier").value=current;
+}
+
+function renderActivityChart(rows){
+  const chart=$("activityChart");
+  if(!rows.length){chart.innerHTML='<div class="chart-empty">Belum ada aktivitas buat ditampilin.</div>';return;}
+  const days={};
+  rows.forEach(a=>{
+    const d=parseActivityDate(a.berangkat||a.datang||a.selesai); if(!d)return;
+    const key=formatDateKey(d); if(!days[key])days[key]={total:0,done:0};
+    days[key].total++; if(a.status==="Selesai")days[key].done++;
+  });
+  const entries=Object.entries(days).sort((a,b)=>a[0].localeCompare(b[0])).slice(-10);
+  const max=Math.max(...entries.map(([,v])=>v.total),1);
+  chart.innerHTML=entries.map(([key,v])=>{
+    const d=new Date(key+"T00:00:00");
+    const label=d.toLocaleDateString("id-ID",{day:"2-digit",month:"short"});
+    const totalH=Math.max(10,Math.round(v.total/max*170));
+    const doneH=Math.max(v.done?6:0,Math.round(v.done/max*170));
+    const active=v.total-v.done;
+    return `<div class="chart-col"><div class="chart-value">${v.total}</div><div class="chart-bars"><div class="chart-bar total" style="height:${totalH}px"><span class="chart-overlay done" style="height:${doneH}px"></span></div></div><div class="chart-label">${escapeHtml(label)}</div><div class="chart-active">${active} belum selesai</div></div>`;
   }).join("");
 }
 
 function renderDashboard(data){
-  const stats=data.stats||{};
-  renderStatusChart(stats);
-  $("statTotal").textContent=stats.total||0;$("statPending").textContent=stats.menungguBerangkat||0;$("statDriving").textContent=stats.lagiJalan||0;$("statProgress").textContent=stats.lagiDiproses||0;$("statDone").textContent=stats.selesai||0;
-  const rows=data.activities||[];
+  const allRows=data.activities||[];
+  populateDashboardCouriers(allRows);
+  const day=$("dashboardDate").value, courier=$("dashboardCourier").value;
+  const rows=allRows.filter(a=>(!courier||a.kurir===courier)&&activityMatchesDay(a,day));
+  const stats={total:rows.length,menungguBerangkat:rows.filter(a=>a.status==="Menunggu Berangkat").length,lagiJalan:rows.filter(a=>a.status==="Lagi Jalan").length,lagiDiproses:rows.filter(a=>a.status==="Lagi Diproses").length,selesai:rows.filter(a=>a.status==="Selesai").length};
+  $("statTotal").textContent=stats.total;$("statPending").textContent=stats.menungguBerangkat;$("statDriving").textContent=stats.lagiJalan;$("statProgress").textContent=stats.lagiDiproses;$("statDone").textContent=stats.selesai;
+  renderActivityChart(rows);
+  $("chartSubtitle").textContent=day?`Aktivitas di ${new Date(day+"T00:00:00").toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"})}.`:`Aktivitas per hari dari data yang tersedia.`;
   $("dashboardTable").innerHTML=rows.map(a=>`<tr><td>${statusClass(a.status)}</td><td>${escapeHtml(a.kurir)}</td><td>${escapeHtml(a.pekerjaan)}</td><td>${escapeHtml(a.asal)} → ${escapeHtml(a.tujuan)}</td><td>${escapeHtml(a.berangkat||"-")}</td><td>${escapeHtml(a.datang||"-")}</td><td>${escapeHtml(a.selesai||"-")}</td><td>${escapeHtml(a.hasil||"-")}</td><td>${escapeHtml(a.keterangan||"-")}</td></tr>`).join("");
   $("dashboardEmpty").classList.toggle("hidden",rows.length>0);
 }
 
 async function loadDashboard(){
   msg("dashboardMsg","Lagi ambil data aktivitas...");
-  try{const data=await api("getDashboard",{idPengguna:state.user.id});renderDashboard(data);msg("dashboardMsg","");}
+  try{const data=await api("getDashboard",{idPengguna:state.user.id});state.dashboardActivities=data.activities||[];renderDashboard(data);msg("dashboardMsg","");}
   catch(err){msg("dashboardMsg",err.message);}
 }
+
+function applyDashboardFilters(){renderDashboard({activities:state.dashboardActivities||[]});}
+function resetDashboardFilters(){$("dashboardDate").value="";$("dashboardCourier").value="";applyDashboardFilters();}
 
 
 function populateReportOptions(data){
@@ -207,11 +241,10 @@ function populateReportOptions(data){
 
 async function loadReportOptions(){
   try{
-    const data = await api("getReportOptions",{idPengguna:state.user.id});
-    populateReportOptions(data);
-  }catch(err){
-    msg("reportMsg",err.message);
-  }
+    const [data,loc] = await Promise.all([api("getReportOptions",{idPengguna:state.user.id}),api("getLocations")]);
+    const dashboardCouriers=[...new Set((state.dashboardActivities||[]).map(a=>String(a.kurir||"").trim()).filter(Boolean))].sort();
+    populateReportOptions({couriers:(data.couriers&&data.couriers.length)?data.couriers:dashboardCouriers,origins:(data.origins&&data.origins.length)?data.origins:(loc.locations||[]),destinations:(data.destinations&&data.destinations.length)?data.destinations:(loc.locations||[])});
+  }catch(err){msg("reportMsg",err.message);}
 }
 
 function renderReport(rows){
@@ -289,6 +322,8 @@ $("arrivalBtn").addEventListener("click",handleArrival);
 $("resultForm").addEventListener("submit",handleSaveResult);
 $("completeBtn").addEventListener("click",handleComplete);
 $("refreshDashboardBtn").addEventListener("click",loadDashboard);
+$("applyDashboardFilterBtn").addEventListener("click",applyDashboardFilters);
+$("resetDashboardFilterBtn").addEventListener("click",resetDashboardFilters);
 $("refreshReportBtn").addEventListener("click",async()=>{await loadReportOptions();await loadReport();});
 $("applyReportBtn").addEventListener("click",loadReport);
 $("resetReportBtn").addEventListener("click",resetReportFilters);

@@ -29,6 +29,8 @@
         <h1 id="welcomeName">-</h1>
       </div>
       <button id="logoutBtn" class="ghost" type="button">Keluar</button>
+      <div class="developer-credit">Developed by Wildan Yudistira</div>
+
     </header>
 
     <nav id="nav" class="nav hidden">
@@ -132,6 +134,27 @@
 
       <div id="dashboardMsg" class="message page-message"></div>
 
+      <div class="card dashboard-filters">
+        <div class="dashboard-filter-head">
+          <div>
+            <div class="section-title">Filter aktivitas</div>
+            <div class="muted small">Pilih hari dan kurir buat lihat data yang lebih spesifik.</div>
+          </div>
+        </div>
+        <div class="filters-grid dashboard-filter-grid">
+          <label>Hari
+            <input id="dashboardDate" type="date">
+          </label>
+          <label>Kurir
+            <select id="dashboardCourier"><option value="">Semua kurir</option></select>
+          </label>
+          <div class="dashboard-filter-actions">
+            <button id="applyDashboardFilterBtn" class="primary" type="button">Terapkan</button>
+            <button id="resetDashboardFilterBtn" class="ghost" type="button">Reset</button>
+          </div>
+        </div>
+      </div>
+
       <div class="stats-grid">
         <div class="stat-card"><span>Total Aktivitas</span><strong id="statTotal">0</strong></div>
         <div class="stat-card"><span>Menunggu Berangkat</span><strong id="statPending">0</strong></div>
@@ -144,11 +167,16 @@
       <div class="card chart-card">
         <div class="section-title-row">
           <div>
-            <div class="section-title">Aktivitas berdasarkan status</div>
-            <div class="muted small">Biar kelihatan cepat aktivitas lagi ada di tahap mana.</div>
+            <div class="section-title">Tren aktivitas</div>
+            <div class="muted small" id="chartSubtitle">Jumlah aktivitas per hari berdasarkan data yang tersedia.</div>
           </div>
         </div>
-        <div id="statusChart" class="status-chart"></div>
+        <div id="activityChart" class="activity-chart"></div>
+        <div class="chart-legend">
+          <span><i class="legend-dot status-total"></i>Total</span>
+          <span><i class="legend-dot status-done"></i>Selesai</span>
+          <span><i class="legend-dot status-active"></i>Belum selesai</span>
+        </div>
       </div>
 
       <div class="card">

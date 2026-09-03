@@ -16,3 +16,67 @@
 @media(max-width:560px){.status-chart-row{grid-template-columns:120px 1fr 34px;gap:9px}.status-chart-label{font-size:12px}}
 
 .welcome-user{font-size:.78em;line-height:1.15}
+
+/* Dashboard */
+.topbar{position:sticky;top:0;z-index:50;background:#f7f7f8;padding:14px 0 12px;margin:0 -2px 12px}
+.nav{position:sticky;top:78px;z-index:45;background:#f7f7f8;padding:4px 0 12px;margin:0 0 18px}
+.dashboard-filters{padding:18px;margin-bottom:16px}
+.dashboard-filter-head{margin-bottom:14px}
+.dashboard-filter-grid{grid-template-columns:1fr 1fr auto;align-items:end}
+.dashboard-filter-actions{display:flex;gap:8px}
+.activity-chart{display:flex;align-items:flex-end;gap:10px;min-height:235px;padding:12px 4px 0;border-bottom:1px solid #e8e9ec;overflow-x:auto}
+.chart-col{min-width:72px;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:220px}
+.chart-value{font-size:12px;font-weight:800;margin-bottom:5px}
+.chart-bars{height:170px;display:flex;align-items:flex-end}
+.chart-bar{width:38px;min-height:2px;border-radius:9px 9px 3px 3px;background:#dfe3e8;position:relative;overflow:hidden}
+.chart-overlay.done{position:absolute;bottom:0;left:0;right:0;background:#17181b;border-radius:8px 8px 3px 3px}
+.chart-label{font-size:11px;font-weight:700;margin-top:9px;white-space:nowrap}
+.chart-active{font-size:9px;color:#858b94;margin-top:2px;white-space:nowrap}
+.chart-legend{display:flex;gap:18px;margin-top:12px;font-size:11px;color:#656b74;font-weight:600}
+.chart-legend span{display:flex;align-items:center;gap:6px}.legend-dot{width:9px;height:9px;border-radius:3px;display:inline-block}.status-total{background:#dfe3e8}.status-done{background:#17181b}.status-active{background:#bfc5cd}
+.chart-empty{width:100%;text-align:center;color:#777d88;padding:70px 20px}
+@media(max-width:850px){.dashboard-filter-grid{grid-template-columns:1fr 1fr}.dashboard-filter-actions{grid-column:1/-1}}
+@media(max-width:560px){.topbar{top:0}.nav{top:73px}.dashboard-filter-grid{grid-template-columns:1fr}.dashboard-filter-actions{grid-column:auto}.activity-chart{gap:7px}.chart-bar{width:30px}}
+
+/* V11 — perapihan tipografi login & greeting */
+.login-card .login-subtitle,
+.login-card .subtitle,
+.login-card .helper-text {
+  font-size: 15px;
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+
+.login-card .field-label,
+.login-card label {
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.login-card .field + .field,
+.login-card .form-group + .form-group {
+  margin-top: 20px;
+}
+
+/* Greeting tidak boleh lebih besar dari nama user */
+.greeting {
+  font-size: 30px !important;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+
+.user-name,
+.welcome-name {
+  font-size: 30px !important;
+  line-height: 1.2;
+}
+
+/* V12 — credit developer */
+.developer-credit {
+  text-align: right;
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 400;
+  margin-top: 8px;
+  color: #9a9da3;
+}
