@@ -294,9 +294,32 @@ async function handleArrival(){
 async function handleSaveResult(e){
   e.preventDefault();
   if(!$("hasil").value){msg("resultMsg","Pilih hasil pekerjaannya dulu, ya.");return;}
-  $("saveResultBtn").disabled=true;msg("resultMsg","Lagi nyimpen hasil...");
-  try{await api("saveResult",{idAktivitas:state.activity.idAktivitas,idPengguna:state.user.id,hasil:$("hasil").value,keterangan:$("keterangan").value.trim()});$("saveResultBtn").classList.add("hidden");$("completeBtn").classList.remove("hidden");msg("resultMsg","Hasilnya udah tersimpan. Tinggal selesain tugas.");}
-  catch(err){msg("resultMsg",err.message);$("saveResultBtn").disabled=false;}
+  $("saveResultBtn").disabled=true;
+  msg("resultMsg","Lagi nyelesaiin tugas...");
+  try{
+    await api("saveResult",{
+      idAktivitas:state.activity.idAktivitas,
+      idPengguna:state.user.id,
+      hasil:$("hasil").value,
+      keterangan:$("keterangan").value.trim()
+    });
+    const data=await api("completeActivity",{
+      idAktivitas:state.activity.idAktivitas,
+      idPengguna:state.user.id
+    });
+    state.activity.status="Selesai";
+    state.activity.waktuSelsai=data.waktuSelsai||"-";
+    resetCourierCards();
+    $("activityCard").classList.remove("hidden");
+    $("activeCard").classList.add("hidden");
+    $("resultCard").classList.add("hidden");
+    $("startBtn").disabled=true;
+    $("activityMsg").textContent="Tugas selesai. Yuk bikin aktivitas baru.";
+    window.scrollTo({top:0,behavior:"smooth"});
+  }catch(err){
+    msg("resultMsg",err.message);
+    $("saveResultBtn").disabled=false;
+  }
 }
 
 async function handleComplete(){
@@ -363,10 +386,10 @@ function renderActivityChart(rows){
 function displayTimeOnly(value){
   if(!value)return "-";
   const text=String(value).trim();
-  const m=text.match(/(?:T|\\s)(\\d{1,2}):(\\d{2})(?::\\d{2})?/);
-  if(m)return `${String(m[1]).padStart(2,"0")}:${m[2]}`;
   const d=new Date(text);
   if(!isNaN(d.getTime()))return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+  const m=text.match(/(?:T|\\s)(\\d{1,2}):(\\d{2})(?::\\d{2})?/);
+  if(m)return `${String(m[1]).padStart(2,"0")}:${m[2]}`;
   return text;
 }
 
