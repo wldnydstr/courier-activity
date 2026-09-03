@@ -3,29 +3,25 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw8XCphf76_VVMSIRDpuVAC
 let state = { user:null, activity:null, locations:[], dashboardActivities:[] };
 let sessionExpiryTimer = null;
 const SESSION_LIMIT = 60 * 60 * 1000;
-const SESSION_KEY = "aktivitasKurirSession";
+const SESSION_KEY = "courierSessionV43";
 const $ = id => document.getElementById(id);
 
-// Sesi dibuat sederhana seperti aplikasi Transport Schedule yang sudah terbukti stabil.
-// LocalStorage tidak hilang saat tab/browser ditutup. Sesi hanya dihapus saat logout
-// manual atau umur sesi sudah mencapai 1 jam.
 function readSession(){
-  try{
-    const raw=localStorage.getItem(SESSION_KEY);
-    if(!raw)return null;
-    const saved=JSON.parse(raw);
-    if(!saved || !saved.user || !saved.loginAt)return null;
-    if(!Number.isFinite(Number(saved.loginAt)))return null;
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw);
+    if (!saved || !saved.user || !Number(saved.expiresAt)) return null;
     return saved;
-  }catch(e){return null;}
+  } catch(e) { return null; }
 }
 
 function writeSession(saved){
-  try{localStorage.setItem(SESSION_KEY,JSON.stringify(saved));}catch(e){}
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(saved)); } catch(e) {}
 }
 
 function removeStoredSession(){
-  try{localStorage.removeItem(SESSION_KEY);}catch(e){}
+  try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
 }
 
 const msg = (id,text="") => { if($(id)) $(id).textContent=text; };
@@ -41,7 +37,7 @@ function fileToBase64(file){
   return new Promise((resolve,reject)=>{
     if(!file)return resolve(null);
     const reader=new FileReader();
-    reader.onload=()=>resolve({name:file.name,mimeType:file.type,data:reader.result.split(",")[1]});
+    reader.onload=()=>resolve({name:file.name,mimeType:file.type,base64:reader.result.split(",")[1]});
     reader.onerror=reject;
     reader.readAsDataURL(file);
   });
@@ -66,21 +62,18 @@ function logoutToLogin(message=""){
   msg("loginMsg",message);
 }
 
-function scheduleSessionExpiry(loginAt){
-  if(sessionExpiryTimer)clearTimeout(sessionExpiryTimer);
-  const remaining=Number(loginAt)+SESSION_LIMIT-Date.now();
-  if(remaining<=0){logoutToLogin("Sesi kamu udah lebih dari 1 jam. Silakan masuk lagi, ya.");return;}
-  sessionExpiryTimer=setTimeout(()=>logoutToLogin("Sesi kamu udah lebih dari 1 jam. Silakan masuk lagi, ya."),remaining);
+function scheduleSessionExpiry(expiresAt){
+  if(sessionExpiryTimer) clearTimeout(sessionExpiryTimer);
+  const remaining = Number(expiresAt) - Date.now();
+  if(remaining <= 0){ logoutToLogin("Sesi kamu udah lebih dari 1 jam. Silakan masuk lagi, ya."); return; }
+  sessionExpiryTimer = setTimeout(() => logoutToLogin("Sesi kamu udah lebih dari 1 jam. Silakan masuk lagi, ya."), remaining);
 }
 
 function checkSessionExpiry(){
   const saved=readSession();
-  if(!saved)return true;
-  if(Date.now()-Number(saved.loginAt)>=SESSION_LIMIT){
-    logoutToLogin("Sesi kamu udah lebih dari 1 jam. Silakan masuk lagi, ya.");
-    return false;
-  }
-  scheduleSessionExpiry(saved.loginAt);
+  if(!saved) return true;
+  if(Date.now() >= Number(saved.expiresAt)){ logoutToLogin("Sesi kamu udah lebih dari 1 jam. Silakan masuk lagi, ya."); return false; }
+  scheduleSessionExpiry(saved.expiresAt);
   return true;
 }
 
@@ -192,34 +185,28 @@ function setWelcome(name){
 }
 
 async function restoreSession(){
-  const saved=readSession();
-  if(!saved)return false;
-
-  if(Date.now()-Number(saved.loginAt)>=SESSION_LIMIT){
+  let saved=null;
+  saved=readSession();
+  if(!saved || !saved.user || !saved.expiresAt) return false;
+  if(Date.now() >= Number(saved.expiresAt)){
     removeStoredSession();
     return false;
   }
 
   state.user=saved.user;
-  scheduleSessionExpiry(saved.loginAt);
+  scheduleSessionExpiry(saved.expiresAt);
   $("loginView").classList.add("hidden");
   $("appView").classList.remove("hidden");
   setWelcome(state.user.nama);
   setupNav(state.user.peran);
+  const lastView=saved.lastView||((state.user.peran==="Kurir")?"courierView":"dashboardView");
 
-  const lastView=saved.lastView || (state.user.peran==="Kurir"?"courierView":"dashboardView");
-
-  // Error API tidak menghapus sesi. User tetap masuk dan bisa lanjut lagi.
+  // Gagal mengambil data tidak boleh menghapus sesi. Sesi hanya berakhir setelah 1 jam atau saat user logout.
   try{
     if(state.user.peran==="Kurir"){
       await loadLocations();
-      if(lastView==="courierView"){
-        setView("courierView");
-        await loadActiveActivity();
-      }else{
-        setView("courierView");
-        await loadActiveActivity();
-      }
+      setView("courierView");
+      await loadActiveActivity();
     }else if(lastView==="reportView"){
       setView("reportView");
       await loadReportOptions();
@@ -232,10 +219,14 @@ async function restoreSession(){
       await loadDashboard();
     }
   }catch(err){
-    if(state.user.peran==="Kurir")setView("courierView");
-    else if(lastView==="reportView")setView("reportView");
-    else if(lastView==="usersView" && state.user.peran==="Super User")setView("usersView");
+    if(state.user.peran==="Kurir") setView("courierView");
+    else if(lastView==="reportView") setView("reportView");
+    else if(lastView==="usersView" && state.user.peran==="Super User") setView("usersView");
     else setView("dashboardView");
+    msg("dashboardMsg",err.message);
+    msg("reportMsg",err.message);
+    msg("activityMsg",err.message);
+    msg("userMsg",err.message);
   }
   return true;
 }
@@ -245,7 +236,7 @@ async function handleLogin(e){
   try{
     const data=await api("login",{id:$("loginId").value.trim(),pin:$("loginPin").value.trim()});
     state.user=data.user;
-    const loginAt=Date.now(); writeSession({user:data.user,loginAt,lastView:data.user.peran==="Kurir"?"courierView":"dashboardView"}); scheduleSessionExpiry(loginAt);
+    const loginAt=Date.now(); const expiresAt=loginAt+SESSION_LIMIT; writeSession({user:data.user,loginAt,expiresAt,lastView:data.user.peran==="Kurir"?"courierView":"dashboardView"}); scheduleSessionExpiry(expiresAt);
     $("loginView").classList.add("hidden");$("appView").classList.remove("hidden");
     setWelcome(data.user.nama);setupNav(data.user.peran);
     if(data.user.peran==="Kurir"){await loadLocations();setView("courierView");}
@@ -346,7 +337,7 @@ function renderDashboard(data){
   const day=$("dashboardDate").value, courier=$("dashboardCourier").value;
   const rows=allRows.filter(a=>(!courier||a.kurir===courier)&&activityMatchesDay(a,day));
   const stats={total:rows.length,menungguBerangkat:rows.filter(a=>a.status==="Menunggu Berangkat").length,lagiJalan:rows.filter(a=>a.status==="Lagi Jalan").length,lagiDiproses:rows.filter(a=>a.status==="Lagi Diproses").length,selesai:rows.filter(a=>a.status==="Selesai").length};
-  $("statTotal").textContent = stats.total || 0;$("statJalan").textContent=stats.lagiJalan;$("statProses").textContent=stats.lagiDiproses;$("statSelesai").textContent=stats.selesai;
+  $("statTotal").textContent = stats.total || 0;$("statDriving").textContent=stats.lagiJalan;$("statProgress").textContent=stats.lagiDiproses;$("statDone").textContent=stats.selesai;
   renderActivityChart(rows);
   $("chartSubtitle").textContent=day?`Aktivitas di ${new Date(day+"T00:00:00").toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"})}.`:`Aktivitas per hari dari data yang tersedia.`;
   $("dashboardTable").innerHTML=rows.map(a=>`<tr><td>${statusClass(a.status)}</td><td>${escapeHtml(a.kurir)}</td><td>${escapeHtml(a.pekerjaan)}</td><td>${escapeHtml(a.asal)} → ${escapeHtml(a.tujuan)}</td><td>${escapeHtml(a.berangkat||"-")}</td><td>${escapeHtml(a.datang||"-")}</td><td>${escapeHtml(a.selesai||"-")}</td><td>${escapeHtml(a.hasil||"-")}</td><td>${escapeHtml(a.keterangan||"-")}</td></tr>`).join("");
@@ -469,6 +460,7 @@ $("activityForm").addEventListener("submit",handleCreateActivity);
 $("arrivalBtn").addEventListener("click",handleArrival);
 $("resultForm").addEventListener("submit",handleSaveResult);
 $("completeBtn").addEventListener("click",handleComplete);
+$("refreshDashboardBtn").addEventListener("click",loadDashboard);
 $("applyDashboardFilterBtn").addEventListener("click",applyDashboardFilters);
 $("resetDashboardFilterBtn").addEventListener("click",resetDashboardFilters);
 $("refreshReportBtn").addEventListener("click",async()=>{await loadReportOptions();await loadReport();});
