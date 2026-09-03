@@ -23,6 +23,7 @@
   </section>
 
   <section id="appView" class="hidden">
+    <div id="dashboardStickyTop" class="dashboard-sticky-top">
     <header class="topbar">
       <div>
         <div class="eyebrow">AKTIVITAS KURIR</div>
@@ -40,6 +41,30 @@
       <button id="navReport" class="nav-btn hidden" type="button">Report</button>
       <button id="navUsers" class="nav-btn hidden" type="button">Management User</button>
     </nav>
+
+      <div class="section-title-row page-heading">
+        <div>
+          <div class="section-title">Dashboard</div>
+          <div class="muted small">Pantau aktivitas yang masuk di sini.</div>
+        </div>
+        <button id="refreshDashboardBtn" class="ghost" type="button">Refresh</button>
+      </div>
+
+      <div id="dashboardMsg" class="message page-message"></div>
+
+      <div class="stats-grid">
+        <div class="stat-card"><span>Total Aktivitas</span><strong id="statTotal">0</strong></div>
+        <div class="stat-card"><span>Menunggu Berangkat</span><strong id="statPending">0</strong></div>
+        <div class="stat-card"><span>Lagi Jalan</span><strong id="statDriving">0</strong></div>
+        <div class="stat-card"><span>Lagi Diproses</span><strong id="statProgress">0</strong></div>
+        <div class="stat-card"><span>Selesai</span><strong id="statDone">0</strong></div>
+      </div>
+
+
+
+
+    </div>
+    <div id="dashboardStickySpacer" class="dashboard-sticky-spacer" aria-hidden="true"></div>
 
     <section id="courierView" class="hidden">
       <div id="activityCard" class="card">
@@ -125,28 +150,6 @@
     </section>
 
     <section id="dashboardView" class="hidden">
-      <div class="section-title-row page-heading">
-        <div>
-          <div class="section-title">Dashboard</div>
-          <div class="muted small">Pantau aktivitas yang masuk di sini.</div>
-        </div>
-        <button id="refreshDashboardBtn" class="ghost" type="button">Refresh</button>
-      </div>
-
-      <div id="dashboardMsg" class="message page-message"></div>
-
-      <div class="stats-grid">
-        <div class="stat-card"><span>Total Aktivitas</span><strong id="statTotal">0</strong></div>
-        <div class="stat-card"><span>Menunggu Berangkat</span><strong id="statPending">0</strong></div>
-        <div class="stat-card"><span>Lagi Jalan</span><strong id="statDriving">0</strong></div>
-        <div class="stat-card"><span>Lagi Diproses</span><strong id="statProgress">0</strong></div>
-        <div class="stat-card"><span>Selesai</span><strong id="statDone">0</strong></div>
-      </div>
-
-
-
-
-      <div class="dashboard-freeze">
       <div class="card dashboard-filters">
         <div class="dashboard-filter-head">
           <div>
@@ -167,7 +170,7 @@
           </div>
         </div>
       </div>
-      </div>
+
 
       <div class="card chart-card">
         <div class="section-title-row">
@@ -199,6 +202,120 @@
         <div id="dashboardEmpty" class="empty hidden">Belum ada aktivitas.</div>
       </div>
     </section>
+
+
+    <section id="reportView" class="hidden">
+      <div class="section-title-row page-heading">
+        <div>
+          <div class="section-title">Report</div>
+          <div class="muted small">Lihat data aktivitas sesuai filter yang kamu pilih.</div>
+        </div>
+        <button id="refreshReportBtn" class="ghost" type="button">Refresh</button>
+      </div>
+
+      <div class="card">
+        <div class="filters-grid">
+          <label>Dari tanggal
+            <input id="reportDateFrom" type="date">
+          </label>
+          <label>Sampai tanggal
+            <input id="reportDateTo" type="date">
+          </label>
+          <label>Status
+            <select id="reportStatus">
+              <option value="">Semua status</option>
+              <option>Menunggu Berangkat</option>
+              <option>Lagi Jalan</option>
+              <option>Lagi Diproses</option>
+              <option>Selesai</option>
+            </select>
+          </label>
+          <label>Kurir
+            <select id="reportCourier">
+              <option value="">Semua kurir</option>
+            </select>
+          </label>
+          <label>Asal
+            <select id="reportOrigin">
+              <option value="">Semua asal</option>
+            </select>
+          </label>
+          <label>Tujuan
+            <select id="reportDestination">
+              <option value="">Semua tujuan</option>
+            </select>
+          </label>
+        </div>
+        <div class="filter-actions">
+          <button id="applyReportBtn" class="primary" type="button">Terapkan Filter</button>
+          <button id="resetReportBtn" class="ghost" type="button">Reset</button>
+        </div>
+        <p id="reportMsg" class="message"></p>
+      </div>
+
+      <div class="card">
+        <div class="section-title-row">
+          <div>
+            <div class="section-title">Data Aktivitas</div>
+            <div id="reportCount" class="muted small">0 aktivitas</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID Aktivitas</th>
+                <th>Status</th>
+                <th>Kurir</th>
+                <th>Pekerjaan</th>
+                <th>Asal</th>
+                <th>Tujuan</th>
+                <th>Berangkat</th>
+                <th>Datang</th>
+                <th>Selesai</th>
+                <th>Hasil</th>
+                <th>Keterangan</th>
+              </tr>
+            </thead>
+            <tbody id="reportTable"></tbody>
+          </table>
+        </div>
+        <div id="reportEmpty" class="empty hidden">Data aktivitas nggak ditemukan.</div>
+      </div>
+    </section>
+
+    <section id="usersView" class="hidden">
+      <div class="card">
+        <div class="section-title-row">
+          <div>
+            <div class="section-title">Management User</div>
+            <div class="muted small">Tambah, hapus, atau atur status pengguna.</div>
+          </div>
+          <button id="refreshUsersBtn" class="ghost" type="button">Refresh</button>
+        </div>
+        <form id="userForm" class="user-form">
+          <div class="two">
+            <label>ID Pengguna<input id="userId" required></label>
+            <label>Nama<input id="userName" required></label>
+          </div>
+          <div class="two">
+            <label>Password<input id="userPin" inputmode="numeric" required></label>
+            <label>Peran<select id="userRole" required><option value="">Pilih peran</option><option>Kurir</option><option>Admin</option><option>Super User</option></select></label>
+          </div>
+          <button class="primary" type="submit">Tambah Pengguna</button>
+          <p id="userMsg" class="message"></p>
+        </form>
+      </div>
+      <div class="card">
+        <div class="section-title">Daftar Pengguna</div>
+        <div id="usersList" class="users-list"></div>
+      </div>
+    </section>
+  </section>
+</main>
+<script src="script.js"></script>
+</body>
+</html>
 
 
     <section id="reportView" class="hidden">

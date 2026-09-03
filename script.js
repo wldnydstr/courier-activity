@@ -38,7 +38,7 @@ function setupNav(role){
   $("navReport").classList.toggle("hidden",role!=="Admin"&&role!=="Super User");
   $("navUsers").classList.toggle("hidden",role!=="Super User");
   $("navActivity").onclick=()=>setView("courierView");
-  $("navDashboard").onclick=async()=>{setView("dashboardView");setDashboardDefaultDay();await loadDashboard();};
+  $("navDashboard").onclick=async()=>{setView("dashboardView");setDashboardDefaultDay();await loadDashboard();requestAnimationFrame(syncDashboardFreeze);};
   $("navReport").onclick=async()=>{setView("reportView");await loadReportOptions();await loadReport();};
   $("navUsers").onclick=async()=>{setView("usersView");await loadUsers();};
 }
@@ -202,6 +202,7 @@ function renderActivityChart(rows){
 }
 
 function renderDashboard(data){
+  requestAnimationFrame(syncDashboardFreeze);
   const allRows=data.activities||[];
   populateDashboardCouriers(allRows);
   const day=$("dashboardDate").value, courier=$("dashboardCourier").value;
@@ -331,3 +332,14 @@ $("applyReportBtn").addEventListener("click",loadReport);
 $("resetReportBtn").addEventListener("click",resetReportFilters);
 $("userForm").addEventListener("submit",handleCreateUser);
 $("refreshUsersBtn").addEventListener("click",loadUsers);
+
+function syncDashboardFreeze(){
+  const freeze = $("dashboardStickyTop");
+  const spacer = $("dashboardStickySpacer");
+  if(!freeze || !spacer) return;
+  const h = freeze.getBoundingClientRect().height;
+  spacer.style.height = `${Math.ceil(h)}px`;
+}
+
+window.addEventListener("resize", syncDashboardFreeze);
+window.addEventListener("load", syncDashboardFreeze);
