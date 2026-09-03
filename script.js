@@ -3,39 +3,27 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw8XCphf76_VVMSIRDpuVAC
 let state = { user:null, activity:null, locations:[], dashboardActivities:[] };
 let sessionExpiryTimer = null;
 const SESSION_LIMIT = 60 * 60 * 1000;
-const SESSION_KEY = "courierSession";
-const SESSION_COOKIE = "courierSession";
-const SESSION_VERSION = 2;
+const SESSION_KEY = "courierSessionV43";
 const $ = id => document.getElementById(id);
 
 function readSession(){
-  try{
-    const raw=localStorage.getItem(SESSION_KEY);
-    if(raw){
-      const saved=JSON.parse(raw);
-      if(saved && saved.user && saved.loginAt && saved.version===SESSION_VERSION) return saved;
-    }
-  }catch(e){}
-  try{
-    const match=document.cookie.match(new RegExp("(?:^|; )"+SESSION_COOKIE.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"=([^;]*)"));
-    if(match){
-      const saved=JSON.parse(decodeURIComponent(match[1]));
-      if(saved && saved.user && saved.loginAt && saved.version===SESSION_VERSION) return saved;
-    }
-  }catch(e){}
-  return null;
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw);
+    if (!saved || !saved.user || !Number(saved.expiresAt)) return null;
+    return saved;
+  } catch(e) { return null; }
 }
 
 function writeSession(saved){
-  const raw=JSON.stringify(saved);
-  try{localStorage.setItem(SESSION_KEY,raw);}catch(e){}
-  try{document.cookie=SESSION_COOKIE+"="+encodeURIComponent(raw)+"; Path=/; SameSite=Lax";}catch(e){}
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(saved)); } catch(e) {}
 }
 
 function removeStoredSession(){
-  try{localStorage.removeItem(SESSION_KEY);}catch(e){}
-  try{document.cookie=SESSION_COOKIE+"=; Max-Age=0; Path=/; SameSite=Lax";}catch(e){}
+  try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
 }
+
 const msg = (id,text="") => { if($(id)) $(id).textContent=text; };
 
 async function api(action,payload={}){
@@ -74,23 +62,18 @@ function logoutToLogin(message=""){
   msg("loginMsg",message);
 }
 
-function scheduleSessionExpiry(loginAt){
+function scheduleSessionExpiry(expiresAt){
   if(sessionExpiryTimer) clearTimeout(sessionExpiryTimer);
-  const elapsed=Date.now()-Number(loginAt);
-  const remaining=SESSION_LIMIT-elapsed;
-  if(remaining<=0){logoutToLogin("Sesi kamu udah lebih dari 1 jam. Silakan masuk lagi, ya.");return;}
-  sessionExpiryTimer=setTimeout(()=>logoutToLogin("Sesi kamu udah lebih dari 1 jam. Silakan masuk lagi, ya."),remaining);
+  const remaining = Number(expiresAt) - Date.now();
+  if(remaining <= 0){ logoutToLogin("Sesi kamu udah lebih dari 1 jam. Silakan masuk lagi, ya."); return; }
+  sessionExpiryTimer = setTimeout(() => logoutToLogin("Sesi kamu udah lebih dari 1 jam. Silakan masuk lagi, ya."), remaining);
 }
 
 function checkSessionExpiry(){
-  try{
-    const saved=readSession();
-    if(saved?.loginAt && Date.now()-Number(saved.loginAt)>=SESSION_LIMIT){
-      logoutToLogin("Sesi kamu udah lebih dari 1 jam. Silakan masuk lagi, ya.");
-      return false;
-    }
-    if(saved?.loginAt) scheduleSessionExpiry(saved.loginAt);
-  }catch(e){}
+  const saved=readSession();
+  if(!saved) return true;
+  if(Date.now() >= Number(saved.expiresAt)){ logoutToLogin("Sesi kamu udah lebih dari 1 jam. Silakan masuk lagi, ya."); return false; }
+  scheduleSessionExpiry(saved.expiresAt);
   return true;
 }
 
@@ -103,7 +86,7 @@ function setView(view){
   if(state.user){
     try{
       const saved=readSession();
-      if(saved){saved.lastView=view;saved.version=SESSION_VERSION;writeSession(saved);}
+      if(saved){saved.lastView=view;writeSession(saved);}
     }catch(e){}
   }
 }
@@ -204,14 +187,14 @@ function setWelcome(name){
 async function restoreSession(){
   let saved=null;
   saved=readSession();
-  if(!saved || !saved.user || !saved.loginAt) return false;
-  if(Date.now()-Number(saved.loginAt)>=SESSION_LIMIT){
+  if(!saved || !saved.user || !saved.expiresAt) return false;
+  if(Date.now() >= Number(saved.expiresAt)){
     removeStoredSession();
     return false;
   }
 
   state.user=saved.user;
-  scheduleSessionExpiry(saved.loginAt);
+  scheduleSessionExpiry(saved.expiresAt);
   $("loginView").classList.add("hidden");
   $("appView").classList.remove("hidden");
   setWelcome(state.user.nama);
@@ -253,7 +236,7 @@ async function handleLogin(e){
   try{
     const data=await api("login",{id:$("loginId").value.trim(),pin:$("loginPin").value.trim()});
     state.user=data.user;
-    const loginAt=Date.now(); writeSession({version:SESSION_VERSION,user:data.user,loginAt,lastView:data.user.peran==="Kurir"?"courierView":"dashboardView"}); scheduleSessionExpiry(loginAt);
+    const loginAt=Date.now(); const expiresAt=loginAt+SESSION_LIMIT; writeSession({user:data.user,loginAt,expiresAt,lastView:data.user.peran==="Kurir"?"courierView":"dashboardView"}); scheduleSessionExpiry(expiresAt);
     $("loginView").classList.add("hidden");$("appView").classList.remove("hidden");
     setWelcome(data.user.nama);setupNav(data.user.peran);
     if(data.user.peran==="Kurir"){await loadLocations();setView("courierView");}
