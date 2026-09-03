@@ -89,8 +89,6 @@
 #loginView form{gap:14px}
 #loginView label{font-size:14px;gap:6px}
 #loginView .message{font-size:12px}
-.dashboard-freeze{position:sticky;top:0;z-index:40;background:#f7f7f8;padding:0 0 2px}
-.dashboard-freeze .dashboard-filters{margin-bottom:0}
 
 /* V15 — final topbar, greeting, dan freeze dashboard */
 .topbar-actions{
@@ -115,17 +113,6 @@
   line-height:1.2;
   font-weight:800;
   letter-spacing:-.03em;
-}
-.dashboard-freeze{
-  position:sticky;
-  top:0;
-  z-index:50;
-  background:#f7f7f8;
-  padding-top:8px;
-  padding-bottom:8px;
-}
-.dashboard-freeze .dashboard-filters{
-  margin-bottom:0;
 }
 @media(max-width:560px){
   .topbar-actions{align-items:flex-end}
@@ -203,67 +190,181 @@
 
 
 
-/* V25 — layout final: satu garis kiri-kanan + freeze utuh sampai summary */
-.app {
-  width: min(1180px, calc(100% - 36px));
-  box-sizing: border-box;
-  margin-left: auto;
-  margin-right: auto;
-}
 
+/* V27 — freeze bersih + summary 2x2 di HP */
 #appView .dashboard-sticky-top {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  right: auto;
-  transform: translateX(-50%);
-  width: min(1180px, calc(100% - 36px));
-  box-sizing: border-box;
-  padding: 28px 18px 14px;
+  position: static !important;
+  width: 100%;
+  max-width: none;
+  transform: none;
+  padding: 0;
   margin: 0;
-  z-index: 1000;
-  background: #f7f7f8;
-  box-shadow: 0 14px 24px rgba(0,0,0,.035);
+  background: transparent;
+  box-shadow: none;
   overflow: visible;
 }
 
-#appView .dashboard-sticky-top .topbar,
-#appView .dashboard-sticky-top .nav,
-#appView .dashboard-sticky-top .page-heading,
-#appView .dashboard-sticky-top .stats-grid {
-  position: static !important;
+#appView .dashboard-freeze-below-nav {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
   width: 100%;
   box-sizing: border-box;
+  background: #f7f7f8;
+  padding-top: 10px;
+  padding-bottom: 14px;
+  box-shadow: 0 10px 18px rgba(20,25,35,.025);
 }
 
-#appView .dashboard-sticky-top .stats-grid {
+#appView .dashboard-freeze-below-nav .page-heading,
+#appView .dashboard-freeze-below-nav .stats-grid {
+  position: static !important;
+}
+
+#appView .dashboard-freeze-below-nav .stats-grid {
   margin-bottom: 0;
 }
 
+/* Hapus aturan yang membuat kartu terakhir melebar sendiri. */
+#appView .stats-grid .stat-card:last-child {
+  grid-column: auto !important;
+}
+
+@media (max-width: 900px) {
+  #appView .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  #appView .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  #appView .dashboard-freeze-below-nav {
+    padding-top: 8px;
+    padding-bottom: 12px;
+  }
+}
+
+/* V28 — filter Report dipastikan tampil lengkap */
+.report-filter-card {
+  display: block !important;
+  visibility: visible !important;
+}
+
+.report-filters-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.report-filter-card .filter-actions {
+  display: flex !important;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+@media (max-width: 900px) {
+  .report-filters-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .report-filters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .report-filter-card .filter-actions {
+    flex-direction: column;
+  }
+}
+
+/* V29 — freeze hanya area header + tombol Dashboard/Report */
+#appView .dashboard-sticky-top {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  transform: none;
+  z-index: 1000;
+  box-sizing: border-box;
+  background: #f7f7f8;
+  padding: 28px 0 12px;
+  margin: 0;
+  box-shadow: 0 8px 18px rgba(0,0,0,.025);
+}
+
+#appView .dashboard-sticky-top .topbar,
+#appView .dashboard-sticky-top .nav {
+  width: min(1180px, calc(100% - 36px));
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
+#appView .dashboard-sticky-top .topbar,
+#appView .dashboard-sticky-top .nav {
+  position: static !important;
+}
+
 #appView .dashboard-sticky-spacer {
-  width: 100%;
   height: 0;
+  width: 100%;
 }
 
-#appView .dashboardView,
-#appView #dashboardView {
-  width: 100%;
-  box-sizing: border-box;
+#appView .greeting-text {
+  font-size: 18px !important;
+  font-weight: 400 !important;
+  line-height: 1.25;
+  margin-bottom: 1px;
+  letter-spacing: 0;
 }
 
-#appView #dashboardView > .card,
-#appView #dashboardView > .section-title-row {
-  width: 100%;
-  box-sizing: border-box;
+#appView .welcome-user {
+  font-size: 25px !important;
+  font-weight: 800 !important;
+  line-height: 1.2;
+}
+
+#appView .eyebrow {
+  margin-bottom: 12px;
 }
 
 @media (max-width: 700px) {
-  .app {
+  #appView .dashboard-sticky-top {
+    padding-top: 20px;
+    padding-bottom: 10px;
+  }
+
+  #appView .dashboard-sticky-top .topbar,
+  #appView .dashboard-sticky-top .nav {
     width: calc(100% - 24px);
   }
 
-  #appView .dashboard-sticky-top {
-    width: calc(100% - 24px);
-    padding: 20px 12px 12px;
+  #appView .greeting-text {
+    font-size: 17px !important;
+  }
+
+  #appView .welcome-user {
+    font-size: 23px !important;
+  }
+}
+
+/* V30 — greeting diperkecil lagi */
+#appView .greeting-text {
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  line-height: 1.25;
+  margin-bottom: 1px;
+  letter-spacing: 0;
+}
+
+@media (max-width: 700px) {
+  #appView .greeting-text {
+    font-size: 14px !important;
   }
 }

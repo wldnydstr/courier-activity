@@ -41,30 +41,6 @@
       <button id="navReport" class="nav-btn hidden" type="button">Report</button>
       <button id="navUsers" class="nav-btn hidden" type="button">Management User</button>
     </nav>
-
-      <div class="dashboard-freeze-below-nav">
-<div class="section-title-row page-heading">
-        <div>
-          <div class="section-title">Dashboard</div>
-          <div class="muted small">Pantau aktivitas yang masuk di sini.</div>
-        </div>
-        <button id="refreshDashboardBtn" class="ghost" type="button">Refresh</button>
-      </div>
-
-      <div id="dashboardMsg" class="message page-message"></div>
-
-      <div class="stats-grid">
-        <div class="stat-card"><span>Total Aktivitas</span><strong id="statTotal">0</strong></div>
-        
-        <div class="stat-card"><span>Lagi Jalan</span><strong id="statDriving">0</strong></div>
-        <div class="stat-card"><span>Lagi Diproses</span><strong id="statProgress">0</strong></div>
-        <div class="stat-card"><span>Selesai</span><strong id="statDone">0</strong></div>
-      </div>
-</div><!-- dashboard-freeze-below-nav -->
-
-
-
-
     </div>
     <div id="dashboardStickySpacer" class="dashboard-sticky-spacer" aria-hidden="true"></div>
 
@@ -215,8 +191,39 @@
         <button id="refreshReportBtn" class="ghost" type="button">Refresh</button>
       </div>
 
-      <div class="card">
-        
+      <div class="card report-filter-card">
+        <div class="filters-grid report-filters-grid">
+          <label>Dari tanggal
+            <input id="reportDateFrom" type="date">
+          </label>
+          <label>Sampai tanggal
+            <input id="reportDateTo" type="date">
+          </label>
+          <label>Status
+            <select id="reportStatus">
+              <option value="">Semua status</option>
+              <option>Menunggu Berangkat</option>
+              <option>Lagi Jalan</option>
+              <option>Lagi Diproses</option>
+              <option>Selesai</option>
+            </select>
+          </label>
+          <label>Kurir
+            <select id="reportCourier">
+              <option value="">Semua kurir</option>
+            </select>
+          </label>
+          <label>Asal
+            <select id="reportOrigin">
+              <option value="">Semua asal</option>
+            </select>
+          </label>
+          <label>Tujuan
+            <select id="reportDestination">
+              <option value="">Semua tujuan</option>
+            </select>
+          </label>
+        </div>
         <div class="filter-actions">
           <button id="applyReportBtn" class="primary" type="button">Terapkan Filter</button>
           <button id="resetReportBtn" class="ghost" type="button">Reset</button>
