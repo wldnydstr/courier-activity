@@ -368,3 +368,45 @@
     font-size: 14px !important;
   }
 }
+
+/* V31 — freeze dihapus total */
+#appView .dashboard-sticky-top,
+#appView .dashboard-freeze-area,
+#appView .dashboard-freeze-below-nav {
+  position: static !important;
+  width: auto !important;
+  max-width: none !important;
+  transform: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+#appView .dashboard-sticky-spacer,
+#appView .dashboard-sticky-spacer {
+  display: none !important;
+  height: 0 !important;
+}
+
+/* Credit developer jadi footer halaman, bukan bagian header */
+#appView .developer-credit {
+  position: static !important;
+  width: 100%;
+  text-align: center !important;
+  margin: 32px 0 20px !important;
+  font-size: 12px;
+  font-weight: 400;
+  color: #9a9da3;
+}
+
+/* V31 — summary 4 card: 2x2 di HP */
+#appView .stats-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (max-width: 700px) {
+  #appView .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px;
+  }
+}
