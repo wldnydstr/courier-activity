@@ -517,3 +517,35 @@
   margin-left: 0 !important;
   margin-right: 0 !important;
 }
+
+/* V41 — garis kiri dashboard disamakan dengan header & navigasi di HP */
+@media (max-width: 700px) {
+  #appView #dashboardView {
+    padding-left: 22px !important;
+    box-sizing: border-box;
+  }
+
+  #appView #dashboardView > * {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+  }
+}
+
+/* V41 — footer benar-benar center terhadap viewport */
+.app > .app-footer {
+  width: 100vw !important;
+  margin-left: calc(50% - 50vw) !important;
+  margin-right: 0 !important;
+  text-align: center !important;
+  box-sizing: border-box;
+}
+
+.app > .app-footer .developer-credit {
+  width: 100% !important;
+  margin: 36px 0 20px !important;
+  text-align: center !important;
+  font-size: 12px;
+  font-weight: 400;
+  color: #9a9da3;
+}

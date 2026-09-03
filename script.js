@@ -3,7 +3,38 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw8XCphf76_VVMSIRDpuVAC
 let state = { user:null, activity:null, locations:[], dashboardActivities:[] };
 let sessionExpiryTimer = null;
 const SESSION_LIMIT = 60 * 60 * 1000;
+const SESSION_KEY = "courierSession";
+const SESSION_COOKIE = "courierSession";
 const $ = id => document.getElementById(id);
+
+function readSession(){
+  try{
+    const raw=localStorage.getItem(SESSION_KEY);
+    if(raw){
+      const saved=JSON.parse(raw);
+      if(saved && saved.user && saved.loginAt) return saved;
+    }
+  }catch(e){}
+  try{
+    const match=document.cookie.match(new RegExp("(?:^|; )"+SESSION_COOKIE.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"=([^;]*)"));
+    if(match){
+      const saved=JSON.parse(decodeURIComponent(match[1]));
+      if(saved && saved.user && saved.loginAt) return saved;
+    }
+  }catch(e){}
+  return null;
+}
+
+function writeSession(saved){
+  const raw=JSON.stringify(saved);
+  try{localStorage.setItem(SESSION_KEY,raw);}catch(e){}
+  try{document.cookie=SESSION_COOKIE+"="+encodeURIComponent(raw)+"; Max-Age=3600; Path=/; SameSite=Lax";}catch(e){}
+}
+
+function removeStoredSession(){
+  try{localStorage.removeItem(SESSION_KEY);}catch(e){}
+  try{document.cookie=SESSION_COOKIE+"=; Max-Age=0; Path=/; SameSite=Lax";}catch(e){}
+}
 const msg = (id,text="") => { if($(id)) $(id).textContent=text; };
 
 async function api(action,payload={}){
@@ -27,7 +58,7 @@ function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;",
 
 function clearSession(){
   if(sessionExpiryTimer){clearTimeout(sessionExpiryTimer);sessionExpiryTimer=null;}
-  localStorage.removeItem("courierSession");
+  removeStoredSession();
   state={user:null,activity:null,locations:[],dashboardActivities:[]};
 }
 
@@ -52,7 +83,7 @@ function scheduleSessionExpiry(loginAt){
 
 function checkSessionExpiry(){
   try{
-    const saved=JSON.parse(localStorage.getItem("courierSession")||"null");
+    const saved=readSession();
     if(saved?.loginAt && Date.now()-Number(saved.loginAt)>=SESSION_LIMIT){
       logoutToLogin("Sesi kamu udah lebih dari 1 jam. Silakan masuk lagi, ya.");
       return false;
@@ -70,8 +101,8 @@ function setView(view){
   if(nav)$(nav).classList.add("active");
   if(state.user){
     try{
-      const saved=JSON.parse(localStorage.getItem("courierSession")||"null");
-      if(saved){saved.lastView=view;localStorage.setItem("courierSession",JSON.stringify(saved));}
+      const saved=readSession();
+      if(saved){saved.lastView=view;writeSession(saved);}
     }catch(e){}
   }
 }
@@ -171,10 +202,10 @@ function setWelcome(name){
 
 async function restoreSession(){
   let saved=null;
-  try{saved=JSON.parse(localStorage.getItem("courierSession")||"null");}catch(e){saved=null;}
+  saved=readSession();
   if(!saved || !saved.user || !saved.loginAt) return false;
   if(Date.now()-Number(saved.loginAt)>=SESSION_LIMIT){
-    localStorage.removeItem("courierSession");
+    removeStoredSession();
     return false;
   }
 
@@ -221,7 +252,7 @@ async function handleLogin(e){
   try{
     const data=await api("login",{id:$("loginId").value.trim(),pin:$("loginPin").value.trim()});
     state.user=data.user;
-    const loginAt=Date.now(); localStorage.setItem("courierSession", JSON.stringify({user:data.user,loginAt,lastView:data.user.peran==="Kurir"?"courierView":"dashboardView"})); scheduleSessionExpiry(loginAt);
+    const loginAt=Date.now(); writeSession({user:data.user,loginAt,lastView:data.user.peran==="Kurir"?"courierView":"dashboardView"}); scheduleSessionExpiry(loginAt);
     $("loginView").classList.add("hidden");$("appView").classList.remove("hidden");
     setWelcome(data.user.nama);setupNav(data.user.peran);
     if(data.user.peran==="Kurir"){await loadLocations();setView("courierView");}
