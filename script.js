@@ -53,7 +53,23 @@ function setupCombo(inputId,listId){
     list.querySelectorAll(".combo-option").forEach(el=>el.onclick=()=>{input.value=el.dataset.value;list.classList.add("hidden");checkStart();});
   };
   input.addEventListener("focus",render);input.addEventListener("input",render);
-  document.addEventListener("click",e=>{if(!list.contains(e.target)&&e.target!==input)list.classList.add("hidden");});
+  
+function restoreCourierSession(){
+  try{
+    const saved = localStorage.getItem("courierSession");
+    if(!saved) return false;
+    const user = JSON.parse(saved);
+    if(!user || !user.id || !user.role) return false;
+    state.user = user;
+    showApp();
+    return true;
+  }catch(e){
+    localStorage.removeItem("courierSession");
+    return false;
+  }
+}
+
+document.addEventListener("click",e=>{if(!list.contains(e.target)&&e.target!==input)list.classList.add("hidden");});
 }
 
 async function loadLocations(){const data=await api("getLocations");state.locations=data.locations||[];}
@@ -108,6 +124,7 @@ async function handleLogin(e){
   try{
     const data=await api("login",{id:$("loginId").value.trim(),pin:$("loginPin").value.trim()});
     state.user=data.user;
+  localStorage.setItem("courierSession", JSON.stringify(state.user));
     $("loginView").classList.add("hidden");$("appView").classList.remove("hidden");
     setWelcome(data.user.nama);setupNav(data.user.peran);
     if(data.user.peran==="Kurir"){await loadLocations();setView("courierView");}

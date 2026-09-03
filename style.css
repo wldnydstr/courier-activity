@@ -468,3 +468,11 @@
   width: auto !important;
   margin: 0 !important;
 }
+
+/* V33 — footer tengah */
+#appView .app-footer {
+  text-align: center !important;
+}
+#appView .app-footer .developer-credit {
+  text-align: center !important;
+}
