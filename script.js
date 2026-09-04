@@ -33,9 +33,20 @@ const msg = (id,text="") => { if($(id)) $(id).textContent=text; };
 
 async function api(action,payload={}){
   const res=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action,...payload})});
-  const data=await res.json();
-  if(!data.ok) throw new Error(data.message||"Ada yang belum beres. Coba lagi, ya.");
-  return data;
+  const raw=await res.json();
+
+  // Kompatibel dengan respons API yang memakai {ok:true,...} maupun {success:true,...}.
+  if(raw && (raw.ok===false || raw.success===false)){
+    throw new Error(raw.message||raw.error||"Ada yang belum beres. Coba lagi, ya.");
+  }
+
+  // Beberapa versi Web API membungkus payload di dalam properti "data".
+  // Buka satu lapis wrapper supaya frontend tetap membaca format yang sama.
+  if(raw && raw.data && typeof raw.data === "object" && !Array.isArray(raw.data)){
+    return Object.assign({},raw,raw.data);
+  }
+
+  return raw;
 }
 
 function fileToBase64(file){
@@ -245,11 +256,25 @@ async function handleLogin(e){
   e.preventDefault();msg("loginMsg","Lagi ngecek...");
   try{
     const data=await api("login",{id:$("loginId").value.trim(),pin:$("loginPin").value.trim()});
-    state.user=data.user;
-    const loginAt=Date.now(); writeSession({user:data.user,loginAt,lastView:data.user.peran==="Kurir"?"courierView":"dashboardView"}); scheduleSessionExpiry(loginAt);
+
+    // Normalisasi respons login agar tetap kompatibel dengan Web API yang
+    // mengembalikan user langsung maupun di dalam data/user.
+    const rawUser=data.user || data;
+    const user={
+      id:rawUser.id ?? rawUser.idPengguna ?? rawUser["ID Pengguna"],
+      nama:rawUser.nama ?? rawUser.name ?? rawUser["Nama"],
+      peran:rawUser.peran ?? rawUser.role ?? rawUser["Peran"]
+    };
+
+    if(!user.id || !user.nama || !user.peran){
+      throw new Error("Data akun belum lengkap. Coba lagi, ya.");
+    }
+
+    state.user=user;
+    const loginAt=Date.now(); writeSession({user,loginAt,lastView:user.peran==="Kurir"?"courierView":"dashboardView"}); scheduleSessionExpiry(loginAt);
     $("loginView").classList.add("hidden");$("appView").classList.remove("hidden");
-    setWelcome(data.user.nama);setupNav(data.user.peran);
-    if(data.user.peran==="Kurir"){await loadLocations();setView("courierView");}
+    setWelcome(user.nama);setupNav(user.peran);
+    if(user.peran==="Kurir"){await loadLocations();setView("courierView");}
     else{setView("dashboardView");await loadDashboard();}
   }catch(err){msg("loginMsg",err.message)}
 }
