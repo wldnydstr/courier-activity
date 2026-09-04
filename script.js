@@ -6,6 +6,7 @@ const SESSION_LIMIT = 60 * 60 * 1000;
 const SESSION_KEY = "aktivitasKurirSession";
 const $ = id => document.getElementById(id);
 
+// V69 — tampilan Dashboard/Report dan filter Report diperbarui tanpa mengubah alur sesi.
 // Sesi dibuat sederhana seperti aplikasi Transport Schedule yang sudah terbukti stabil.
 // LocalStorage tidak hilang saat tab/browser ditutup. Sesi hanya dihapus saat logout
 // manual atau umur sesi sudah mencapai 1 jam.
@@ -106,7 +107,7 @@ function setupNav(role){
   $("navUsers").classList.toggle("hidden",role!=="Super User");
   $("navActivity").onclick=()=>setView("courierView");
   $("navDashboard").onclick=async()=>{setView("dashboardView");setDashboardDefaultDay();await loadDashboard();requestAnimationFrame(syncDashboardFreeze);};
-  $("navReport").onclick=async()=>{setView("reportView");await loadReportOptions();await loadReport();};
+  $("navReport").onclick=async()=>{setView("reportView");renderReport([]);await loadReportOptions();};
   $("navUsers").onclick=async()=>{setView("usersView");await loadUsers();};
 }
 
@@ -222,8 +223,8 @@ async function restoreSession(){
       }
     }else if(lastView==="reportView"){
       setView("reportView");
+      renderReport([]);
       await loadReportOptions();
-      await loadReport();
     }else if(lastView==="usersView" && state.user.peran==="Super User"){
       setView("usersView");
       await loadUsers();
@@ -403,7 +404,20 @@ function renderDashboard(data){
   $("statTotal").textContent = stats.total || 0;$("statJalan").textContent=stats.lagiJalan;$("statProses").textContent=stats.lagiDiproses;$("statSelesai").textContent=stats.selesai;
   renderActivityChart(rows);
   $("chartSubtitle").textContent="Aktivitas sesuai filter yang dipilih.";
-  $("dashboardTable").innerHTML=rows.map(a=>`<tr><td>${statusClass(a.status)}</td><td>${escapeHtml(a.kurir)}</td><td>${escapeHtml(a.pekerjaan)}</td><td>${escapeHtml(a.asal)} → ${escapeHtml(a.tujuan)}</td><td>${escapeHtml(displayTimeOnly(a.berangkat))}</td><td>${escapeHtml(displayTimeOnly(a.datang))}</td><td>${escapeHtml(displayTimeOnly(a.selesai))}</td><td>${escapeHtml(a.hasil||"-")}</td><td>${escapeHtml(a.keterangan||"-")}</td></tr>`).join("");
+  const photoLink=(url)=>url?`<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Lihat Foto</a>`:"-";
+  $("dashboardTable").innerHTML=rows.map(a=>`<tr>
+    <td>${escapeHtml(a.kurir||"-")}</td>
+    <td>${escapeHtml(a.pekerjaan||"-")}</td>
+    <td>${escapeHtml(a.tujuan||"-")}</td>
+    <td>${photoLink(a.fotoDokumen)}</td>
+    <td>${photoLink(a.fotoBerangkat)}</td>
+    <td>${escapeHtml(displayTimeOnly(a.berangkat))}</td>
+    <td>${photoLink(a.fotoDatang)}</td>
+    <td>${escapeHtml(displayTimeOnly(a.datang))}</td>
+    <td>${escapeHtml(displayTimeOnly(a.selesai))}</td>
+    <td>${escapeHtml(a.durasiMengemudi||"-")}</td>
+    <td>${escapeHtml(a.durasiTugas||"-")}</td>
+  </tr>`).join("");
   $("dashboardEmpty").classList.toggle("hidden",rows.length>0);
 }
 
@@ -474,20 +488,25 @@ function displayReportTime(value){
 
 function renderReport(rows){
   currentReportRows=Array.isArray(rows)?rows:[];
+  const photoLink=(url)=>url?`<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Lihat Foto</a>`:"-";
   $("reportTable").innerHTML = currentReportRows.map(a=>`<tr>
-    <td>${escapeHtml(a.idAktivitas)}</td>
+    <td>${escapeHtml(a.idAktivitas||"")}</td>
     <td>${statusClass(a.status)}</td>
-    <td>${escapeHtml(a.kurir)}</td>
-    <td>${escapeHtml(a.pekerjaan)}</td>
-    <td>${escapeHtml(a.asal)}</td>
-    <td>${escapeHtml(a.tujuan)}</td>
+    <td>${escapeHtml(a.idPengguna||"")}</td>
+    <td>${escapeHtml(a.nama||a.kurir||"")}</td>
+    <td>${escapeHtml(a.pekerjaan||"")}</td>
+    <td>${escapeHtml(a.asal||"")}</td>
+    <td>${escapeHtml(a.tujuan||"")}</td>
+    <td>${photoLink(a.fotoDokumen)}</td>
+    <td>${photoLink(a.fotoBerangkat)}</td>
     <td>${escapeHtml(displayReportTime(a.berangkat))}</td>
     <td>${escapeHtml(displayReportTime(a.datang))}</td>
+    <td>${photoLink(a.fotoDatang)}</td>
+    <td>${escapeHtml(a.hasil||"-")}</td>
+    <td>${escapeHtml(a.keterangan||"-")}</td>
     <td>${escapeHtml(displayReportTime(a.selesai))}</td>
     <td>${escapeHtml(a.durasiMengemudi||"-")}</td>
     <td>${escapeHtml(a.durasiTugas||"-")}</td>
-    <td>${escapeHtml(a.hasil||"-")}</td>
-    <td>${escapeHtml(a.keterangan||"-")}</td>
   </tr>`).join("");
   $("reportEmpty").classList.toggle("hidden",currentReportRows.length>0);
   $("reportCount").textContent = `${currentReportRows.length} aktivitas`;
@@ -581,7 +600,8 @@ function resetReportFilters(){
   $("reportCourier").value="";
   $("reportOrigin").value="";
   $("reportDestination").value="";
-  loadReport();
+  renderReport([]);
+  msg("reportMsg","");
 }
 
 async function loadUsers(){
@@ -612,7 +632,7 @@ $("resultForm").addEventListener("submit",handleSaveResult);
 $("completeBtn").addEventListener("click",handleComplete);
 $("applyDashboardFilterBtn").addEventListener("click",applyDashboardFilters);
 $("resetDashboardFilterBtn").addEventListener("click",resetDashboardFilters);
-$("refreshReportBtn").addEventListener("click",async()=>{await loadReportOptions();await loadReport();});
+$("refreshReportBtn").addEventListener("click",async()=>{await loadReportOptions();msg("reportMsg","");});
 $("exportReportBtn").addEventListener("click",exportReportExcel);
 $("applyReportBtn").addEventListener("click",loadReport);
 $("resetReportBtn").addEventListener("click",resetReportFilters);
