@@ -148,7 +148,7 @@ async function loadActiveActivity(){
 }
 
 function checkStart(){
-  const ready=!!($('jenisPekerjaan').value&&state.locations.includes($('asalSearch').value.trim())&&state.locations.includes($('tujuanSearch').value.trim())&&$('fotoDokumen').files[0]&&$('fotoBerangkat').files[0]);
+  const ready=!!($('jenisTugas').value&&state.locations.includes($('asalSearch').value.trim())&&state.locations.includes($('tujuanSearch').value.trim())&&$('fotoDokumen').files[0]&&$('fotoBerangkat').files[0]);
   $('startBtn').disabled=!ready;
 }
 
@@ -163,7 +163,7 @@ function resetCourierCards(){
 }
 
 function showActivityInfo(activity){
-  $("activeInfo").innerHTML=`<div class="info-item"><span>Pekerjaan</span><strong>${escapeHtml(activity.jenisPekerjaan)}</strong></div><div class="info-item"><span>Rute</span><strong>${escapeHtml(activity.asal)} → ${escapeHtml(activity.tujuan)}</strong></div><div class="info-item"><span>Berangkat</span><strong>${escapeHtml(activity.waktuBerangkat||"-")}</strong></div><div class="info-item"><span>Status</span><strong>${escapeHtml(activity.status)}</strong></div>`;
+  $("activeInfo").innerHTML=`<div class="info-item"><span>Tipe Tugas</span><strong>${escapeHtml(activity.jenisTugas)}</strong></div><div class="info-item"><span>Rute</span><strong>${escapeHtml(activity.asal)} → ${escapeHtml(activity.tujuan)}</strong></div><div class="info-item"><span>Berangkat</span><strong>${escapeHtml(activity.waktuBerangkat||"-")}</strong></div><div class="info-item"><span>Status</span><strong>${escapeHtml(activity.status)}</strong></div>`;
   $("activeStatus").textContent=activity.status;
 }
 
@@ -258,10 +258,10 @@ async function handleCreateActivity(e){
   e.preventDefault();if($("startBtn").disabled)return;
   $("startBtn").disabled=true;msg("activityMsg","Lagi nyimpen aktivitas...");
   try{
-    const asal=$("asalSearch").value.trim(), tujuan=$("tujuanSearch").value.trim(), pekerjaan=$("jenisPekerjaan").value;
-    const data=await api("createActivity",{idPengguna:state.user.id,jenisPekerjaan:pekerjaan,asal,tujuan,fotoDokumen:await fileToBase64($("fotoDokumen").files[0]),fotoBerangkat:await fileToBase64($("fotoBerangkat").files[0])});
+    const asal=$("asalSearch").value.trim(), tujuan=$("tujuanSearch").value.trim(), jenisTugas=$("jenisTugas").value;
+    const data=await api("createActivity",{idPengguna:state.user.id,jenisTugas:jenisTugas,asal,tujuan,fotoDokumen:await fileToBase64($("fotoDokumen").files[0]),fotoBerangkat:await fileToBase64($("fotoBerangkat").files[0])});
     const departure=await api("confirmDeparture",{idAktivitas:data.idAktivitas,idPengguna:state.user.id});
-    state.activity={idAktivitas:data.idAktivitas,status:departure.status,jenisPekerjaan:pekerjaan,asal,tujuan,waktuBerangkat:departure.waktuBerangkat};
+    state.activity={idAktivitas:data.idAktivitas,status:departure.status,jenisTugas:jenisTugas,asal,tujuan,waktuBerangkat:departure.waktuBerangkat};
     $("activityForm").classList.add("hidden");$("activityCard").classList.add("hidden");$("activeCard").classList.remove("hidden");showActivityInfo(state.activity);msg("activityMsg","");
   }catch(err){msg("activityMsg",err.message);checkStart();}
 }
@@ -294,7 +294,7 @@ async function handleArrival(){
 
 async function handleSaveResult(e){
   e.preventDefault();
-  if(!$("hasil").value){msg("resultMsg","Pilih hasil pekerjaannya dulu, ya.");return;}
+  if(!$("hasil").value){msg("resultMsg","Pilih hasil tugasnya dulu, ya.");return;}
   $("saveResultBtn").disabled=true;
   msg("resultMsg","Lagi nyelesaiin tugas...");
   try{
@@ -407,7 +407,7 @@ function renderDashboard(data){
   const photoLink=(url)=>url?`<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Lihat Foto</a>`:"-";
   $("dashboardTable").innerHTML=rows.map(a=>`<tr>
     <td>${escapeHtml(a.kurir||"-")}</td>
-    <td>${escapeHtml(a.pekerjaan||"-")}</td>
+    <td>${escapeHtml(a.jenisTugas||"-")}</td>
     <td>${escapeHtml(a.tujuan||"-")}</td>
     <td>${photoLink(a.fotoDokumen)}</td>
     <td>${photoLink(a.fotoBerangkat)}</td>
@@ -457,9 +457,15 @@ function fillReportSelect(id, values, firstLabel){
 
 async function loadReportOptions(){
   try{
-    const [data,loc] = await Promise.all([api("getReportOptions",{idPengguna:state.user.id}),api("getLocations")]);
+    // Satu request saja. getReportOptions sudah mengembalikan kurir, asal, dan tujuan.
+    // Ini menghindari dua request bersamaan ke Google Apps Script yang bisa memicu "Failed to fetch".
+    const data = await api("getReportOptions",{idPengguna:state.user.id});
     const dashboardCouriers=[...new Set((state.dashboardActivities||[]).map(a=>String(a.kurir||"").trim()).filter(Boolean))].sort();
-    populateReportOptions({couriers:(data.couriers&&data.couriers.length)?data.couriers:dashboardCouriers,origins:(data.origins&&data.origins.length)?data.origins:(loc.locations||[]),destinations:(data.destinations&&data.destinations.length)?data.destinations:(loc.locations||[])});
+    populateReportOptions({
+      couriers:(data.couriers&&data.couriers.length)?data.couriers:dashboardCouriers,
+      origins:data.origins||[],
+      destinations:data.destinations||[]
+    });
   }catch(err){msg("reportMsg",err.message);}
 }
 
@@ -494,7 +500,7 @@ function renderReport(rows){
     <td>${statusClass(a.status)}</td>
     <td>${escapeHtml(a.idPengguna||"")}</td>
     <td>${escapeHtml(a.nama||a.kurir||"")}</td>
-    <td>${escapeHtml(a.pekerjaan||"")}</td>
+    <td>${escapeHtml(a.jenisTugas||"")}</td>
     <td>${escapeHtml(a.asal||"")}</td>
     <td>${escapeHtml(a.tujuan||"")}</td>
     <td>${photoLink(a.fotoDokumen)}</td>
@@ -527,7 +533,7 @@ function exportReportExcel(){
     "Status":a.status||"",
     "ID Pengguna":a.idPengguna||"",
     "Nama":a.nama||a.kurir||"",
-    "Jenis Pekerjaan":a.pekerjaan||"",
+    "Jenis Tugas":a.jenisTugas||"",
     "Asal":a.asal||"",
     "Tujuan":a.tujuan||"",
     "Foto Dokumen":a.fotoDokumen||"",
@@ -625,7 +631,7 @@ async function handleCreateUser(e){
 $("loginForm").addEventListener("submit",handleLogin);
 $("logoutBtn").addEventListener("click",()=>logoutToLogin(""));
 setupCombo("asalSearch","asalList");setupCombo("tujuanSearch","tujuanList");
-["jenisPekerjaan","asalSearch","tujuanSearch","fotoDokumen","fotoBerangkat"].forEach(id=>$(id).addEventListener("input",checkStart));
+["jenisTugas","asalSearch","tujuanSearch","fotoDokumen","fotoBerangkat"].forEach(id=>$(id).addEventListener("input",checkStart));
 $("activityForm").addEventListener("submit",handleCreateActivity);
 $("arrivalBtn").addEventListener("click",handleArrival);
 $("resultForm").addEventListener("submit",handleSaveResult);

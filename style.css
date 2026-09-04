@@ -670,3 +670,106 @@ th {
   table tbody td:last-child { border-bottom:0; }
   table tbody td::before { font-size:11px; font-weight:800; color:#777d88; line-height:1.35; }
 }
+
+
+/* V71 — card Aktivitas Kurir boleh scroll horizontal di dalam card */
+#dashboardView .card:has(#dashboardTable) {
+  overflow: hidden;
+}
+
+#dashboardView .card:has(#dashboardTable) .table-wrap {
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: 100%;
+  min-width: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+#dashboardView .card:has(#dashboardTable) table {
+  width: 1180px;
+  min-width: 1180px;
+  table-layout: fixed;
+}
+
+#dashboardView .card:has(#dashboardTable) th,
+#dashboardView .card:has(#dashboardTable) td {
+  min-width: 0;
+  max-width: none;
+  vertical-align: top;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+#dashboardView .card:has(#dashboardTable) th {
+  height: 48px;
+  padding: 8px 10px 9px;
+  vertical-align: bottom;
+  text-align: left;
+  white-space: normal;
+  overflow: hidden;
+}
+
+#dashboardView .card:has(#dashboardTable) th span {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  line-height: 1.35;
+  max-height: 2.7em;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+#dashboardView .card:has(#dashboardTable) td {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+#dashboardView .card:has(#dashboardTable) th:nth-child(1),
+#dashboardView .card:has(#dashboardTable) td:nth-child(1) { width: 105px; }
+#dashboardView .card:has(#dashboardTable) th:nth-child(2),
+#dashboardView .card:has(#dashboardTable) td:nth-child(2) { width: 125px; }
+#dashboardView .card:has(#dashboardTable) th:nth-child(3),
+#dashboardView .card:has(#dashboardTable) td:nth-child(3) { width: 145px; }
+#dashboardView .card:has(#dashboardTable) th:nth-child(4),
+#dashboardView .card:has(#dashboardTable) td:nth-child(4) { width: 125px; }
+#dashboardView .card:has(#dashboardTable) th:nth-child(5),
+#dashboardView .card:has(#dashboardTable) td:nth-child(5) { width: 125px; }
+#dashboardView .card:has(#dashboardTable) th:nth-child(6),
+#dashboardView .card:has(#dashboardTable) td:nth-child(6) { width: 105px; }
+#dashboardView .card:has(#dashboardTable) th:nth-child(7),
+#dashboardView .card:has(#dashboardTable) td:nth-child(7) { width: 125px; }
+#dashboardView .card:has(#dashboardTable) th:nth-child(8),
+#dashboardView .card:has(#dashboardTable) td:nth-child(8) { width: 105px; }
+#dashboardView .card:has(#dashboardTable) th:nth-child(9),
+#dashboardView .card:has(#dashboardTable) td:nth-child(9) { width: 105px; }
+#dashboardView .card:has(#dashboardTable) th:nth-child(10),
+#dashboardView .card:has(#dashboardTable) td:nth-child(10) { width: 125px; }
+#dashboardView .card:has(#dashboardTable) th:nth-child(11),
+#dashboardView .card:has(#dashboardTable) td:nth-child(11) { width: 105px; }
+
+@media (max-width:700px) {
+  #dashboardView .card:has(#dashboardTable) .table-wrap {
+    overflow-x: auto;
+  }
+  #dashboardView .card:has(#dashboardTable) table {
+    display: table;
+    width: 1180px;
+    min-width: 1180px;
+  }
+  #dashboardView .card:has(#dashboardTable) table thead {
+    display: table-header-group;
+  }
+  #dashboardView .card:has(#dashboardTable) table tbody {
+    display: table-row-group;
+  }
+  #dashboardView .card:has(#dashboardTable) table tr {
+    display: table-row;
+  }
+  #dashboardView .card:has(#dashboardTable) table th,
+  #dashboardView .card:has(#dashboardTable) table td {
+    display: table-cell;
+  }
+}
