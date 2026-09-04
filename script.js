@@ -449,22 +449,72 @@ async function loadReportOptions(){
   }catch(err){msg("reportMsg",err.message);}
 }
 
+let currentReportRows=[];
+
+function displayReportTime(value){
+  if(!value)return "-";
+  const text=String(value).trim();
+  const d=new Date(text);
+  if(!isNaN(d.getTime()))return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+  const m=text.match(/(?:T|\\s)(\\d{1,2}):(\\d{2})(?::\\d{2})?/);
+  if(m)return `${String(m[1]).padStart(2,"0")}:${m[2]}`;
+  return text;
+}
+
 function renderReport(rows){
-  $("reportTable").innerHTML = rows.map(a=>`<tr>
+  currentReportRows=Array.isArray(rows)?rows:[];
+  $("reportTable").innerHTML = currentReportRows.map(a=>`<tr>
     <td>${escapeHtml(a.idAktivitas)}</td>
     <td>${statusClass(a.status)}</td>
     <td>${escapeHtml(a.kurir)}</td>
     <td>${escapeHtml(a.pekerjaan)}</td>
     <td>${escapeHtml(a.asal)}</td>
     <td>${escapeHtml(a.tujuan)}</td>
-    <td>${escapeHtml(a.berangkat||"-")}</td>
-    <td>${escapeHtml(a.datang||"-")}</td>
-    <td>${escapeHtml(a.selesai||"-")}</td>
+    <td>${escapeHtml(displayReportTime(a.berangkat))}</td>
+    <td>${escapeHtml(displayReportTime(a.datang))}</td>
+    <td>${escapeHtml(displayReportTime(a.selesai))}</td>
     <td>${escapeHtml(a.hasil||"-")}</td>
     <td>${escapeHtml(a.keterangan||"-")}</td>
   </tr>`).join("");
-  $("reportEmpty").classList.toggle("hidden",rows.length>0);
-  $("reportCount").textContent = `${rows.length} aktivitas`;
+  $("reportEmpty").classList.toggle("hidden",currentReportRows.length>0);
+  $("reportCount").textContent = `${currentReportRows.length} aktivitas`;
+}
+
+function exportReportExcel(){
+  if(!currentReportRows.length){
+    msg("reportMsg","Belum ada data yang bisa diekspor.");
+    return;
+  }
+  if(typeof XLSX==="undefined"){
+    msg("reportMsg","Fitur Excel belum siap. Coba refresh halaman dulu, ya.");
+    return;
+  }
+  const rows=currentReportRows.map(a=>({
+    "ID Aktivitas":a.idAktivitas||"",
+    "Status":a.status||"",
+    "Kurir":a.kurir||"",
+    "Pekerjaan":a.pekerjaan||"",
+    "Asal":a.asal||"",
+    "Tujuan":a.tujuan||"",
+    "Berangkat":displayReportTime(a.berangkat),
+    "Datang":displayReportTime(a.datang),
+    "Selesai":displayReportTime(a.selesai),
+    "Hasil":a.hasil||"",
+    "Keterangan":a.keterangan||""
+  }));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws["!cols"]=[
+    {wch:14},{wch:20},{wch:18},{wch:20},{wch:28},{wch:28},
+    {wch:12},{wch:12},{wch:12},{wch:20},{wch:35}
+  ];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"Report Aktivitas");
+  const stamp=new Date();
+  const y=stamp.getFullYear();
+  const m=String(stamp.getMonth()+1).padStart(2,"0");
+  const d=String(stamp.getDate()).padStart(2,"0");
+  XLSX.writeFile(wb,`Report Aktivitas ${y}-${m}-${d}.xlsx`);
+  msg("reportMsg","File Excel udah siap.");
 }
 
 async function loadReport(){
@@ -526,6 +576,7 @@ $("completeBtn").addEventListener("click",handleComplete);
 $("applyDashboardFilterBtn").addEventListener("click",applyDashboardFilters);
 $("resetDashboardFilterBtn").addEventListener("click",resetDashboardFilters);
 $("refreshReportBtn").addEventListener("click",async()=>{await loadReportOptions();await loadReport();});
+$("exportReportBtn").addEventListener("click",exportReportExcel);
 $("applyReportBtn").addEventListener("click",loadReport);
 $("resetReportBtn").addEventListener("click",resetReportFilters);
 $("userForm").addEventListener("submit",handleCreateUser);
