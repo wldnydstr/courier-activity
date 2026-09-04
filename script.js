@@ -413,7 +413,7 @@ function displayTimeOnly(value){
   const text=String(value).trim();
   const d=new Date(text);
   if(!isNaN(d.getTime()))return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
-  const m=text.match(/(?:T|\\s)(\\d{1,2}):(\\d{2})(?::\\d{2})?/);
+  const m=text.match(/(?:T|\s)(\d{1,2}):(\d{2})(?::\d{2})?/);
   if(m)return `${String(m[1]).padStart(2,"0")}:${m[2]}`;
   return text;
 }
@@ -489,7 +489,7 @@ function parseReportDateTime(value){
   if(!value)return null;
   const text=String(value).trim();
 
-  const localMatch=text.match(/^(\\d{1,2})\\/(\\d{1,2})\\/(\\d{4})\\s+(\\d{1,2}):(\\d{2})(?::(\\d{2}))?$/);
+  const localMatch=text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
   if(localMatch){
     const d=new Date(
       Number(localMatch[3]),
