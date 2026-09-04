@@ -574,13 +574,15 @@ function exportReportExcel(){
     }))
   ]);
 
-  // Lebar kolom dibuat tetap, bukan autofit.
+  // Lebar kolom dibuat tetap dan sengaja dibuat lebih ringkas.
+  // Tidak memakai autofit supaya hasil export konsisten dan tidak melebar.
   ws["!cols"]=[
-    {wch:14},{wch:20},{wch:14},{wch:20},{wch:22},{wch:28},{wch:28},
-    {wch:18},{wch:22},{wch:21},{wch:21},{wch:20},{wch:20},{wch:35},{wch:21}
+    {wch:12},{wch:15},{wch:12},{wch:17},{wch:18},{wch:20},{wch:20},
+    {wch:13},{wch:15},{wch:18},{wch:18},{wch:13},{wch:15},{wch:24},{wch:18}
   ];
 
-  // Jadikan link foto benar-benar bisa diklik dari Excel.
+  // Foto dibuat sebagai hyperlink formula supaya benar-benar bisa diklik di Excel.
+  // Teks yang tampil tetap singkat: "Buka Foto".
   const photoCols=[
     {index:7,key:"fotoDokumen"},
     {index:8,key:"fotoBerangkat"},
@@ -591,8 +593,11 @@ function exportReportExcel(){
     photoCols.forEach(({index,key})=>{
       const url=String(a[key]||"").trim();
       if(!url)return;
-      const cell=ws[XLSX.utils.encode_cell({r:excelRow-1,c:index})];
+      const cellRef=XLSX.utils.encode_cell({r:excelRow-1,c:index});
+      const cell=ws[cellRef];
       if(cell){
+        cell.t="s";
+        cell.f=`HYPERLINK("${url.replace(/"/g,'\"')}","Buka Foto")`;
         cell.v="Buka Foto";
         cell.l={Target:url,Tooltip:"Buka bukti foto"};
       }
@@ -606,7 +611,7 @@ function exportReportExcel(){
   const y=stamp.getFullYear();
   const m=String(stamp.getMonth()+1).padStart(2,"0");
   const d=String(stamp.getDate()).padStart(2,"0");
-  XLSX.writeFile(wb,`Report Aktivitas ${y}-${m}-${d}.xlsx`);
+  XLSX.writeFile(wb,`gamamed_${d}-${m}-${y.slice(-2)}.xlsx`);
   msg("reportMsg","File Excel udah siap.");
 }
 
