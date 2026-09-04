@@ -455,9 +455,20 @@ function displayReportTime(value){
   if(!value)return "-";
   const text=String(value).trim();
   const d=new Date(text);
-  if(!isNaN(d.getTime()))return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
-  const m=text.match(/(?:T|\\s)(\\d{1,2}):(\\d{2})(?::\\d{2})?/);
-  if(m)return `${String(m[1]).padStart(2,"0")}:${m[2]}`;
+  if(!isNaN(d.getTime())){
+    const dd=String(d.getDate()).padStart(2,"0");
+    const mm=String(d.getMonth()+1).padStart(2,"0");
+    const yyyy=d.getFullYear();
+    const hh=String(d.getHours()).padStart(2,"0");
+    const mi=String(d.getMinutes()).padStart(2,"0");
+    const ss=String(d.getSeconds()).padStart(2,"0");
+    return `${dd}/${mm}/${yyyy} ${hh}:${mi}:${ss}`;
+  }
+  const m=text.match(/(\d{1,2})[\/:](\d{1,2})[\/:](\d{2,4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if(m){
+    const year=String(m[3]).length===2?`20${m[3]}`:m[3];
+    return `${String(m[1]).padStart(2,"0")}/${String(m[2]).padStart(2,"0")}/${year} ${String(m[4]).padStart(2,"0")}:${m[5]}:${m[6]||"00"}`;
+  }
   return text;
 }
 
@@ -473,6 +484,8 @@ function renderReport(rows){
     <td>${escapeHtml(displayReportTime(a.berangkat))}</td>
     <td>${escapeHtml(displayReportTime(a.datang))}</td>
     <td>${escapeHtml(displayReportTime(a.selesai))}</td>
+    <td>${escapeHtml(a.durasiMengemudi||"-")}</td>
+    <td>${escapeHtml(a.durasiTugas||"-")}</td>
     <td>${escapeHtml(a.hasil||"-")}</td>
     <td>${escapeHtml(a.keterangan||"-")}</td>
   </tr>`).join("");
@@ -494,24 +507,26 @@ function exportReportExcel(){
     "ID Aktivitas":a.idAktivitas||"",
     "Status":a.status||"",
     "ID Pengguna":a.idPengguna||"",
-    "Nama":a.nama||"",
+    "Nama":a.nama||a.kurir||"",
     "Jenis Pekerjaan":a.pekerjaan||"",
     "Asal":a.asal||"",
     "Tujuan":a.tujuan||"",
     "Foto Dokumen":a.fotoDokumen||"",
     "Foto Saat Berangkat":a.fotoBerangkat||"",
-    "Waktu Berangkat":a.berangkat||"",
-    "Waktu Datang":a.datang||"",
+    "Waktu Berangkat":displayReportTime(a.berangkat),
+    "Waktu Datang":displayReportTime(a.datang),
     "Foto Saat Datang":a.fotoDatang||"",
     "Hasil":a.hasil||"",
     "Keterangan":a.keterangan||"",
-    "Waktu Selsai":a.selesai||""
+    "Waktu Selsai":displayReportTime(a.selesai),
+    "Durasi Mengemudi":a.durasiMengemudi||"",
+    "Durasi Tugas":a.durasiTugas||""
   }));
 
   const ws=XLSX.utils.json_to_sheet(exportRows);
 
   // Semua kolom memakai lebar default Excel yang diminta: 8.11.
-  ws["!cols"]=Array.from({length:15},()=>({wch:8.11}));
+  ws["!cols"]=Array.from({length:17},()=>({wch:8.11}));
 
   // Foto dibuat sebagai hyperlink yang bisa diklik langsung dari Excel.
   const photoColumns=["Foto Dokumen","Foto Saat Berangkat","Foto Saat Datang"];
