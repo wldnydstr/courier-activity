@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbw8XCphf76_VVMSIRDpuVACAppuk5NlxKxQL91hD03nTOIooU0wrM21Wmltbuhay6y9/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzsVUudEB169aaXav19C7tNPTL6RpPNqQv5E_o6Bn368zbAgetT4L2N7ZZwjA4WTTcv/exec";
 
 let state = { user:null, activity:null, locations:[], dashboardActivities:[] };
 let sessionExpiryTimer = null;
