@@ -537,83 +537,144 @@ function renderReport(rows){
   $("reportCount").textContent = `${currentReportRows.length} aktivitas`;
 }
 
-window.exportReportExcel = function exportReportExcel(){
-  if(!currentReportRows.length){
-    msg("reportMsg","Belum ada data yang bisa diekspor.");
-    return;
-  }
-  if(typeof XLSX==="undefined" || !XLSX.utils || !XLSX.writeFile){
-    msg("reportMsg","Excel belum siap. Tunggu sebentar, lalu klik Export Excel lagi, ya.");
-    return;
-  }
+function xmlEscape(value){
+  return String(value ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&apos;");
+}
 
+function downloadBlob(blob, filename){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=filename;
+  a.style.display="none";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1000);
+}
+
+function exportReportExcelFallback(){
   const columns=[
-    ["ID Aktivitas","idAktivitas"],
-    ["Status","status"],
-    ["ID Pengguna","idPengguna"],
-    ["Nama","nama"],
-    ["Jenis Pekerjaan","pekerjaan"],
-    ["Asal","asal"],
-    ["Tujuan","tujuan"],
-    ["Foto Dokumen","fotoDokumen"],
-    ["Foto Saat Berangkat","fotoBerangkat"],
-    ["Waktu Berangkat","berangkat"],
-    ["Waktu Datang","datang"],
-    ["Foto Saat Datang","fotoDatang"],
-    ["Hasil","hasil"],
-    ["Keterangan","keterangan"],
-    ["Waktu Selsai","selesai"]
+    ["ID Aktivitas","idAktivitas",12],
+    ["Status","status",15],
+    ["ID Pengguna","idPengguna",12],
+    ["Nama","nama",17],
+    ["Jenis Pekerjaan","pekerjaan",18],
+    ["Asal","asal",20],
+    ["Tujuan","tujuan",20],
+    ["Foto Dokumen","fotoDokumen",18],
+    ["Foto Saat Berangkat","fotoBerangkat",18],
+    ["Waktu Berangkat","berangkat",20],
+    ["Waktu Datang","datang",20],
+    ["Foto Saat Datang","fotoDatang",18],
+    ["Hasil","hasil",15],
+    ["Keterangan","keterangan",24],
+    ["Waktu Selsai","selesai",20]
   ];
-
-  const ws=XLSX.utils.aoa_to_sheet([
-    columns.map(c=>c[0]),
-    ...currentReportRows.map(a=>columns.map(([label,key])=>{
-      if(["berangkat","datang","selesai"].includes(key)) return exportReportDateTime(a[key]);
-      if(["fotoDokumen","fotoBerangkat","fotoDatang"].includes(key)) return a[key]||"";
-      return a[key]||"";
-    }))
-  ]);
-
-  // Lebar kolom dibuat tetap dan sengaja dibuat lebih ringkas.
-  // Tidak memakai autofit supaya hasil export konsisten dan tidak melebar.
-  ws["!cols"]=[
-    {wch:12},{wch:15},{wch:12},{wch:17},{wch:18},{wch:20},{wch:20},
-    {wch:13},{wch:15},{wch:18},{wch:18},{wch:13},{wch:15},{wch:24},{wch:18}
-  ];
-
-  // Foto dibuat sebagai hyperlink formula supaya benar-benar bisa diklik di Excel.
-  // Teks yang tampil tetap singkat: "Buka Foto".
-  const photoCols=[
-    {index:7,key:"fotoDokumen"},
-    {index:8,key:"fotoBerangkat"},
-    {index:11,key:"fotoDatang"}
-  ];
-  currentReportRows.forEach((a,rowIndex)=>{
-    const excelRow=rowIndex+2;
-    photoCols.forEach(({index,key})=>{
-      const url=String(a[key]||"").trim();
-      if(!url)return;
-      const cellRef=XLSX.utils.encode_cell({r:excelRow-1,c:index});
-      const cell=ws[cellRef];
-      if(cell){
-        cell.t="s";
-        const safeUrl=url.replace(/"/g,'""');
-        cell.f=`HYPERLINK("${safeUrl}","Buka Foto")`;
-        cell.v="Buka Foto";
-        cell.l={Target:url,Tooltip:"Buka bukti foto"};
+  const widths=columns.map(c=>c[2]);
+  const colDefs=widths.map(w=>`<Column ss:AutoFitWidth="0" ss:Width="${Math.max(70,w*7)}"/>`).join("");
+  const header=columns.map(c=>`<Cell ss:StyleID="Header"><Data ss:Type="String">${xmlEscape(c[0])}</Data></Cell>`).join("");
+  const rows=currentReportRows.map(a=>{
+    const cells=columns.map(([label,key])=>{
+      let value=a[key]||"";
+      if(["berangkat","datang","selesai"].includes(key)) value=exportReportDateTime(value);
+      const url=["fotoDokumen","fotoBerangkat","fotoDatang"].includes(key) ? String(a[key]||"").trim() : "";
+      if(url){
+        return `<Cell ss:HRef="${xmlEscape(url)}"><Data ss:Type="String">Buka Foto</Data></Cell>`;
       }
-    });
-  });
+      return `<Cell><Data ss:Type="String">${xmlEscape(value)}</Data></Cell>`;
+    }).join("");
+    return `<Row>${cells}</Row>`;
+  }).join("");
 
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,"Report Aktivitas");
+  const xml=`<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="Header"><Font ss:Bold="1"/></Style>
+ </Styles>
+ <Worksheet ss:Name="Report Aktivitas">
+  <Table>${colDefs}<Row>${header}</Row>${rows}</Table>
+ </Worksheet>
+</Workbook>`;
 
   const stamp=new Date();
   const y=stamp.getFullYear();
   const m=String(stamp.getMonth()+1).padStart(2,"0");
   const d=String(stamp.getDate()).padStart(2,"0");
-  XLSX.writeFile(wb,`gamamed_${d}-${m}-${y.slice(-2)}.xlsx`);
-  msg("reportMsg","File Excel udah siap.");
+  downloadBlob(new Blob([xml],{type:"application/vnd.ms-excel;charset=utf-8"}),`gamamed_${d}-${m}-${y.slice(-2)}.xls`);
+  msg("reportMsg","File Excel udah siap. Kalau format .xls, tinggal buka langsung di Excel, ya.");
+}
+
+window.exportReportExcel = function exportReportExcel(){
+  if(!currentReportRows.length){
+    msg("reportMsg","Belum ada data yang bisa diekspor.");
+    return;
+  }
+
+  // Utamakan XLSX. Kalau library SheetJS gagal dimuat di browser,
+  // tetap hasilkan file Excel yang bisa dibuka tanpa library eksternal.
+  if(typeof XLSX!=="undefined" && XLSX.utils && XLSX.writeFile){
+    try{
+      const columns=[
+        ["ID Aktivitas","idAktivitas"],["Status","status"],["ID Pengguna","idPengguna"],["Nama","nama"],
+        ["Jenis Pekerjaan","pekerjaan"],["Asal","asal"],["Tujuan","tujuan"],["Foto Dokumen","fotoDokumen"],
+        ["Foto Saat Berangkat","fotoBerangkat"],["Waktu Berangkat","berangkat"],["Waktu Datang","datang"],
+        ["Foto Saat Datang","fotoDatang"],["Hasil","hasil"],["Keterangan","keterangan"],["Waktu Selsai","selesai"]
+      ];
+      const ws=XLSX.utils.aoa_to_sheet([
+        columns.map(c=>c[0]),
+        ...currentReportRows.map(a=>columns.map(([label,key])=>{
+          if(["berangkat","datang","selesai"].includes(key)) return exportReportDateTime(a[key]);
+          if(["fotoDokumen","fotoBerangkat","fotoDatang"].includes(key)) return a[key]||"";
+          return a[key]||"";
+        }))
+      ]);
+      ws["!cols"]=[
+        {wch:12},{wch:15},{wch:12},{wch:17},{wch:18},{wch:20},{wch:20},
+        {wch:13},{wch:15},{wch:18},{wch:18},{wch:13},{wch:15},{wch:24},{wch:18}
+      ];
+      const photoCols=[
+        {index:7,key:"fotoDokumen"},{index:8,key:"fotoBerangkat"},{index:11,key:"fotoDatang"}
+      ];
+      currentReportRows.forEach((a,rowIndex)=>{
+        const excelRow=rowIndex+2;
+        photoCols.forEach(({index,key})=>{
+          const url=String(a[key]||"").trim();
+          if(!url)return;
+          const cellRef=XLSX.utils.encode_cell({r:excelRow-1,c:index});
+          const cell=ws[cellRef];
+          if(cell){
+            cell.t="s";
+            cell.f=`HYPERLINK("${url.replace(/"/g,'""')}","Buka Foto")`;
+            cell.v="Buka Foto";
+            cell.l={Target:url,Tooltip:"Buka bukti foto"};
+          }
+        });
+      });
+      const wb=XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb,ws,"Report Aktivitas");
+      const stamp=new Date();
+      const y=stamp.getFullYear();
+      const m=String(stamp.getMonth()+1).padStart(2,"0");
+      const d=String(stamp.getDate()).padStart(2,"0");
+      XLSX.writeFile(wb,`gamamed_${d}-${m}-${y.slice(-2)}.xlsx`);
+      msg("reportMsg","File Excel udah siap.");
+      return;
+    }catch(err){
+      console.error("Export XLSX gagal, pakai fallback:",err);
+    }
+  }
+
+  exportReportExcelFallback();
 }
 
 async function loadReport(){
