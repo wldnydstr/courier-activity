@@ -675,7 +675,14 @@ $("completeBtn").addEventListener("click",handleComplete);
 $("applyDashboardFilterBtn").addEventListener("click",applyDashboardFilters);
 $("resetDashboardFilterBtn").addEventListener("click",resetDashboardFilters);
 $("refreshReportBtn").addEventListener("click",async()=>{await loadReportOptions();await loadReport();});
-$("exportReportBtn").onclick=exportReportExcel;
+const exportReportButton = $("exportReportBtn");
+if(exportReportButton){
+  exportReportButton.addEventListener("click", function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    exportReportExcel();
+  }, true);
+}
 $("applyReportBtn").addEventListener("click",loadReport);
 $("resetReportBtn").addEventListener("click",resetReportFilters);
 $("userForm").addEventListener("submit",handleCreateUser);

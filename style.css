@@ -788,3 +788,24 @@ th {
     width: 20px;
   }
 }
+
+
+/* V62 — pastikan tombol Export Excel selalu menerima klik */
+#reportView .heading-actions {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+#reportView #exportReportBtn {
+  position: relative;
+  z-index: 21;
+  pointer-events: auto !important;
+  cursor: pointer;
+}
+@media(max-width:560px){
+  #reportView .heading-actions {
+    flex-wrap: wrap;
+  }
+}
