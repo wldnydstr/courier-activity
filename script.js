@@ -297,19 +297,19 @@ async function handleSaveResult(e){
   $("saveResultBtn").disabled=true;
   msg("resultMsg","Lagi nyelesaiin tugas...");
   try{
-    await api("saveResult",{
+    const data=await api("completeWithResult",{
       idAktivitas:state.activity.idAktivitas,
       idPengguna:state.user.id,
       hasil:$("hasil").value,
       keterangan:$("keterangan").value.trim()
     });
-    const data=await api("completeActivity",{
-      idAktivitas:state.activity.idAktivitas,
-      idPengguna:state.user.id
-    });
     state.activity.status="Selesai";
     state.activity.waktuSelsai=data.waktuSelsai||"-";
     resetCourierCards();
+    try{
+      const saved=readSession();
+      if(saved){saved.lastView="courierView";writeSession(saved);}
+    }catch(e){}
     $("activityCard").classList.remove("hidden");
     $("activeCard").classList.add("hidden");
     $("resultCard").classList.add("hidden");
@@ -383,6 +383,31 @@ function renderActivityChart(rows){
   }).join("");
 }
 
+function renderCourierChart(rows){
+  const chart=$("courierChart");
+  if(!rows.length){chart.innerHTML='<div class="chart-empty">Belum ada aktivitas buat ditampilin.</div>';return;}
+  const counts={};
+  rows.forEach(a=>{const name=String(a.kurir||"-").trim()||"-";counts[name]=(counts[name]||0)+1;});
+  const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+  const max=Math.max(...entries.map(([,v])=>v),1);
+  chart.innerHTML=entries.map(([name,count])=>{
+    const h=Math.max(18,Math.round(count/max*170));
+    return `<div class="chart-col"><div class="chart-value">${count}</div><div class="chart-bars"><div class="chart-bar total" style="height:${h}px"></div></div><div class="chart-label" title="${escapeHtml(name)}">${escapeHtml(name)}</div></div>`;
+  }).join("");
+}
+
+function renderStatusChart(rows){
+  const chart=$("statusChart");
+  const statuses=["Menunggu Berangkat","Lagi Jalan","Lagi Diproses","Selesai"];
+  const counts=statuses.map(status=>[status,rows.filter(a=>a.status===status).length]);
+  if(!rows.length){chart.innerHTML='<div class="chart-empty">Belum ada aktivitas buat ditampilin.</div>';return;}
+  const max=Math.max(...counts.map(([,v])=>v),1);
+  chart.innerHTML=counts.map(([status,count])=>{
+    const h=count?Math.max(18,Math.round(count/max*170)):0;
+    return `<div class="chart-col"><div class="chart-value">${count}</div><div class="chart-bars"><div class="chart-bar total" style="height:${h}px"></div></div><div class="chart-label" title="${escapeHtml(status)}">${escapeHtml(status)}</div></div>`;
+  }).join("");
+}
+
 function displayTimeOnly(value){
   if(!value)return "-";
   const text=String(value).trim();
@@ -391,6 +416,13 @@ function displayTimeOnly(value){
   const m=text.match(/(?:T|\\s)(\\d{1,2}):(\\d{2})(?::\\d{2})?/);
   if(m)return `${String(m[1]).padStart(2,"0")}:${m[2]}`;
   return text;
+}
+
+function dashboardPhoto(url,label){
+  if(!url)return `<span class="dashboard-photo-empty">-</span>`;
+  const safeUrl=escapeHtml(String(url));
+  const safeLabel=escapeHtml(label);
+  return `<a class="dashboard-photo-text-link" href="${safeUrl}" target="_blank" rel="noopener" title="${safeLabel}">Lihat Foto</a>`;
 }
 
 function renderDashboard(data){
@@ -402,8 +434,10 @@ function renderDashboard(data){
   const stats={total:rows.length,menungguBerangkat:rows.filter(a=>a.status==="Menunggu Berangkat").length,lagiJalan:rows.filter(a=>a.status==="Lagi Jalan").length,lagiDiproses:rows.filter(a=>a.status==="Lagi Diproses").length,selesai:rows.filter(a=>a.status==="Selesai").length};
   $("statTotal").textContent = stats.total || 0;$("statJalan").textContent=stats.lagiJalan;$("statProses").textContent=stats.lagiDiproses;$("statSelesai").textContent=stats.selesai;
   renderActivityChart(rows);
+  renderCourierChart(rows);
+  renderStatusChart(rows);
   $("chartSubtitle").textContent="Aktivitas sesuai filter yang dipilih.";
-  $("dashboardTable").innerHTML=rows.map(a=>`<tr><td>${statusClass(a.status)}</td><td>${escapeHtml(a.kurir)}</td><td>${escapeHtml(a.pekerjaan)}</td><td>${escapeHtml(a.asal)} → ${escapeHtml(a.tujuan)}</td><td>${escapeHtml(displayTimeOnly(a.berangkat))}</td><td>${escapeHtml(displayTimeOnly(a.datang))}</td><td>${escapeHtml(displayTimeOnly(a.selesai))}</td><td>${escapeHtml(a.hasil||"-")}</td><td>${escapeHtml(a.keterangan||"-")}</td></tr>`).join("");
+  $("dashboardTable").innerHTML=rows.map(a=>`<tr><td>${statusClass(a.status)}</td><td>${escapeHtml(a.kurir)}</td><td>${escapeHtml(a.pekerjaan)}</td><td>${escapeHtml(a.asal)} → ${escapeHtml(a.tujuan)}</td><td>${escapeHtml(displayTimeOnly(a.berangkat))}</td><td>${escapeHtml(displayTimeOnly(a.datang))}</td><td>${escapeHtml(displayTimeOnly(a.selesai))}</td><td>${dashboardPhoto(a.fotoDokumen,"Foto Dokumen")}</td><td>${dashboardPhoto(a.fotoBerangkat,"Foto Saat Berangkat")}</td><td>${dashboardPhoto(a.fotoDatang,"Foto Saat Datang")}</td><td>${escapeHtml(a.hasil||"-")}</td><td>${escapeHtml(a.keterangan||"-")}</td></tr>`).join("");
   $("dashboardEmpty").classList.toggle("hidden",rows.length>0);
 }
 
@@ -451,14 +485,37 @@ async function loadReportOptions(){
 
 let currentReportRows=[];
 
-function displayReportTime(value){
-  if(!value)return "-";
+function parseReportDateTime(value){
+  if(!value)return null;
   const text=String(value).trim();
+
+  const localMatch=text.match(/^(\\d{1,2})\\/(\\d{1,2})\\/(\\d{4})\\s+(\\d{1,2}):(\\d{2})(?::(\\d{2}))?$/);
+  if(localMatch){
+    const d=new Date(
+      Number(localMatch[3]),
+      Number(localMatch[2])-1,
+      Number(localMatch[1]),
+      Number(localMatch[4]),
+      Number(localMatch[5]),
+      Number(localMatch[6]||0)
+    );
+    return isNaN(d.getTime())?null:d;
+  }
+
   const d=new Date(text);
-  if(!isNaN(d.getTime()))return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
-  const m=text.match(/(?:T|\\s)(\\d{1,2}):(\\d{2})(?::\\d{2})?/);
-  if(m)return `${String(m[1]).padStart(2,"0")}:${m[2]}`;
-  return text;
+  return isNaN(d.getTime())?null:d;
+}
+
+function displayReportTime(value){
+  const d=parseReportDateTime(value);
+  if(d)return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+  return value?String(value):"-";
+}
+
+function exportReportDateTime(value){
+  const d=parseReportDateTime(value);
+  if(!d)return value?String(value):"";
+  return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`;
 }
 
 function renderReport(rows){
@@ -489,26 +546,62 @@ function exportReportExcel(){
     msg("reportMsg","Fitur Excel belum siap. Coba refresh halaman dulu, ya.");
     return;
   }
-  const rows=currentReportRows.map(a=>({
-    "ID Aktivitas":a.idAktivitas||"",
-    "Status":a.status||"",
-    "Kurir":a.kurir||"",
-    "Pekerjaan":a.pekerjaan||"",
-    "Asal":a.asal||"",
-    "Tujuan":a.tujuan||"",
-    "Berangkat":displayReportTime(a.berangkat),
-    "Datang":displayReportTime(a.datang),
-    "Selesai":displayReportTime(a.selesai),
-    "Hasil":a.hasil||"",
-    "Keterangan":a.keterangan||""
-  }));
-  const ws=XLSX.utils.json_to_sheet(rows);
-  ws["!cols"]=[
-    {wch:14},{wch:20},{wch:18},{wch:20},{wch:28},{wch:28},
-    {wch:12},{wch:12},{wch:12},{wch:20},{wch:35}
+
+  const columns=[
+    ["ID Aktivitas","idAktivitas"],
+    ["Status","status"],
+    ["ID Pengguna","idPengguna"],
+    ["Nama","nama"],
+    ["Jenis Pekerjaan","pekerjaan"],
+    ["Asal","asal"],
+    ["Tujuan","tujuan"],
+    ["Foto Dokumen","fotoDokumen"],
+    ["Foto Saat Berangkat","fotoBerangkat"],
+    ["Waktu Berangkat","berangkat"],
+    ["Waktu Datang","datang"],
+    ["Foto Saat Datang","fotoDatang"],
+    ["Hasil","hasil"],
+    ["Keterangan","keterangan"],
+    ["Waktu Selsai","selesai"]
   ];
+
+  const ws=XLSX.utils.aoa_to_sheet([
+    columns.map(c=>c[0]),
+    ...currentReportRows.map(a=>columns.map(([label,key])=>{
+      if(["berangkat","datang","selesai"].includes(key)) return exportReportDateTime(a[key]);
+      if(["fotoDokumen","fotoBerangkat","fotoDatang"].includes(key)) return a[key]||"";
+      return a[key]||"";
+    }))
+  ]);
+
+  // Lebar kolom dibuat tetap, bukan autofit.
+  ws["!cols"]=[
+    {wch:14},{wch:20},{wch:14},{wch:20},{wch:22},{wch:28},{wch:28},
+    {wch:18},{wch:22},{wch:21},{wch:21},{wch:20},{wch:20},{wch:35},{wch:21}
+  ];
+
+  // Jadikan link foto benar-benar bisa diklik dari Excel.
+  const photoCols=[
+    {index:7,key:"fotoDokumen"},
+    {index:8,key:"fotoBerangkat"},
+    {index:11,key:"fotoDatang"}
+  ];
+  currentReportRows.forEach((a,rowIndex)=>{
+    const excelRow=rowIndex+2;
+    photoCols.forEach(({index,key})=>{
+      const url=String(a[key]||"").trim();
+      if(!url)return;
+      const cell=ws[XLSX.utils.encode_cell({r:excelRow-1,c:index})];
+      if(cell){
+        cell.v="Buka Foto";
+        cell.l={Target:url,Tooltip:"Buka bukti foto"};
+      }
+    });
+  });
+
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,"Report Aktivitas");
+
   const stamp=new Date();
   const y=stamp.getFullYear();
   const m=String(stamp.getMonth()+1).padStart(2,"0");

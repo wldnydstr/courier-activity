@@ -549,3 +549,242 @@
   font-weight: 400;
   color: #9a9da3;
 }
+
+
+/* V58 — semua halaman fit tanpa scroll horizontal */
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.app {
+  min-width: 0;
+}
+
+.nav {
+  overflow-x: visible;
+  overflow-y: visible;
+  flex-wrap: wrap;
+}
+
+.table-wrap {
+  overflow-x: visible;
+  overflow-y: visible;
+  width: 100%;
+  min-width: 0;
+}
+
+table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+th, td {
+  min-width: 0;
+  max-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+th {
+  white-space: normal;
+}
+
+.activity-chart {
+  overflow-x: visible;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.chart-col {
+  min-width: 0;
+  width: 0;
+}
+
+.chart-label,
+.chart-active {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  text-align: center;
+}
+
+/* Dashboard: proporsi kolom supaya tetap muat di desktop */
+#dashboardView .table-wrap th:nth-child(1),
+#dashboardView .table-wrap td:nth-child(1) { width: 8%; }
+#dashboardView .table-wrap th:nth-child(2),
+#dashboardView .table-wrap td:nth-child(2) { width: 8%; }
+#dashboardView .table-wrap th:nth-child(3),
+#dashboardView .table-wrap td:nth-child(3) { width: 9%; }
+#dashboardView .table-wrap th:nth-child(4),
+#dashboardView .table-wrap td:nth-child(4) { width: 13%; }
+#dashboardView .table-wrap th:nth-child(5),
+#dashboardView .table-wrap td:nth-child(5),
+#dashboardView .table-wrap th:nth-child(6),
+#dashboardView .table-wrap td:nth-child(6),
+#dashboardView .table-wrap th:nth-child(7),
+#dashboardView .table-wrap td:nth-child(7) { width: 7%; }
+#dashboardView .table-wrap th:nth-child(8),
+#dashboardView .table-wrap td:nth-child(8),
+#dashboardView .table-wrap th:nth-child(9),
+#dashboardView .table-wrap td:nth-child(9),
+#dashboardView .table-wrap th:nth-child(10),
+#dashboardView .table-wrap td:nth-child(10) { width: 8%; }
+#dashboardView .table-wrap th:nth-child(11),
+#dashboardView .table-wrap td:nth-child(11) { width: 8%; }
+#dashboardView .table-wrap th:nth-child(12),
+#dashboardView .table-wrap td:nth-child(12) { width: 10%; }
+
+/* Report: proporsi kolom supaya tetap muat di desktop */
+#reportView .table-wrap th:nth-child(1),
+#reportView .table-wrap td:nth-child(1) { width: 9%; }
+#reportView .table-wrap th:nth-child(2),
+#reportView .table-wrap td:nth-child(2) { width: 9%; }
+#reportView .table-wrap th:nth-child(3),
+#reportView .table-wrap td:nth-child(3) { width: 9%; }
+#reportView .table-wrap th:nth-child(4),
+#reportView .table-wrap td:nth-child(4) { width: 10%; }
+#reportView .table-wrap th:nth-child(5),
+#reportView .table-wrap td:nth-child(5),
+#reportView .table-wrap th:nth-child(6),
+#reportView .table-wrap td:nth-child(6) { width: 11%; }
+#reportView .table-wrap th:nth-child(7),
+#reportView .table-wrap td:nth-child(7),
+#reportView .table-wrap th:nth-child(8),
+#reportView .table-wrap td:nth-child(8),
+#reportView .table-wrap th:nth-child(9),
+#reportView .table-wrap td:nth-child(9) { width: 7%; }
+#reportView .table-wrap th:nth-child(10),
+#reportView .table-wrap td:nth-child(10) { width: 9%; }
+#reportView .table-wrap th:nth-child(11),
+#reportView .table-wrap td:nth-child(11) { width: 11%; }
+
+/* HP: tabel berubah jadi kartu per aktivitas, jadi tidak perlu geser kanan-kiri */
+@media (max-width: 700px) {
+  .nav {
+    gap: 6px;
+  }
+
+  .nav-btn {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+
+  .table-wrap {
+    overflow: visible;
+  }
+
+  table,
+  table thead,
+  table tbody,
+  table tr,
+  table td {
+    display: block;
+    width: 100%;
+  }
+
+  table thead {
+    display: none;
+  }
+
+  table tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  table tbody tr {
+    border: 1px solid #e7e8eb;
+    border-radius: 13px;
+    padding: 9px 12px;
+    background: #fff;
+  }
+
+  table tbody td {
+    display: grid;
+    grid-template-columns: 38% minmax(0, 1fr);
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #ececef;
+    max-width: none;
+  }
+
+  table tbody td:last-child {
+    border-bottom: 0;
+  }
+
+  #dashboardView .table-wrap tbody td:nth-child(1)::before { content: "Status"; }
+  #dashboardView .table-wrap tbody td:nth-child(2)::before { content: "Kurir"; }
+  #dashboardView .table-wrap tbody td:nth-child(3)::before { content: "Pekerjaan"; }
+  #dashboardView .table-wrap tbody td:nth-child(4)::before { content: "Rute"; }
+  #dashboardView .table-wrap tbody td:nth-child(5)::before { content: "Berangkat"; }
+  #dashboardView .table-wrap tbody td:nth-child(6)::before { content: "Datang"; }
+  #dashboardView .table-wrap tbody td:nth-child(7)::before { content: "Selesai"; }
+  #dashboardView .table-wrap tbody td:nth-child(8)::before { content: "Foto Dokumen"; }
+  #dashboardView .table-wrap tbody td:nth-child(9)::before { content: "Foto Berangkat"; }
+  #dashboardView .table-wrap tbody td:nth-child(10)::before { content: "Foto Datang"; }
+  #dashboardView .table-wrap tbody td:nth-child(11)::before { content: "Hasil"; }
+  #dashboardView .table-wrap tbody td:nth-child(12)::before { content: "Keterangan"; }
+
+  #reportView .table-wrap tbody td:nth-child(1)::before { content: "ID Aktivitas"; }
+  #reportView .table-wrap tbody td:nth-child(2)::before { content: "Status"; }
+  #reportView .table-wrap tbody td:nth-child(3)::before { content: "Kurir"; }
+  #reportView .table-wrap tbody td:nth-child(4)::before { content: "Pekerjaan"; }
+  #reportView .table-wrap tbody td:nth-child(5)::before { content: "Asal"; }
+  #reportView .table-wrap tbody td:nth-child(6)::before { content: "Tujuan"; }
+  #reportView .table-wrap tbody td:nth-child(7)::before { content: "Berangkat"; }
+  #reportView .table-wrap tbody td:nth-child(8)::before { content: "Datang"; }
+  #reportView .table-wrap tbody td:nth-child(9)::before { content: "Selesai"; }
+  #reportView .table-wrap tbody td:nth-child(10)::before { content: "Hasil"; }
+  #reportView .table-wrap tbody td:nth-child(11)::before { content: "Keterangan"; }
+
+  table tbody td::before {
+    font-size: 11px;
+    font-weight: 800;
+    color: #777d88;
+    line-height: 1.35;
+  }
+
+  .activity-chart {
+    gap: 5px;
+  }
+
+  .chart-col {
+    flex: 1 1 0;
+  }
+
+  .chart-bar {
+    width: 24px;
+  }
+
+  .chart-label {
+    font-size: 10px;
+  }
+
+  .chart-active {
+    font-size: 8px;
+  }
+}
+
+@media (max-width: 420px) {
+  .nav-btn {
+    padding: 9px 10px;
+    font-size: 12px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  table tbody td {
+    grid-template-columns: 34% minmax(0, 1fr);
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .chart-bar {
+    width: 20px;
+  }
+}
