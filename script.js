@@ -537,13 +537,13 @@ function renderReport(rows){
   $("reportCount").textContent = `${currentReportRows.length} aktivitas`;
 }
 
-function exportReportExcel(){
+window.exportReportExcel = function exportReportExcel(){
   if(!currentReportRows.length){
     msg("reportMsg","Belum ada data yang bisa diekspor.");
     return;
   }
-  if(typeof XLSX==="undefined"){
-    msg("reportMsg","Fitur Excel belum siap. Coba refresh halaman dulu, ya.");
+  if(typeof XLSX==="undefined" || !XLSX.utils || !XLSX.writeFile){
+    msg("reportMsg","Excel belum siap. Tunggu sebentar, lalu klik Export Excel lagi, ya.");
     return;
   }
 
@@ -597,7 +597,8 @@ function exportReportExcel(){
       const cell=ws[cellRef];
       if(cell){
         cell.t="s";
-        cell.f=`HYPERLINK("${url.replace(/"/g,'\"')}","Buka Foto")`;
+        const safeUrl=url.replace(/"/g,'""');
+        cell.f=`HYPERLINK("${safeUrl}","Buka Foto")`;
         cell.v="Buka Foto";
         cell.l={Target:url,Tooltip:"Buka bukti foto"};
       }
@@ -674,7 +675,7 @@ $("completeBtn").addEventListener("click",handleComplete);
 $("applyDashboardFilterBtn").addEventListener("click",applyDashboardFilters);
 $("resetDashboardFilterBtn").addEventListener("click",resetDashboardFilters);
 $("refreshReportBtn").addEventListener("click",async()=>{await loadReportOptions();await loadReport();});
-$("exportReportBtn").addEventListener("click",exportReportExcel);
+$("exportReportBtn").onclick=exportReportExcel;
 $("applyReportBtn").addEventListener("click",loadReport);
 $("resetReportBtn").addEventListener("click",resetReportFilters);
 $("userForm").addEventListener("submit",handleCreateUser);
