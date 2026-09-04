@@ -882,3 +882,24 @@ th {
     display: table-cell !important;
   }
 }
+
+
+/* Header Report: susunan tetap rapi, maksimal 2 baris */
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(9),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(9) { width: 170px; }
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(10),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(10) { width: 150px; }
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(11),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(11) { width: 150px; }
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(12),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(12) { width: 160px; }
+#reportView .card:has(#reportTable) .table-wrap th .report-head-line,
+#reportView .card:has(#reportTable) .table-wrap th .report-head-single {
+  display: block;
+  white-space: nowrap;
+  overflow: visible;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+#reportView .card:has(#reportTable) .table-wrap th .report-head-line { line-height: 1.25; }
+#reportView .card:has(#reportTable) .table-wrap th .report-head-single { line-height: 1.25; }
