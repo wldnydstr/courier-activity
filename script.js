@@ -489,36 +489,48 @@ function exportReportExcel(){
     msg("reportMsg","Fitur Excel belum siap. Coba refresh halaman dulu, ya.");
     return;
   }
-  const rows=currentReportRows.map(a=>({
+
+  const exportRows=currentReportRows.map(a=>({
     "ID Aktivitas":a.idAktivitas||"",
     "Status":a.status||"",
-    "Kurir":a.kurir||"",
-    "Pekerjaan":a.pekerjaan||"",
+    "ID Pengguna":a.idPengguna||"",
+    "Nama":a.nama||"",
+    "Jenis Pekerjaan":a.pekerjaan||"",
     "Asal":a.asal||"",
     "Tujuan":a.tujuan||"",
-    "Berangkat":displayReportTime(a.berangkat),
-    "Datang":displayReportTime(a.datang),
-    "Selesai":displayReportTime(a.selesai),
+    "Foto Dokumen":a.fotoDokumen||"",
+    "Foto Saat Berangkat":a.fotoBerangkat||"",
+    "Waktu Berangkat":a.berangkat||"",
+    "Waktu Datang":a.datang||"",
+    "Foto Saat Datang":a.fotoDatang||"",
     "Hasil":a.hasil||"",
-    "Keterangan":a.keterangan||""
+    "Keterangan":a.keterangan||"",
+    "Waktu Selsai":a.selesai||""
   }));
-  const ws=XLSX.utils.json_to_sheet(rows);
-  // Lebar kolom dikunci manual. Tidak menggunakan autofit.
-  ws["!cols"]=[
-    {wch:14}, // ID Aktivitas
-    {wch:18}, // Status
-    {wch:16}, // Kurir
-    {wch:18}, // Pekerjaan
-    {wch:22}, // Asal
-    {wch:22}, // Tujuan
-    {wch:12}, // Berangkat
-    {wch:12}, // Datang
-    {wch:12}, // Selesai
-    {wch:18}, // Hasil
-    {wch:30}  // Keterangan
-  ];
+
+  const ws=XLSX.utils.json_to_sheet(exportRows);
+
+  // Semua kolom memakai lebar default Excel yang diminta: 8.11.
+  ws["!cols"]=Array.from({length:15},()=>({wch:8.11}));
+
+  // Foto dibuat sebagai hyperlink yang bisa diklik langsung dari Excel.
+  const photoColumns=["Foto Dokumen","Foto Saat Berangkat","Foto Saat Datang"];
+  photoColumns.forEach(col=>{
+    const colIndex=Object.keys(exportRows[0]).indexOf(col);
+    exportRows.forEach((row,rowIndex)=>{
+      const url=String(row[col]||"").trim();
+      if(!url)return;
+      const cellRef=XLSX.utils.encode_cell({r:rowIndex+1,c:colIndex});
+      if(!ws[cellRef])ws[cellRef]={t:"s",v:url};
+      ws[cellRef].l={Target:url,Tooltip:"Buka foto"};
+      ws[cellRef].v="Buka Foto";
+      ws[cellRef].t="s";
+    });
+  });
+
   const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,"Report Aktivitas");
+  XLSX.utils.book_append_sheet(wb,ws,"Aktivitas");
+
   const stamp=new Date();
   const y=stamp.getFullYear();
   const m=String(stamp.getMonth()+1).padStart(2,"0");
