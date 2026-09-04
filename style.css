@@ -672,7 +672,7 @@ th {
 }
 
 
-/* V71 — card Aktivitas Kurir boleh scroll horizontal di dalam card */
+/* V77 — Aktivitas Kurir: scroll hanya di dalam card, header maksimal 2 baris */
 #dashboardView .card:has(#dashboardTable) {
   overflow: hidden;
 }
@@ -683,11 +683,12 @@ th {
   width: 100%;
   min-width: 0;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: auto;
 }
 
 #dashboardView .card:has(#dashboardTable) table {
-  width: 1180px;
-  min-width: 1180px;
+  width: 1565px;
+  min-width: 1565px;
   table-layout: fixed;
 }
 
@@ -701,8 +702,8 @@ th {
 }
 
 #dashboardView .card:has(#dashboardTable) th {
-  height: 48px;
-  padding: 8px 10px 9px;
+  height: 58px;
+  padding: 8px 10px 10px;
   vertical-align: bottom;
   text-align: left;
   white-space: normal;
@@ -710,12 +711,10 @@ th {
 }
 
 #dashboardView .card:has(#dashboardTable) th span {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
+  display: block;
   line-height: 1.35;
   max-height: 2.7em;
+  overflow: hidden;
   text-align: left;
   white-space: normal;
   overflow-wrap: normal;
@@ -727,28 +726,29 @@ th {
   word-break: break-word;
 }
 
+/* Lebar dibuat longgar supaya judul tidak pecah per huruf. */
 #dashboardView .card:has(#dashboardTable) th:nth-child(1),
-#dashboardView .card:has(#dashboardTable) td:nth-child(1) { width: 105px; }
+#dashboardView .card:has(#dashboardTable) td:nth-child(1) { width: 130px; }
 #dashboardView .card:has(#dashboardTable) th:nth-child(2),
-#dashboardView .card:has(#dashboardTable) td:nth-child(2) { width: 125px; }
+#dashboardView .card:has(#dashboardTable) td:nth-child(2) { width: 140px; }
 #dashboardView .card:has(#dashboardTable) th:nth-child(3),
-#dashboardView .card:has(#dashboardTable) td:nth-child(3) { width: 145px; }
+#dashboardView .card:has(#dashboardTable) td:nth-child(3) { width: 160px; }
 #dashboardView .card:has(#dashboardTable) th:nth-child(4),
-#dashboardView .card:has(#dashboardTable) td:nth-child(4) { width: 125px; }
+#dashboardView .card:has(#dashboardTable) td:nth-child(4) { width: 150px; }
 #dashboardView .card:has(#dashboardTable) th:nth-child(5),
-#dashboardView .card:has(#dashboardTable) td:nth-child(5) { width: 125px; }
+#dashboardView .card:has(#dashboardTable) td:nth-child(5) { width: 150px; }
 #dashboardView .card:has(#dashboardTable) th:nth-child(6),
-#dashboardView .card:has(#dashboardTable) td:nth-child(6) { width: 105px; }
+#dashboardView .card:has(#dashboardTable) td:nth-child(6) { width: 125px; }
 #dashboardView .card:has(#dashboardTable) th:nth-child(7),
-#dashboardView .card:has(#dashboardTable) td:nth-child(7) { width: 125px; }
+#dashboardView .card:has(#dashboardTable) td:nth-child(7) { width: 150px; }
 #dashboardView .card:has(#dashboardTable) th:nth-child(8),
-#dashboardView .card:has(#dashboardTable) td:nth-child(8) { width: 105px; }
+#dashboardView .card:has(#dashboardTable) td:nth-child(8) { width: 125px; }
 #dashboardView .card:has(#dashboardTable) th:nth-child(9),
-#dashboardView .card:has(#dashboardTable) td:nth-child(9) { width: 105px; }
+#dashboardView .card:has(#dashboardTable) td:nth-child(9) { width: 125px; }
 #dashboardView .card:has(#dashboardTable) th:nth-child(10),
-#dashboardView .card:has(#dashboardTable) td:nth-child(10) { width: 125px; }
+#dashboardView .card:has(#dashboardTable) td:nth-child(10) { width: 160px; }
 #dashboardView .card:has(#dashboardTable) th:nth-child(11),
-#dashboardView .card:has(#dashboardTable) td:nth-child(11) { width: 105px; }
+#dashboardView .card:has(#dashboardTable) td:nth-child(11) { width: 150px; }
 
 @media (max-width:700px) {
   #dashboardView .card:has(#dashboardTable) .table-wrap {
@@ -756,8 +756,8 @@ th {
   }
   #dashboardView .card:has(#dashboardTable) table {
     display: table;
-    width: 1180px;
-    min-width: 1180px;
+    width: 1565px;
+    min-width: 1565px;
   }
   #dashboardView .card:has(#dashboardTable) table thead {
     display: table-header-group;
@@ -771,5 +771,114 @@ th {
   #dashboardView .card:has(#dashboardTable) table th,
   #dashboardView .card:has(#dashboardTable) table td {
     display: table-cell;
+  }
+}
+
+
+/* V78 — Data Aktivitas Report: scroll di dalam card, header rapi maksimal 2 baris */
+#reportView .card:has(#reportTable) {
+  overflow: hidden;
+}
+
+#reportView .card:has(#reportTable) .table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: auto;
+}
+
+#reportView .card:has(#reportTable) .table-wrap table {
+  width: 2400px !important;
+  min-width: 2400px !important;
+  max-width: none;
+  table-layout: fixed;
+}
+
+#reportView .card:has(#reportTable) .table-wrap th,
+#reportView .card:has(#reportTable) .table-wrap td {
+  min-width: 0;
+  max-width: none;
+  text-align: left;
+  vertical-align: bottom;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+#reportView .card:has(#reportTable) .table-wrap th {
+  height: 52px;
+  padding: 8px 10px 10px;
+  white-space: normal;
+  overflow: hidden;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+#reportView .card:has(#reportTable) .table-wrap td {
+  vertical-align: top;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(1),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(1) { width: 110px; }
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(2),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(2) { width: 105px; }
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(3),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(3) { width: 110px; }
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(4),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(4) { width: 120px; }
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(5),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(5) { width: 125px; }
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(6),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(6) { width: 145px; }
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(7),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(7) { width: 145px; }
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(8),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(8) { width: 140px; }
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(9),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(9) { width: 170px; }
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(10),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(10) { width: 135px; }
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(11),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(11) { width: 135px; }
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(12),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(12) { width: 160px; }
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(13),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(13) { width: 110px; }
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(14),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(14) { width: 220px; }
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(15),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(15) { width: 135px; }
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(16),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(16) { width: 150px; }
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(17),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(17) { width: 130px; }
+
+@media (max-width: 700px) {
+  #reportView .card:has(#reportTable) .table-wrap {
+    overflow-x: auto;
+  }
+  #reportView .card:has(#reportTable) .table-wrap table {
+    display: table !important;
+    width: 2400px !important;
+    min-width: 2400px !important;
+  }
+  #reportView .card:has(#reportTable) .table-wrap thead {
+    display: table-header-group !important;
+  }
+  #reportView .card:has(#reportTable) .table-wrap tbody {
+    display: table-row-group !important;
+  }
+  #reportView .card:has(#reportTable) .table-wrap tr {
+    display: table-row !important;
+    border: 0;
+    padding: 0;
+    background: transparent;
+  }
+  #reportView .card:has(#reportTable) .table-wrap th,
+  #reportView .card:has(#reportTable) .table-wrap td {
+    display: table-cell !important;
   }
 }

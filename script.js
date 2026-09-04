@@ -509,12 +509,12 @@ function displayReportTime(value){
     const hh=String(d.getHours()).padStart(2,"0");
     const mi=String(d.getMinutes()).padStart(2,"0");
     const ss=String(d.getSeconds()).padStart(2,"0");
-    return `${dd}/${mm}/${yyyy} ${hh}:${mi}:${ss}`;
+    return `${mm}/${dd}/${yyyy} ${hh}:${mi}:${ss}`;
   }
   const m=text.match(/(\d{1,2})[\/:](\d{1,2})[\/:](\d{2,4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
   if(m){
     const year=String(m[3]).length===2?`20${m[3]}`:m[3];
-    return `${String(m[1]).padStart(2,"0")}/${String(m[2]).padStart(2,"0")}/${year} ${String(m[4]).padStart(2,"0")}:${m[5]}:${m[6]||"00"}`;
+    return `${String(m[2]).padStart(2,"0")}/${String(m[1]).padStart(2,"0")}/${year} ${String(m[4]).padStart(2,"0")}:${m[5]}:${m[6]||"00"}`;
   }
   return text;
 }
