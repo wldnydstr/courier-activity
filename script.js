@@ -419,6 +419,30 @@ function displayTimeOnly(value){
   return text;
 }
 
+function displayDuration(value){
+  if(value===null || value===undefined || value==="") return "-";
+  const text=String(value).trim();
+  if(!text) return "-";
+
+  // Google Sheets kadang mengembalikan durasi sebagai ISO 1899-12-xx.
+  let m=text.match(/T(\d{1,3}):(\d{2})(?::(\d{2}))?/);
+  if(m) return `${String(m[1]).padStart(2,"0")}:${m[2]}`;
+
+  // Durasi biasa: HH:MM:SS atau HH:MM.
+  m=text.match(/^(\d{1,3}):(\d{2})(?::(\d{2}))?$/);
+  if(m) return `${String(m[1]).padStart(2,"0")}:${m[2]}`;
+
+  // Jika API mengembalikan angka serial waktu Google Sheets.
+  if(typeof value === "number" && Number.isFinite(value)){
+    const totalMinutes=Math.max(0,Math.round(value*24*60));
+    const hours=Math.floor(totalMinutes/60);
+    const minutes=totalMinutes%60;
+    return `${String(hours).padStart(2,"0")}:${String(minutes).padStart(2,"0")}`;
+  }
+
+  return text;
+}
+
 function renderDashboard(data){
   requestAnimationFrame(syncDashboardFreeze);
   const allRows=data.activities||[];
@@ -440,8 +464,8 @@ function renderDashboard(data){
     <td>${photoLink(a.fotoDatang)}</td>
     <td>${escapeHtml(displayTimeOnly(a.datang))}</td>
     <td>${escapeHtml(displayTimeOnly(a.selesai))}</td>
-    <td>${escapeHtml(a.durasiMengemudi||"-")}</td>
-    <td>${escapeHtml(a.durasiTugas||"-")}</td>
+    <td>${escapeHtml(displayDuration(a.durasiMengemudi))}</td>
+    <td>${escapeHtml(displayDuration(a.durasiTugas))}</td>
   </tr>`).join("");
   $("dashboardEmpty").classList.toggle("hidden",rows.length>0);
 }
@@ -538,8 +562,8 @@ function renderReport(rows){
     <td>${escapeHtml(a.hasil||"-")}</td>
     <td>${escapeHtml(a.keterangan||"-")}</td>
     <td>${escapeHtml(displayReportTime(a.selesai))}</td>
-    <td>${escapeHtml(a.durasiMengemudi||"-")}</td>
-    <td>${escapeHtml(a.durasiTugas||"-")}</td>
+    <td>${escapeHtml(displayDuration(a.durasiMengemudi))}</td>
+    <td>${escapeHtml(displayDuration(a.durasiTugas))}</td>
   </tr>`).join("");
   $("reportEmpty").classList.toggle("hidden",currentReportRows.length>0);
   $("reportCount").textContent = `${currentReportRows.length} aktivitas`;
@@ -571,8 +595,8 @@ function exportReportExcel(){
     "Hasil":a.hasil||"",
     "Keterangan":a.keterangan||"",
     "Waktu Selsai":displayReportTime(a.selesai),
-    "Durasi Mengemudi":a.durasiMengemudi||"",
-    "Durasi Tugas":a.durasiTugas||""
+    "Durasi Mengemudi":displayDuration(a.durasiMengemudi),
+    "Durasi Tugas":displayDuration(a.durasiTugas)
   }));
 
   const ws=XLSX.utils.json_to_sheet(exportRows);
