@@ -457,14 +457,16 @@ function fillReportSelect(id, values, firstLabel){
 
 async function loadReportOptions(){
   try{
-    // Satu request saja. getReportOptions sudah mengembalikan kurir, asal, dan tujuan.
-    // Ini menghindari dua request bersamaan ke Google Apps Script yang bisa memicu "Failed to fetch".
-    const data = await api("getReportOptions",{idPengguna:state.user.id});
+    // Mengikuti pola request dari script referensi yang terbukti masih bisa mengambil data.
+    const [data,loc] = await Promise.all([
+      api("getReportOptions",{idPengguna:state.user.id}),
+      api("getLocations")
+    ]);
     const dashboardCouriers=[...new Set((state.dashboardActivities||[]).map(a=>String(a.kurir||"").trim()).filter(Boolean))].sort();
     populateReportOptions({
       couriers:(data.couriers&&data.couriers.length)?data.couriers:dashboardCouriers,
-      origins:data.origins||[],
-      destinations:data.destinations||[]
+      origins:(data.origins&&data.origins.length)?data.origins:(loc.locations||[]),
+      destinations:(data.destinations&&data.destinations.length)?data.destinations:(loc.locations||[])
     });
   }catch(err){msg("reportMsg",err.message);}
 }
