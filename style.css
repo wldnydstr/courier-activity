@@ -790,22 +790,21 @@ th {
 }
 
 
-/* V62 — pastikan tombol Export Excel selalu menerima klik */
-#reportView .heading-actions {
-  position: relative;
-  z-index: 20;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-#reportView #exportReportBtn {
-  position: relative;
-  z-index: 21;
-  pointer-events: auto !important;
-  cursor: pointer;
-}
-@media(max-width:560px){
-  #reportView .heading-actions {
-    flex-wrap: wrap;
-  }
+/* V65 — fit semua halaman tanpa scroll horizontal */
+html, body { width:100%; max-width:100%; overflow-x:hidden; }
+.app { min-width:0; max-width:1180px; }
+.nav { overflow-x:visible; flex-wrap:wrap; }
+.table-wrap { width:100%; min-width:0; overflow-x:visible; }
+table { width:100%; min-width:0; table-layout:fixed; }
+th, td { min-width:0; max-width:0; white-space:normal; overflow-wrap:anywhere; word-break:break-word; }
+th { white-space:normal; }
+@media (max-width:700px) {
+  .table-wrap { overflow-x:visible; }
+  table, table thead, table tbody, table tr, table td { display:block; width:100%; }
+  table thead { display:none; }
+  table tbody { display:grid; gap:10px; }
+  table tbody tr { border:1px solid #e7e8eb; border-radius:13px; padding:9px 12px; background:#fff; }
+  table tbody td { display:grid; grid-template-columns:38% minmax(0,1fr); gap:10px; padding:8px 0; border-bottom:1px solid #ececef; max-width:none; }
+  table tbody td:last-child { border-bottom:0; }
+  table tbody td::before { font-size:11px; font-weight:800; color:#777d88; line-height:1.35; }
 }

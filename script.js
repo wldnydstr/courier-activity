@@ -297,19 +297,19 @@ async function handleSaveResult(e){
   $("saveResultBtn").disabled=true;
   msg("resultMsg","Lagi nyelesaiin tugas...");
   try{
-    const data=await api("completeWithResult",{
+    await api("saveResult",{
       idAktivitas:state.activity.idAktivitas,
       idPengguna:state.user.id,
       hasil:$("hasil").value,
       keterangan:$("keterangan").value.trim()
     });
+    const data=await api("completeActivity",{
+      idAktivitas:state.activity.idAktivitas,
+      idPengguna:state.user.id
+    });
     state.activity.status="Selesai";
     state.activity.waktuSelsai=data.waktuSelsai||"-";
     resetCourierCards();
-    try{
-      const saved=readSession();
-      if(saved){saved.lastView="courierView";writeSession(saved);}
-    }catch(e){}
     $("activityCard").classList.remove("hidden");
     $("activeCard").classList.add("hidden");
     $("resultCard").classList.add("hidden");
@@ -383,46 +383,14 @@ function renderActivityChart(rows){
   }).join("");
 }
 
-function renderCourierChart(rows){
-  const chart=$("courierChart");
-  if(!rows.length){chart.innerHTML='<div class="chart-empty">Belum ada aktivitas buat ditampilin.</div>';return;}
-  const counts={};
-  rows.forEach(a=>{const name=String(a.kurir||"-").trim()||"-";counts[name]=(counts[name]||0)+1;});
-  const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
-  const max=Math.max(...entries.map(([,v])=>v),1);
-  chart.innerHTML=entries.map(([name,count])=>{
-    const h=Math.max(18,Math.round(count/max*170));
-    return `<div class="chart-col"><div class="chart-value">${count}</div><div class="chart-bars"><div class="chart-bar total" style="height:${h}px"></div></div><div class="chart-label" title="${escapeHtml(name)}">${escapeHtml(name)}</div></div>`;
-  }).join("");
-}
-
-function renderStatusChart(rows){
-  const chart=$("statusChart");
-  const statuses=["Menunggu Berangkat","Lagi Jalan","Lagi Diproses","Selesai"];
-  const counts=statuses.map(status=>[status,rows.filter(a=>a.status===status).length]);
-  if(!rows.length){chart.innerHTML='<div class="chart-empty">Belum ada aktivitas buat ditampilin.</div>';return;}
-  const max=Math.max(...counts.map(([,v])=>v),1);
-  chart.innerHTML=counts.map(([status,count])=>{
-    const h=count?Math.max(18,Math.round(count/max*170)):0;
-    return `<div class="chart-col"><div class="chart-value">${count}</div><div class="chart-bars"><div class="chart-bar total" style="height:${h}px"></div></div><div class="chart-label" title="${escapeHtml(status)}">${escapeHtml(status)}</div></div>`;
-  }).join("");
-}
-
 function displayTimeOnly(value){
   if(!value)return "-";
   const text=String(value).trim();
   const d=new Date(text);
   if(!isNaN(d.getTime()))return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
-  const m=text.match(/(?:T|\s)(\d{1,2}):(\d{2})(?::\d{2})?/);
+  const m=text.match(/(?:T|\\s)(\\d{1,2}):(\\d{2})(?::\\d{2})?/);
   if(m)return `${String(m[1]).padStart(2,"0")}:${m[2]}`;
   return text;
-}
-
-function dashboardPhoto(url,label){
-  if(!url)return `<span class="dashboard-photo-empty">-</span>`;
-  const safeUrl=escapeHtml(String(url));
-  const safeLabel=escapeHtml(label);
-  return `<a class="dashboard-photo-text-link" href="${safeUrl}" target="_blank" rel="noopener" title="${safeLabel}">Lihat Foto</a>`;
 }
 
 function renderDashboard(data){
@@ -434,10 +402,8 @@ function renderDashboard(data){
   const stats={total:rows.length,menungguBerangkat:rows.filter(a=>a.status==="Menunggu Berangkat").length,lagiJalan:rows.filter(a=>a.status==="Lagi Jalan").length,lagiDiproses:rows.filter(a=>a.status==="Lagi Diproses").length,selesai:rows.filter(a=>a.status==="Selesai").length};
   $("statTotal").textContent = stats.total || 0;$("statJalan").textContent=stats.lagiJalan;$("statProses").textContent=stats.lagiDiproses;$("statSelesai").textContent=stats.selesai;
   renderActivityChart(rows);
-  renderCourierChart(rows);
-  renderStatusChart(rows);
   $("chartSubtitle").textContent="Aktivitas sesuai filter yang dipilih.";
-  $("dashboardTable").innerHTML=rows.map(a=>`<tr><td>${statusClass(a.status)}</td><td>${escapeHtml(a.kurir)}</td><td>${escapeHtml(a.pekerjaan)}</td><td>${escapeHtml(a.asal)} → ${escapeHtml(a.tujuan)}</td><td>${escapeHtml(displayTimeOnly(a.berangkat))}</td><td>${escapeHtml(displayTimeOnly(a.datang))}</td><td>${escapeHtml(displayTimeOnly(a.selesai))}</td><td>${dashboardPhoto(a.fotoDokumen,"Foto Dokumen")}</td><td>${dashboardPhoto(a.fotoBerangkat,"Foto Saat Berangkat")}</td><td>${dashboardPhoto(a.fotoDatang,"Foto Saat Datang")}</td><td>${escapeHtml(a.hasil||"-")}</td><td>${escapeHtml(a.keterangan||"-")}</td></tr>`).join("");
+  $("dashboardTable").innerHTML=rows.map(a=>`<tr><td>${statusClass(a.status)}</td><td>${escapeHtml(a.kurir)}</td><td>${escapeHtml(a.pekerjaan)}</td><td>${escapeHtml(a.asal)} → ${escapeHtml(a.tujuan)}</td><td>${escapeHtml(displayTimeOnly(a.berangkat))}</td><td>${escapeHtml(displayTimeOnly(a.datang))}</td><td>${escapeHtml(displayTimeOnly(a.selesai))}</td><td>${escapeHtml(a.hasil||"-")}</td><td>${escapeHtml(a.keterangan||"-")}</td></tr>`).join("");
   $("dashboardEmpty").classList.toggle("hidden",rows.length>0);
 }
 
@@ -485,37 +451,14 @@ async function loadReportOptions(){
 
 let currentReportRows=[];
 
-function parseReportDateTime(value){
-  if(!value)return null;
-  const text=String(value).trim();
-
-  const localMatch=text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
-  if(localMatch){
-    const d=new Date(
-      Number(localMatch[3]),
-      Number(localMatch[2])-1,
-      Number(localMatch[1]),
-      Number(localMatch[4]),
-      Number(localMatch[5]),
-      Number(localMatch[6]||0)
-    );
-    return isNaN(d.getTime())?null:d;
-  }
-
-  const d=new Date(text);
-  return isNaN(d.getTime())?null:d;
-}
-
 function displayReportTime(value){
-  const d=parseReportDateTime(value);
-  if(d)return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
-  return value?String(value):"-";
-}
-
-function exportReportDateTime(value){
-  const d=parseReportDateTime(value);
-  if(!d)return value?String(value):"";
-  return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`;
+  if(!value)return "-";
+  const text=String(value).trim();
+  const d=new Date(text);
+  if(!isNaN(d.getTime()))return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+  const m=text.match(/(?:T|\\s)(\\d{1,2}):(\\d{2})(?::\\d{2})?/);
+  if(m)return `${String(m[1]).padStart(2,"0")}:${m[2]}`;
+  return text;
 }
 
 function renderReport(rows){
@@ -537,144 +480,51 @@ function renderReport(rows){
   $("reportCount").textContent = `${currentReportRows.length} aktivitas`;
 }
 
-function xmlEscape(value){
-  return String(value ?? "")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&apos;");
-}
-
-function downloadBlob(blob, filename){
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement("a");
-  a.href=url;
-  a.download=filename;
-  a.style.display="none";
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1000);
-}
-
-function exportReportExcelFallback(){
-  const columns=[
-    ["ID Aktivitas","idAktivitas",12],
-    ["Status","status",15],
-    ["ID Pengguna","idPengguna",12],
-    ["Nama","nama",17],
-    ["Jenis Pekerjaan","pekerjaan",18],
-    ["Asal","asal",20],
-    ["Tujuan","tujuan",20],
-    ["Foto Dokumen","fotoDokumen",18],
-    ["Foto Saat Berangkat","fotoBerangkat",18],
-    ["Waktu Berangkat","berangkat",20],
-    ["Waktu Datang","datang",20],
-    ["Foto Saat Datang","fotoDatang",18],
-    ["Hasil","hasil",15],
-    ["Keterangan","keterangan",24],
-    ["Waktu Selsai","selesai",20]
-  ];
-  const widths=columns.map(c=>c[2]);
-  const colDefs=widths.map(w=>`<Column ss:AutoFitWidth="0" ss:Width="${Math.max(70,w*7)}"/>`).join("");
-  const header=columns.map(c=>`<Cell ss:StyleID="Header"><Data ss:Type="String">${xmlEscape(c[0])}</Data></Cell>`).join("");
-  const rows=currentReportRows.map(a=>{
-    const cells=columns.map(([label,key])=>{
-      let value=a[key]||"";
-      if(["berangkat","datang","selesai"].includes(key)) value=exportReportDateTime(value);
-      const url=["fotoDokumen","fotoBerangkat","fotoDatang"].includes(key) ? String(a[key]||"").trim() : "";
-      if(url){
-        return `<Cell ss:HRef="${xmlEscape(url)}"><Data ss:Type="String">Buka Foto</Data></Cell>`;
-      }
-      return `<Cell><Data ss:Type="String">${xmlEscape(value)}</Data></Cell>`;
-    }).join("");
-    return `<Row>${cells}</Row>`;
-  }).join("");
-
-  const xml=`<?xml version="1.0"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:o="urn:schemas-microsoft-com:office:office"
- xmlns:x="urn:schemas-microsoft-com:office:excel"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:html="http://www.w3.org/TR/REC-html40">
- <Styles>
-  <Style ss:ID="Header"><Font ss:Bold="1"/></Style>
- </Styles>
- <Worksheet ss:Name="Report Aktivitas">
-  <Table>${colDefs}<Row>${header}</Row>${rows}</Table>
- </Worksheet>
-</Workbook>`;
-
-  const stamp=new Date();
-  const y=stamp.getFullYear();
-  const m=String(stamp.getMonth()+1).padStart(2,"0");
-  const d=String(stamp.getDate()).padStart(2,"0");
-  downloadBlob(new Blob([xml],{type:"application/vnd.ms-excel;charset=utf-8"}),`gamamed_${d}-${m}-${y.slice(-2)}.xls`);
-  msg("reportMsg","File Excel udah siap. Kalau format .xls, tinggal buka langsung di Excel, ya.");
-}
-
-window.exportReportExcel = function exportReportExcel(){
+function exportReportExcel(){
   if(!currentReportRows.length){
     msg("reportMsg","Belum ada data yang bisa diekspor.");
     return;
   }
-
-  // Utamakan XLSX. Kalau library SheetJS gagal dimuat di browser,
-  // tetap hasilkan file Excel yang bisa dibuka tanpa library eksternal.
-  if(typeof XLSX!=="undefined" && XLSX.utils && XLSX.writeFile){
-    try{
-      const columns=[
-        ["ID Aktivitas","idAktivitas"],["Status","status"],["ID Pengguna","idPengguna"],["Nama","nama"],
-        ["Jenis Pekerjaan","pekerjaan"],["Asal","asal"],["Tujuan","tujuan"],["Foto Dokumen","fotoDokumen"],
-        ["Foto Saat Berangkat","fotoBerangkat"],["Waktu Berangkat","berangkat"],["Waktu Datang","datang"],
-        ["Foto Saat Datang","fotoDatang"],["Hasil","hasil"],["Keterangan","keterangan"],["Waktu Selsai","selesai"]
-      ];
-      const ws=XLSX.utils.aoa_to_sheet([
-        columns.map(c=>c[0]),
-        ...currentReportRows.map(a=>columns.map(([label,key])=>{
-          if(["berangkat","datang","selesai"].includes(key)) return exportReportDateTime(a[key]);
-          if(["fotoDokumen","fotoBerangkat","fotoDatang"].includes(key)) return a[key]||"";
-          return a[key]||"";
-        }))
-      ]);
-      ws["!cols"]=[
-        {wch:12},{wch:15},{wch:12},{wch:17},{wch:18},{wch:20},{wch:20},
-        {wch:13},{wch:15},{wch:18},{wch:18},{wch:13},{wch:15},{wch:24},{wch:18}
-      ];
-      const photoCols=[
-        {index:7,key:"fotoDokumen"},{index:8,key:"fotoBerangkat"},{index:11,key:"fotoDatang"}
-      ];
-      currentReportRows.forEach((a,rowIndex)=>{
-        const excelRow=rowIndex+2;
-        photoCols.forEach(({index,key})=>{
-          const url=String(a[key]||"").trim();
-          if(!url)return;
-          const cellRef=XLSX.utils.encode_cell({r:excelRow-1,c:index});
-          const cell=ws[cellRef];
-          if(cell){
-            cell.t="s";
-            cell.f=`HYPERLINK("${url.replace(/"/g,'""')}","Buka Foto")`;
-            cell.v="Buka Foto";
-            cell.l={Target:url,Tooltip:"Buka bukti foto"};
-          }
-        });
-      });
-      const wb=XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb,ws,"Report Aktivitas");
-      const stamp=new Date();
-      const y=stamp.getFullYear();
-      const m=String(stamp.getMonth()+1).padStart(2,"0");
-      const d=String(stamp.getDate()).padStart(2,"0");
-      XLSX.writeFile(wb,`gamamed_${d}-${m}-${y.slice(-2)}.xlsx`);
-      msg("reportMsg","File Excel udah siap.");
-      return;
-    }catch(err){
-      console.error("Export XLSX gagal, pakai fallback:",err);
-    }
+  if(typeof XLSX==="undefined"){
+    msg("reportMsg","Fitur Excel belum siap. Coba refresh halaman dulu, ya.");
+    return;
   }
-
-  exportReportExcelFallback();
+  const rows=currentReportRows.map(a=>({
+    "ID Aktivitas":a.idAktivitas||"",
+    "Status":a.status||"",
+    "Kurir":a.kurir||"",
+    "Pekerjaan":a.pekerjaan||"",
+    "Asal":a.asal||"",
+    "Tujuan":a.tujuan||"",
+    "Berangkat":displayReportTime(a.berangkat),
+    "Datang":displayReportTime(a.datang),
+    "Selesai":displayReportTime(a.selesai),
+    "Hasil":a.hasil||"",
+    "Keterangan":a.keterangan||""
+  }));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  // Lebar kolom dikunci manual. Tidak menggunakan autofit.
+  ws["!cols"]=[
+    {wch:14}, // ID Aktivitas
+    {wch:18}, // Status
+    {wch:16}, // Kurir
+    {wch:18}, // Pekerjaan
+    {wch:22}, // Asal
+    {wch:22}, // Tujuan
+    {wch:12}, // Berangkat
+    {wch:12}, // Datang
+    {wch:12}, // Selesai
+    {wch:18}, // Hasil
+    {wch:30}  // Keterangan
+  ];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"Report Aktivitas");
+  const stamp=new Date();
+  const y=stamp.getFullYear();
+  const m=String(stamp.getMonth()+1).padStart(2,"0");
+  const d=String(stamp.getDate()).padStart(2,"0");
+  XLSX.writeFile(wb,`gamamed_${d}-${m}-${String(y).slice(-2)}.xlsx`);
+  msg("reportMsg","File Excel udah siap.");
 }
 
 async function loadReport(){
@@ -736,14 +586,7 @@ $("completeBtn").addEventListener("click",handleComplete);
 $("applyDashboardFilterBtn").addEventListener("click",applyDashboardFilters);
 $("resetDashboardFilterBtn").addEventListener("click",resetDashboardFilters);
 $("refreshReportBtn").addEventListener("click",async()=>{await loadReportOptions();await loadReport();});
-const exportReportButton = $("exportReportBtn");
-if(exportReportButton){
-  exportReportButton.addEventListener("click", function(e){
-    e.preventDefault();
-    e.stopPropagation();
-    exportReportExcel();
-  }, true);
-}
+$("exportReportBtn").addEventListener("click",exportReportExcel);
 $("applyReportBtn").addEventListener("click",loadReport);
 $("resetReportBtn").addEventListener("click",resetReportFilters);
 $("userForm").addEventListener("submit",handleCreateUser);
