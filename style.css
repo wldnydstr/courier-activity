@@ -904,22 +904,32 @@ th {
 #reportView .card:has(#reportTable) .table-wrap th .report-head-line { line-height: 1.25; }
 #reportView .card:has(#reportTable) .table-wrap th .report-head-single { line-height: 1.25; }
 
-/* V33 — grafik tambahan Dashboard: per kurir dan per status */
-.category-chart{display:grid;gap:14px;padding:4px 0 2px}
-.category-chart-row{display:grid;grid-template-columns:145px 1fr 44px;align-items:center;gap:12px}
+/* V34 — semua grafik Dashboard dibuat konsisten: area grafik + garis pemisah + legend */
+.category-chart{display:grid;gap:14px;min-height:235px;padding:12px 4px 0;border-bottom:1px solid #e8e9ec;overflow-y:auto}
+.category-chart-row{display:grid;grid-template-columns:145px 1fr 44px;align-items:center;gap:12px;min-height:34px}
 .category-chart-label{font-size:13px;font-weight:700;color:#454a53;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .category-chart-track{height:12px;background:#eef0f2;border-radius:999px;overflow:hidden}
 .category-chart-bar{height:100%;width:0;background:#17181b;border-radius:999px;transition:width .35s ease}
 .category-chart-value{text-align:right;font-size:13px;font-weight:800}
-.category-chart-empty{width:100%;text-align:center;color:#777d88;padding:34px 20px}
+.category-chart-empty{width:100%;text-align:center;color:#777d88;padding:70px 20px}
+
+/* Legend semua grafik mengikuti pola Tren aktivitas */
+.chart-legend{display:flex;align-items:center;gap:18px;margin-top:12px;font-size:11px;color:#656b74;font-weight:600}
+.chart-legend span{display:flex;align-items:center;gap:6px}
+.legend-dot{width:9px;height:9px;border-radius:3px;display:inline-block;flex:0 0 auto}
+.legend-line{width:22px;height:3px;border-radius:999px;display:inline-block;flex:0 0 auto}
+
+/* Warna legend Tren aktivitas dibuat lebih kontras */
+.status-total{background:#aeb8c4}
+.status-done{background:#17181b}
+.status-active{background:#66717e}
+.legend-courier{background:#17181b}
+.legend-status{background:#66717e}
+
 @media(max-width:560px){
+  .category-chart{min-height:235px}
   .category-chart-row{grid-template-columns:115px 1fr 36px;gap:9px}
   .category-chart-label{font-size:12px}
   .category-chart-track{height:10px}
   .category-chart-value{font-size:12px}
 }
-
-
-/* Legend untuk grafik per kurir & per status — disamakan dengan legend Tren aktivitas */
-.category-chart-legend{margin-top:12px}
-.legend-line{width:22px;height:3px;border-radius:999px;display:inline-block}
