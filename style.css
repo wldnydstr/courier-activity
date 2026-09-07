@@ -920,9 +920,9 @@ th {
 .legend-line{width:22px;height:3px;border-radius:999px;display:inline-block;flex:0 0 auto}
 
 /* Warna legend Tren aktivitas dibuat lebih kontras */
-.status-total{background:#aeb8c4}
-.status-done{background:#17181b}
-.status-active{background:#66717e}
+.status-total{background:#2563EB}
+.status-done{background:#16A34A}
+.status-active{background:#F97316}
 .legend-courier{background:#17181b}
 .legend-status{background:#66717e}
 
@@ -933,3 +933,7 @@ th {
   .category-chart-track{height:10px}
   .category-chart-value{font-size:12px}
 }
+
+/* Legend tetap terlihat walaupun grafik sedang kosong */
+.legend-empty{background:#cfd4da}
+.category-chart-legend{min-height:16px}

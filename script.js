@@ -404,7 +404,7 @@ function renderCategoryBarChart(elementId, legendId, rows, key, emptyText, palet
   if(!chart)return;
   if(!rows.length){
     chart.innerHTML=`<div class="category-chart-empty">${escapeHtml(emptyText)}</div>`;
-    if(legend)legend.innerHTML="";
+    if(legend)legend.innerHTML='<span><i class="legend-line legend-empty"></i>Belum ada data</span>';
     return;
   }
 
@@ -431,7 +431,7 @@ function renderCategoryBarChart(elementId, legendId, rows, key, emptyText, palet
 }
 
 function renderCourierChart(rows){
-  const palette=["#17181b","#5b6570","#87919c","#aeb7c1","#c5ccd3","#6f7883","#3e4750","#9aa3ad"];
+  const palette=["#2563EB","#F97316","#16A34A","#9333EA","#DC2626","#0891B2","#CA8A04","#DB2777"];
   renderCategoryBarChart("courierChart","courierLegend",rows,"kurir","Belum ada aktivitas untuk ditampilkan.",palette);
 }
 
@@ -441,7 +441,7 @@ function renderStatusChart(rows){
   if(!chart)return;
   if(!rows.length){
     chart.innerHTML='<div class="category-chart-empty">Belum ada aktivitas untuk ditampilkan.</div>';
-    if(legend)legend.innerHTML="";
+    if(legend)legend.innerHTML='<span><i class="legend-line legend-empty"></i>Belum ada data</span>';
     return;
   }
 
@@ -461,7 +461,7 @@ function renderStatusChart(rows){
     .sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))
     .forEach(item=>ordered.push(item));
 
-  const palette=["#b8c0c9","#7d8792","#4f5964","#17181b","#9aa3ad","#68737e"];
+  const palette=["#2563EB","#F97316","#16A34A","#9333EA","#DC2626","#0891B2","#CA8A04","#DB2777"];
   const max=Math.max(...ordered.map(([,value])=>value),1);
   chart.innerHTML=ordered.map(([label,value],i)=>{
     const width=Math.max(3,Math.round(value/max*100));
