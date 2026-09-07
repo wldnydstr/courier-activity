@@ -918,3 +918,8 @@ th {
   .category-chart-track{height:10px}
   .category-chart-value{font-size:12px}
 }
+
+
+/* Legend untuk grafik per kurir & per status — disamakan dengan legend Tren aktivitas */
+.category-chart-legend{margin-top:12px}
+.legend-line{width:22px;height:3px;border-radius:999px;display:inline-block}
