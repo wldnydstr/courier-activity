@@ -388,6 +388,73 @@ function populateDashboardCouriers(rows){
   if(names.includes(current))$("dashboardCourier").value=current;
 }
 
+
+function renderCategoryBarChart(elementId, rows, key, emptyText){
+  const chart=$(elementId);
+  if(!chart)return;
+  if(!rows.length){
+    chart.innerHTML=`<div class="category-chart-empty">${escapeHtml(emptyText)}</div>`;
+    return;
+  }
+
+  const counts={};
+  rows.forEach(a=>{
+    const label=String(a[key]||"Tidak diketahui").trim()||"Tidak diketahui";
+    counts[label]=(counts[label]||0)+1;
+  });
+
+  const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+  const max=Math.max(...entries.map(([,value])=>value),1);
+
+  chart.innerHTML=entries.map(([label,value])=>{
+    const width=Math.max(3,Math.round(value/max*100));
+    return `<div class="category-chart-row">
+      <div class="category-chart-label" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
+      <div class="category-chart-track"><div class="category-chart-bar" style="width:${width}%"></div></div>
+      <div class="category-chart-value">${value}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderCourierChart(rows){
+  renderCategoryBarChart("courierChart",rows,"kurir","Belum ada aktivitas untuk ditampilkan.");
+}
+
+function renderStatusChart(rows){
+  const chart=$("statusChart");
+  if(!chart)return;
+  if(!rows.length){
+    chart.innerHTML='<div class="category-chart-empty">Belum ada aktivitas untuk ditampilkan.</div>';
+    return;
+  }
+
+  const statusOrder=["Menunggu Berangkat","Lagi Jalan","Lagi Diproses","Selesai"];
+  const counts={};
+  rows.forEach(a=>{
+    const status=String(a.status||"Tidak diketahui").trim()||"Tidak diketahui";
+    counts[status]=(counts[status]||0)+1;
+  });
+
+  const ordered=[];
+  statusOrder.forEach(status=>{
+    if(counts[status])ordered.push([status,counts[status]]);
+  });
+  Object.entries(counts)
+    .filter(([status])=>!statusOrder.includes(status))
+    .sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))
+    .forEach(item=>ordered.push(item));
+
+  const max=Math.max(...ordered.map(([,value])=>value),1);
+  chart.innerHTML=ordered.map(([label,value])=>{
+    const width=Math.max(3,Math.round(value/max*100));
+    return `<div class="category-chart-row">
+      <div class="category-chart-label" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
+      <div class="category-chart-track"><div class="category-chart-bar" style="width:${width}%"></div></div>
+      <div class="category-chart-value">${value}</div>
+    </div>`;
+  }).join("");
+}
+
 function renderActivityChart(rows){
   const chart=$("activityChart");
   if(!rows.length){chart.innerHTML='<div class="chart-empty">Belum ada aktivitas buat ditampilin.</div>';return;}
@@ -452,6 +519,8 @@ function renderDashboard(data){
   const stats={total:rows.length,menungguBerangkat:rows.filter(a=>a.status==="Menunggu Berangkat").length,lagiJalan:rows.filter(a=>a.status==="Lagi Jalan").length,lagiDiproses:rows.filter(a=>a.status==="Lagi Diproses").length,selesai:rows.filter(a=>a.status==="Selesai").length};
   $("statTotal").textContent = stats.total || 0;$("statJalan").textContent=stats.lagiJalan;$("statProses").textContent=stats.lagiDiproses;$("statSelesai").textContent=stats.selesai;
   renderActivityChart(rows);
+  renderCourierChart(rows);
+  renderStatusChart(rows);
   $("chartSubtitle").textContent="Aktivitas sesuai filter yang dipilih.";
   const photoLink=(url)=>url?`<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Lihat Foto</a>`:"-";
   $("dashboardTable").innerHTML=rows.map(a=>`<tr>

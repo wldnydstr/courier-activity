@@ -903,3 +903,18 @@ th {
 }
 #reportView .card:has(#reportTable) .table-wrap th .report-head-line { line-height: 1.25; }
 #reportView .card:has(#reportTable) .table-wrap th .report-head-single { line-height: 1.25; }
+
+/* V33 — grafik tambahan Dashboard: per kurir dan per status */
+.category-chart{display:grid;gap:14px;padding:4px 0 2px}
+.category-chart-row{display:grid;grid-template-columns:145px 1fr 44px;align-items:center;gap:12px}
+.category-chart-label{font-size:13px;font-weight:700;color:#454a53;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.category-chart-track{height:12px;background:#eef0f2;border-radius:999px;overflow:hidden}
+.category-chart-bar{height:100%;width:0;background:#17181b;border-radius:999px;transition:width .35s ease}
+.category-chart-value{text-align:right;font-size:13px;font-weight:800}
+.category-chart-empty{width:100%;text-align:center;color:#777d88;padding:34px 20px}
+@media(max-width:560px){
+  .category-chart-row{grid-template-columns:115px 1fr 36px;gap:9px}
+  .category-chart-label{font-size:12px}
+  .category-chart-track{height:10px}
+  .category-chart-value{font-size:12px}
+}
