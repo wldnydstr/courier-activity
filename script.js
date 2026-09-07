@@ -37,7 +37,7 @@ async function api(action,payload={}){
 
   // Kompatibel dengan respons API yang memakai {ok:true,...} maupun {success:true,...}.
   if(raw && (raw.ok===false || raw.success===false)){
-    throw new Error(raw.message||raw.error||"Ada yang belum beres. Coba lagi, ya.");
+    throw new Error(raw.message||raw.error||"Terjadi kendala. Silakan coba lagi.");
   }
 
   // Beberapa versi Web API membungkus payload di dalam properti "data".
@@ -81,15 +81,15 @@ function logoutToLogin(message=""){
 function scheduleSessionExpiry(loginAt){
   if(sessionExpiryTimer)clearTimeout(sessionExpiryTimer);
   const remaining=Number(loginAt)+SESSION_LIMIT-Date.now();
-  if(remaining<=0){logoutToLogin("Sesi kamu udah lebih dari 1 jam. Silakan masuk lagi, ya.");return;}
-  sessionExpiryTimer=setTimeout(()=>logoutToLogin("Sesi kamu udah lebih dari 1 jam. Silakan masuk lagi, ya."),remaining);
+  if(remaining<=0){logoutToLogin("Sesi kamu telah berakhir. Silakan masuk kembali.");return;}
+  sessionExpiryTimer=setTimeout(()=>logoutToLogin("Sesi kamu telah berakhir. Silakan masuk kembali."),remaining);
 }
 
 function checkSessionExpiry(){
   const saved=readSession();
   if(!saved)return true;
   if(Date.now()-Number(saved.loginAt)>=SESSION_LIMIT){
-    logoutToLogin("Sesi kamu udah lebih dari 1 jam. Silakan masuk lagi, ya.");
+    logoutToLogin("Sesi kamu telah berakhir. Silakan masuk kembali.");
     return false;
   }
   scheduleSessionExpiry(saved.loginAt);
@@ -127,7 +127,7 @@ function setupCombo(inputId,listId){
   const render=()=>{
     const q=input.value.trim().toLowerCase();
     const items=state.locations.filter(x=>x.toLowerCase().includes(q));
-    list.innerHTML=items.length?items.map(x=>`<div class="combo-option" data-value="${escapeHtml(x)}">${escapeHtml(x)}</div>`).join(""):"<div class='combo-empty'>Lokasi nggak ditemukan.</div>";
+    list.innerHTML=items.length?items.map(x=>`<div class="combo-option" data-value="${escapeHtml(x)}">${escapeHtml(x)}</div>`).join(""):"<div class='combo-empty'>Lokasi tidak ditemukan.</div>";
     list.classList.remove("hidden");
     list.querySelectorAll(".combo-option").forEach(el=>el.onclick=()=>{input.value=el.dataset.value;list.classList.add("hidden");checkStart();});
   };
@@ -253,7 +253,7 @@ async function restoreSession(){
 }
 
 async function handleLogin(e){
-  e.preventDefault();msg("loginMsg","Lagi ngecek...");
+  e.preventDefault();msg("loginMsg","Sedang memeriksa...");
   try{
     const data=await api("login",{id:$("loginId").value.trim(),pin:$("loginPin").value.trim()});
 
@@ -267,7 +267,7 @@ async function handleLogin(e){
     };
 
     if(!user.id || !user.nama || !user.peran){
-      throw new Error("Data akun belum lengkap. Coba lagi, ya.");
+      throw new Error("Data akun belum lengkap. Silakan coba lagi.");
     }
 
     state.user=user;
@@ -281,7 +281,7 @@ async function handleLogin(e){
 
 async function handleCreateActivity(e){
   e.preventDefault();if($("startBtn").disabled)return;
-  $("startBtn").disabled=true;msg("activityMsg","Lagi nyimpen aktivitas...");
+  $("startBtn").disabled=true;msg("activityMsg","Sedang menyimpan aktivitas...");
   try{
     const asal=$("asalSearch").value.trim(), tujuan=$("tujuanSearch").value.trim(), jenisTugas=$("jenisTugas").value;
     const data=await api("createActivity",{idPengguna:state.user.id,jenisTugas:jenisTugas,asal,tujuan,fotoDokumen:await fileToBase64($("fotoDokumen").files[0]),fotoBerangkat:await fileToBase64($("fotoBerangkat").files[0])});
@@ -295,7 +295,7 @@ async function handleArrival(){
   const input=document.createElement("input");input.type="file";input.accept="image/*";input.style.display="none";document.body.appendChild(input);input.click();
   input.onchange=async()=>{
     if(!input.files[0]){input.remove();return;}
-    $("arrivalBtn").disabled=true;msg("arrivalMsg","Lagi nyimpen foto pas sampai...");
+    $("arrivalBtn").disabled=true;msg("arrivalMsg","Sedang menyimpan foto saat tiba...");
     try{
       const data=await api("confirmArrival",{idAktivitas:state.activity.idAktivitas,idPengguna:state.user.id,fotoDatang:await fileToBase64(input.files[0])});
       state.activity.status="Lagi Diproses";
@@ -319,9 +319,9 @@ async function handleArrival(){
 
 async function handleSaveResult(e){
   e.preventDefault();
-  if(!$("hasil").value){msg("resultMsg","Pilih hasil tugasnya dulu, ya.");return;}
+  if(!$("hasil").value){msg("resultMsg","Pilih hasil tugas terlebih dahulu.");return;}
   $("saveResultBtn").disabled=true;
-  msg("resultMsg","Lagi nyelesaiin tugas...");
+  msg("resultMsg","Sedang menyelesaikan tugas...");
   try{
     await api("saveResult",{
       idAktivitas:state.activity.idAktivitas,
@@ -340,7 +340,7 @@ async function handleSaveResult(e){
     $("activeCard").classList.add("hidden");
     $("resultCard").classList.add("hidden");
     $("startBtn").disabled=true;
-    $("activityMsg").textContent="Tugas selesai. Yuk bikin aktivitas baru.";
+    $("activityMsg").textContent="Tugas selesai. Silakan buat aktivitas baru.";
     window.scrollTo({top:0,behavior:"smooth"});
   }catch(err){
     msg("resultMsg",err.message);
@@ -349,7 +349,7 @@ async function handleSaveResult(e){
 }
 
 async function handleComplete(){
-  $("completeBtn").disabled=true;msg("resultMsg","Lagi nyelesaiin tugas...");
+  $("completeBtn").disabled=true;msg("resultMsg","Sedang menyelesaikan tugas...");
   try{const data=await api("completeActivity",{idAktivitas:state.activity.idAktivitas,idPengguna:state.user.id});state.activity.status="Selesai";
       state.activity.waktuSelsai=data.waktuSelsai||"-";
       resetCourierCards();
@@ -357,7 +357,7 @@ async function handleComplete(){
       $("activeCard").classList.add("hidden");
       $("resultCard").classList.add("hidden");
       $("startBtn").disabled=true;
-      $("activityMsg").textContent="Tugas selesai. Yuk bikin aktivitas baru.";
+      $("activityMsg").textContent="Tugas selesai. Silakan buat aktivitas baru.";
       window.scrollTo({top:0,behavior:"smooth"});}
   catch(err){msg("resultMsg",err.message);$("completeBtn").disabled=false;}
 }
@@ -478,7 +478,7 @@ function renderStatusChart(rows){
 
 function renderActivityChart(rows){
   const chart=$("activityChart");
-  if(!rows.length){chart.innerHTML='<div class="chart-empty">Belum ada aktivitas buat ditampilin.</div>';return;}
+  if(!rows.length){chart.innerHTML='<div class="chart-empty">Belum ada aktivitas untuk ditampilkan.</div>';return;}
   const days={};
   rows.forEach(a=>{
     const d=parseActivityDate(a.berangkat||a.datang||a.selesai); if(!d)return;
@@ -542,7 +542,7 @@ function renderDashboard(data){
   renderActivityChart(rows);
   renderCourierChart(rows);
   renderStatusChart(rows);
-  $("chartSubtitle").textContent="Aktivitas sesuai filter yang dipilih.";
+  $("chartSubtitle").textContent="Aktivitas sesuai dengan filter yang dipilih.";
   const photoLink=(url)=>url?`<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Lihat Foto</a>`:"-";
   $("dashboardTable").innerHTML=rows.map(a=>`<tr>
     <td>${escapeHtml(a.kurir||"-")}</td>
@@ -561,7 +561,7 @@ function renderDashboard(data){
 }
 
 async function loadDashboard(){
-  msg("dashboardMsg","Lagi ambil data aktivitas...");
+  msg("dashboardMsg","Sedang memuat data aktivitas...");
   try{setDashboardDefaultDay();const data=await api("getDashboard",{idPengguna:state.user.id});state.dashboardActivities=data.activities||[];renderDashboard(data);msg("dashboardMsg","");}
   catch(err){msg("dashboardMsg",err.message);}
 }
@@ -661,11 +661,11 @@ function renderReport(rows){
 
 function exportReportExcel(){
   if(!currentReportRows.length){
-    msg("reportMsg","Belum ada data yang bisa diekspor.");
+    msg("reportMsg","Belum ada data yang dapat diekspor.");
     return;
   }
   if(typeof XLSX==="undefined"){
-    msg("reportMsg","Fitur Excel belum siap. Coba refresh halaman dulu, ya.");
+    msg("reportMsg","Fitur Excel belum siap. Silakan muat ulang halaman.");
     return;
   }
 
@@ -684,7 +684,7 @@ function exportReportExcel(){
     "Foto Saat Datang":a.fotoDatang||"",
     "Hasil":a.hasil||"",
     "Keterangan":a.keterangan||"",
-    "Waktu Selsai":displayReportTime(a.selesai),
+    "Waktu Selesai":displayReportTime(a.selesai),
     "Durasi Mengemudi":displayDuration(a.durasiMengemudi),
     "Durasi Tugas":displayDuration(a.durasiTugas)
   }));
@@ -717,11 +717,11 @@ function exportReportExcel(){
   const m=String(stamp.getMonth()+1).padStart(2,"0");
   const d=String(stamp.getDate()).padStart(2,"0");
   XLSX.writeFile(wb,`gamamed_${d}-${m}-${String(y).slice(-2)}.xlsx`);
-  msg("reportMsg","File Excel udah siap.");
+  msg("reportMsg","File Excel siap.");
 }
 
 async function loadReport(){
-  msg("reportMsg","Lagi ambil data report...");
+  msg("reportMsg","Sedang memuat data laporan...");
   try{
     const data = await api("getReport",{
       idPengguna:state.user.id,
@@ -752,7 +752,7 @@ function resetReportFilters(){
 }
 
 async function loadUsers(){
-  msg("userMsg","Lagi ambil daftar pengguna...");
+  msg("userMsg","Sedang memuat daftar pengguna...");
   try{
     const data=await api("getUsers",{idPengguna:state.user.id});
     const list=$("usersList");
@@ -764,7 +764,7 @@ async function loadUsers(){
 }
 
 async function handleCreateUser(e){
-  e.preventDefault();msg("userMsg","Lagi nambahin pengguna...");
+  e.preventDefault();msg("userMsg","Sedang menambahkan pengguna...");
   try{await api("createUser",{idPengguna:state.user.id,id:$("userId").value.trim(),nama:$("userName").value.trim(),pin:$("userPin").value.trim(),peran:$("userRole").value});$("userForm").reset();msg("userMsg","Pengguna berhasil ditambahkan.");await loadUsers();}
   catch(err){msg("userMsg",err.message)}
 }
