@@ -53,7 +53,7 @@ async function api(action,payload={}){
 
   // Kompatibel dengan respons API yang memakai {ok:true,...} maupun {success:true,...}.
   if(raw && (raw.ok===false || raw.success===false)){
-    throw new Error(raw.message||raw.error||"Terjadi kendala. Silakan coba lagi.");
+    throw new Error(raw.message||raw.error||"Terjadi kendala. Coba lagi.");
   }
 
   // Beberapa versi Web API membungkus payload di dalam properti "data".
@@ -180,8 +180,8 @@ async function restoreActivityDraft(){
 
   const dok=await loadDraftFile("fotoDokumen");
   const ber=await loadDraftFile("fotoBerangkat");
-  if(dok?.name&&$("fotoDokumenDraft"))$("fotoDokumenDraft").textContent=`Foto tersimpan sementara: ${dok.name}`;
-  if(ber?.name&&$("fotoBerangkatDraft"))$("fotoBerangkatDraft").textContent=`Foto tersimpan sementara: ${ber.name}`;
+  if(dok?.name&&$("fotoDokumenDraft"))$("fotoDokumenDraft").textContent=`Foto dokumen tersimpan sementara: ${dok.name}`;
+  if(ber?.name&&$("fotoBerangkatDraft"))$("fotoBerangkatDraft").textContent=`Foto saat berangkat tersimpan sementara: ${ber.name}`;
   checkStart();
 }
 
@@ -332,7 +332,7 @@ function renderConfirmations(){
         <div class="section-title-row"><div><div class="section-title">${escapeHtml(a.jenisTugas||a.pekerjaan||"Tugas")}</div><div class="muted small">${safeId}</div></div><span class="badge">${escapeHtml(a.status||"")}</span></div>
         <div class="info-grid">${courierInfoHtml(a)}</div>
         <div class="confirm-action">
-          <div class="muted small"><strong>Konfirmasi 2 dari 3:</strong> tugas sedang berjalan. Foto saat tiba wajib diisi sebelum konfirmasi.</div>
+          <div class="muted small"><strong>Langkah 2 dari 3:</strong> konfirmasi kedatangan dengan mengunggah foto saat tiba.</div>
           <label>Foto Saat Datang <span class="required-mark">*</span>
             <input class="task-arrival-photo" data-id="${safeId}" type="file" accept="image/*" capture="environment" required>
           </label>
@@ -348,9 +348,9 @@ function renderConfirmations(){
       <div class="section-title-row"><div><div class="section-title">${escapeHtml(a.jenisTugas||a.pekerjaan||"Tugas")}</div><div class="muted small">${safeId}</div></div><span class="badge">${escapeHtml(a.status||"")}</span></div>
       <div class="info-grid">${courierInfoHtml(a)}</div>
       <div class="confirm-action">
-        <div class="muted small"><strong>Konfirmasi 3 dari 3:</strong> tugas sudah sampai. Semua isian wajib dilengkapi sebelum konfirmasi selesai.</div>
-        <label>Hasil <span class="required-mark">*</span><select class="task-result" data-id="${safeId}" required><option value="">Pilih hasil</option><option ${a.hasil==="Berhasil"?"selected":""}>Berhasil</option><option ${a.hasil==="Sebagian Berhasil"?"selected":""}>Sebagian Berhasil</option><option ${a.hasil==="Tidak Berhasil"?"selected":""}>Tidak Berhasil</option></select></label>
-        <label>Keterangan <span class="required-mark">*</span><textarea class="task-note" data-id="${safeId}" rows="3" placeholder="Isi keterangan hasil tugas..." required>${escapeHtml(a.keterangan||"")}</textarea></label>
+        <div class="muted small"><strong>Langkah 3 dari 3:</strong> lengkapi hasil tugas sebelum menutup tugas.</div>
+        <label>Hasil <span class="required-mark">*</span><select class="task-result" data-id="${safeId}" required><option value="">Pilih hasil tugas</option><option ${a.hasil==="Berhasil"?"selected":""}>Berhasil</option><option ${a.hasil==="Sebagian Berhasil"?"selected":""}>Sebagian Berhasil</option><option ${a.hasil==="Tidak Berhasil"?"selected":""}>Tidak Berhasil</option></select></label>
+        <label>Keterangan <span class="required-mark">*</span><textarea class="task-note" data-id="${safeId}" rows="3" placeholder="Tulis keterangan hasil tugas..." required>${escapeHtml(a.keterangan||"")}</textarea></label>
         <button class="primary complete-task" data-id="${safeId}" type="button" ${completeReady?"":"disabled"}>Konfirmasi Selesai</button>
         <p class="message" id="confirmMsg-${safeId}"></p>
       </div>
@@ -386,7 +386,7 @@ function renderHistory(){
 async function handlePendingDeparture(){
   const a=state.courierTasks.pendingDeparture;
   if(!a)return;
-  const btn=$("pendingDepartureBtn");btn.disabled=true;msg("pendingDepartureMsg","Sedang mencatat keberangkatan...");
+  const btn=$("pendingDepartureBtn");btn.disabled=true;msg("pendingDepartureMsg","Mencatat keberangkatan...");
   try{
     const data=await api("confirmDeparture",{idAktivitas:a.idAktivitas,idPengguna:state.user.id});
     msg("pendingDepartureMsg","");
@@ -397,13 +397,13 @@ async function handlePendingDeparture(){
 
 async function handleCourierArrival(id,btn){
   const input=document.querySelector(`.task-arrival-photo[data-id="${CSS.escape(id)}"]`);
-  if(!input?.files[0]){msg(`confirmMsg-${id}`,"Foto saat datang wajib diisi terlebih dahulu.");return;}
+  if(!input?.files[0]){msg(`confirmMsg-${id}`,"Foto saat datang wajib diunggah terlebih dahulu.");return;}
 
   // Setelah konfirmasi 2/3 dikirim, sembunyikan card 2/3 terlebih dahulu.
   // Card 3/3 baru dibuat ulang setelah backend mengonfirmasi status "Lagi Diproses".
   const card=btn.closest('.courier-task-card');
   btn.disabled=true;
-  msg(`confirmMsg-${id}`,"Sedang menyimpan foto saat tiba...");
+  msg(`confirmMsg-${id}`,"Menyimpan foto saat tiba...");
   if(card) card.classList.add('hidden');
 
   try{
@@ -421,8 +421,8 @@ async function handleCourierComplete(id,btn){
   const resultEl=document.querySelector(`.task-result[data-id="${CSS.escape(id)}"]`);
   const noteEl=document.querySelector(`.task-note[data-id="${CSS.escape(id)}"]`);
   const hasil=resultEl?.value||"";
-  if(!hasil){msg(`confirmMsg-${id}`,"Pilih hasil tugas terlebih dahulu.");return;}
-  btn.disabled=true;msg(`confirmMsg-${id}`,"Sedang menyelesaikan tugas...");
+  if(!hasil){msg(`confirmMsg-${id}`,"Pilih hasil tugas tugas terlebih dahulu.");return;}
+  btn.disabled=true;msg(`confirmMsg-${id}`,"Menyelesaikan tugas...");
   try{
     await api("completeTask",{idAktivitas:id,idPengguna:state.user.id,hasil,keterangan:noteEl?.value.trim()||""});
     await loadCourierTasks();
@@ -526,7 +526,7 @@ async function restoreSession(){
 }
 
 async function handleLogin(e){
-  e.preventDefault();msg("loginMsg","Sedang memeriksa...");
+  e.preventDefault();msg("loginMsg","Memeriksa akun...");
   try{
     const data=await api("login",{id:$("loginId").value.trim(),pin:$("loginPin").value.trim()});
 
@@ -540,7 +540,7 @@ async function handleLogin(e){
     };
 
     if(!user.id || !user.nama || !user.peran){
-      throw new Error("Data akun belum lengkap. Silakan coba lagi.");
+      throw new Error("Data akun belum lengkap. Coba lagi.");
     }
 
     state.user=user;
@@ -554,19 +554,19 @@ async function handleLogin(e){
 
 async function handleCreateActivity(e){
   e.preventDefault();if($("startBtn").disabled)return;
-  $("startBtn").disabled=true;msg("activityMsg","Sedang membuat tugas...");
+  $("startBtn").disabled=true;msg("activityMsg","Membuat tugas...");
   try{
     const asal=$("asalSearch").value.trim(), tujuan=$("tujuanSearch").value.trim();
     const jenisTugas=getSelectedJenisTugas();
-    if(!jenisTugas.length)throw new Error("Pilih minimal satu jenis tugas dulu.");
+    if(!jenisTugas.length)throw new Error("Pilih minimal satu jenis tugas.");
     const jenisPekerjaan=jenisTugas.join(" | ");
     const fotoDokumen=await getDraftOrSelectedFile("fotoDokumen");
     const fotoBerangkat=await getDraftOrSelectedFile("fotoBerangkat");
-    if(!fotoDokumen||!fotoBerangkat)throw new Error("Foto dokumen dan foto berangkat belum tersedia.");
+    if(!fotoDokumen||!fotoBerangkat)throw new Error("Foto dokumen dan foto saat berangkat wajib diisi.");
     const data=await api("createActivity",{idPengguna:state.user.id,jenisPekerjaan,asal,tujuan,fotoDokumen:await fileToBase64(fotoDokumen),fotoBerangkat:await fileToBase64(fotoBerangkat)});
     clearActivityDraft();
     $("activityForm").reset();
-    msg("activityMsg",`Tugas berhasil dibuat: ${data.jenisTugas||jenisTugas.join(" | ")}. Sekarang konfirmasi berangkat kalau sudah siap.`);
+    msg("activityMsg",`Tugas berhasil dibuat: ${data.jenisTugas||jenisTugas.join(" | ")}. Konfirmasi keberangkatan saat kamu siap jalan.`);
     await loadCourierTasks();
   }catch(err){msg("activityMsg",err.message);checkStart();}
 }
@@ -575,7 +575,7 @@ async function handleArrival(){
   const input=document.createElement("input");input.type="file";input.accept="image/*";input.style.display="none";document.body.appendChild(input);input.click();
   input.onchange=async()=>{
     if(!input.files[0]){input.remove();return;}
-    $("arrivalBtn").disabled=true;msg("arrivalMsg","Sedang menyimpan foto saat tiba...");
+    $("arrivalBtn").disabled=true;msg("arrivalMsg","Menyimpan foto saat tiba...");
     try{
       const data=await api("confirmArrival",{idAktivitas:state.activity.idAktivitas,idPengguna:state.user.id,fotoDatang:await fileToBase64(input.files[0])});
       state.activity.status="Lagi Diproses";
@@ -599,9 +599,9 @@ async function handleArrival(){
 
 async function handleSaveResult(e){
   e.preventDefault();
-  if(!$("hasil").value){msg("resultMsg","Pilih hasil tugas terlebih dahulu.");return;}
+  if(!$("hasil").value){msg("resultMsg","Pilih hasil tugas tugas terlebih dahulu.");return;}
   $("saveResultBtn").disabled=true;
-  msg("resultMsg","Sedang menyelesaikan tugas...");
+  msg("resultMsg","Menyelesaikan tugas...");
   try{
     await api("saveResult",{
       idAktivitas:state.activity.idAktivitas,
@@ -620,7 +620,7 @@ async function handleSaveResult(e){
     $("activeCard").classList.add("hidden");
     $("resultCard").classList.add("hidden");
     $("startBtn").disabled=true;
-    $("activityMsg").textContent="Tugas selesai. Silakan buat aktivitas baru.";
+    $("activityMsg").textContent="Tugas selesai. Kamu bisa membuat tugas baru.";
     window.scrollTo({top:0,behavior:"smooth"});
   }catch(err){
     msg("resultMsg",err.message);
@@ -629,7 +629,7 @@ async function handleSaveResult(e){
 }
 
 async function handleComplete(){
-  $("completeBtn").disabled=true;msg("resultMsg","Sedang menyelesaikan tugas...");
+  $("completeBtn").disabled=true;msg("resultMsg","Menyelesaikan tugas...");
   try{const data=await api("completeActivity",{idAktivitas:state.activity.idAktivitas,idPengguna:state.user.id});state.activity.status="Selesai";
       state.activity.waktuSelsai=data.waktuSelsai||"-";
       resetCourierCards();
@@ -637,7 +637,7 @@ async function handleComplete(){
       $("activeCard").classList.add("hidden");
       $("resultCard").classList.add("hidden");
       $("startBtn").disabled=true;
-      $("activityMsg").textContent="Tugas selesai. Silakan buat aktivitas baru.";
+      $("activityMsg").textContent="Tugas selesai. Kamu bisa membuat tugas baru.";
       window.scrollTo({top:0,behavior:"smooth"});}
   catch(err){msg("resultMsg",err.message);$("completeBtn").disabled=false;}
 }
@@ -707,7 +707,7 @@ function renderCategoryBarChart(elementId, legendId, rows, key, emptyText, palet
 
 function renderCourierChart(rows){
   const palette=["#2563EB","#F97316","#16A34A","#9333EA","#DC2626","#0891B2","#CA8A04","#DB2777"];
-  renderCategoryBarChart("courierChart","courierLegend",rows,"kurir","Belum ada aktivitas untuk ditampilkan.",palette);
+  renderCategoryBarChart("courierChart","courierLegend",rows,"kurir","Belum ada aktivitas.",palette);
 }
 
 function renderStatusChart(rows){
@@ -721,7 +721,7 @@ function renderStatusChart(rows){
   const chart=$("statusChart"), legend=$("statusLegend");
   if(!chart)return;
   if(!rows.length){
-    chart.innerHTML='<div class="category-chart-empty">Belum ada aktivitas untuk ditampilkan.</div>';
+    chart.innerHTML='<div class="category-chart-empty">Belum ada aktivitas.</div>';
     if(legend)legend.innerHTML='<span><i class="legend-line legend-empty"></i>Belum ada data</span>';
     return;
   }
@@ -752,7 +752,7 @@ function renderStatusChart(rows){
 function renderActivityChart(rows){
   const chart=$("activityChart");
   if(!chart)return;
-  if(!rows.length){chart.innerHTML='<div class="chart-empty">Belum ada aktivitas untuk ditampilkan.</div>';return;}
+  if(!rows.length){chart.innerHTML='<div class="chart-empty">Belum ada aktivitas.</div>';return;}
 
   const days={};
   rows.forEach(a=>{
@@ -878,7 +878,7 @@ function renderDashboard(data){
 }
 
 async function loadDashboard(){
-  msg("dashboardMsg","Sedang memuat data aktivitas...");
+  msg("dashboardMsg","Memuat data aktivitas...");
   try{setDashboardDefaultDay();const data=await api("getDashboard",{idPengguna:state.user.id});state.dashboardActivities=data.activities||[];renderDashboard(data);msg("dashboardMsg","");}
   catch(err){msg("dashboardMsg",err.message);}
 }
@@ -962,11 +962,11 @@ function renderReport(rows){
 
 function exportReportExcel(){
   if(!currentReportRows.length){
-    msg("reportMsg","Belum ada data yang dapat diekspor.");
+    msg("reportMsg","Belum ada data untuk diekspor.");
     return;
   }
   if(typeof XLSX==="undefined"){
-    msg("reportMsg","Fitur Excel belum siap. Silakan muat ulang halaman.");
+    msg("reportMsg","Fitur Excel belum siap. Muat ulang halaman lalu coba lagi.");
     return;
   }
 
@@ -1023,7 +1023,7 @@ function exportReportExcel(){
 }
 
 async function loadReport(){
-  msg("reportMsg","Sedang memuat data laporan...");
+  msg("reportMsg","Memuat data laporan...");
   try{
     const data = await api("getReport",{
       idPengguna:state.user.id,
@@ -1053,19 +1053,19 @@ function resetReportFilters(){
 }
 
 async function loadUsers(){
-  msg("userMsg","Sedang memuat daftar pengguna...");
+  msg("userMsg","Memuat daftar pengguna...");
   try{
     const data=await api("getUsers",{idPengguna:state.user.id});
     const list=$("usersList");
-    list.innerHTML=(data.users||[]).map(u=>`<div class="user-row"><div class="user-main"><strong>${escapeHtml(u.nama)}</strong><div class="user-meta">${escapeHtml(u.idPengguna)} · ${escapeHtml(u.peran)} · ${u.status?"Aktif":"Nggak aktif"}</div></div><div class="user-actions"><button class="ghost status-user" data-id="${escapeHtml(u.idPengguna)}" data-status="${u.status}">${u.status?"Nonaktifkan":"Aktifkan"}</button><button class="danger delete-user" data-id="${escapeHtml(u.idPengguna)}">Hapus</button></div></div>`).join("")||"<div class='empty'>Belum ada pengguna.</div>";
+    list.innerHTML=(data.users||[]).map(u=>`<div class="user-row"><div class="user-main"><strong>${escapeHtml(u.nama)}</strong><div class="user-meta">${escapeHtml(u.idPengguna)} · ${escapeHtml(u.peran)} · ${u.status?"Aktif":"Nonaktif"}</div></div><div class="user-actions"><button class="ghost status-user" data-id="${escapeHtml(u.idPengguna)}" data-status="${u.status}">${u.status?"Nonaktifkan":"Aktifkan"}</button><button class="danger delete-user" data-id="${escapeHtml(u.idPengguna)}">Hapus</button></div></div>`).join("")||"<div class='empty'>Belum ada pengguna.</div>";
     list.querySelectorAll(".status-user").forEach(btn=>btn.onclick=async()=>{btn.disabled=true;try{await api("updateUserStatus",{idPengguna:state.user.id,id:btn.dataset.id,status:btn.dataset.status!=="true"});await loadUsers();}catch(err){msg("userMsg",err.message);btn.disabled=false;}});
-    list.querySelectorAll(".delete-user").forEach(btn=>btn.onclick=async()=>{if(!confirm("Yakin mau hapus pengguna ini?"))return;btn.disabled=true;try{await api("deleteUser",{idPengguna:state.user.id,id:btn.dataset.id});await loadUsers();}catch(err){msg("userMsg",err.message);btn.disabled=false;}});
+    list.querySelectorAll(".delete-user").forEach(btn=>btn.onclick=async()=>{if(!confirm("Yakin ingin menghapus pengguna ini?"))return;btn.disabled=true;try{await api("deleteUser",{idPengguna:state.user.id,id:btn.dataset.id});await loadUsers();}catch(err){msg("userMsg",err.message);btn.disabled=false;}});
     msg("userMsg","");
   }catch(err){msg("userMsg",err.message)}
 }
 
 async function handleCreateUser(e){
-  e.preventDefault();msg("userMsg","Sedang menambahkan pengguna...");
+  e.preventDefault();msg("userMsg","Menambahkan pengguna...");
   try{await api("createUser",{idPengguna:state.user.id,id:$("userId").value.trim(),nama:$("userName").value.trim(),pin:$("userPin").value.trim(),peran:$("userRole").value});$("userForm").reset();msg("userMsg","Pengguna berhasil ditambahkan.");await loadUsers();}
   catch(err){msg("userMsg",err.message)}
 }

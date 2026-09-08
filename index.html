@@ -4,10 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Aktivitas Kurir</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=230">
+  <link rel="preconnect" href="https://fonts.cdnfonts.com">
+  <link href="https://fonts.cdnfonts.com/css/gilroy" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=320">
 </head>
 <body>
 <main class="app">
@@ -50,8 +49,8 @@
       <div id="activityCard" class="card">
         <div class="section-title-row">
           <div>
-            <div class="section-title">Tambah Aktivitas</div>
-            <div class="muted small">Buat tugas baru di sini.</div>
+            <div class="section-title">Buat Tugas</div>
+            <div class="muted small">Lengkapi detail tugas sebelum mulai perjalanan.</div>
           </div>
         </div>
         <form id="activityForm">
@@ -68,12 +67,12 @@
           <div class="two">
             <div class="combo-wrap">
               <label for="asalSearch">Berangkat Dari</label>
-              <input id="asalSearch" autocomplete="off" placeholder="Cari lokasi..." required>
+              <input id="asalSearch" autocomplete="off" placeholder="Cari lokasi keberangkatan..." required>
               <div id="asalList" class="combo-list hidden"></div>
             </div>
             <div class="combo-wrap">
               <label for="tujuanSearch">Menuju</label>
-              <input id="tujuanSearch" autocomplete="off" placeholder="Cari lokasi..." required>
+              <input id="tujuanSearch" autocomplete="off" placeholder="Cari lokasi tujuan..." required>
               <div id="tujuanList" class="combo-list hidden"></div>
             </div>
           </div>
@@ -81,7 +80,7 @@
             <input id="fotoDokumen" type="file" accept="image/*" required>
             <p id="fotoDokumenDraft" class="draft-file-message"></p>
           </label>
-          <label>Foto Berangkat
+          <label>Foto Saat Berangkat
             <input id="fotoBerangkat" type="file" accept="image/*" required>
             <p id="fotoBerangkatDraft" class="draft-file-message"></p>
           </label>
@@ -94,7 +93,7 @@
         <div class="section-title-row">
           <div>
             <div class="section-title">Tugas Menunggu Berangkat</div>
-            <div class="muted small">Konfirmasi 1 dari 3 — berangkat kalau kamu sudah siap jalan.</div>
+            <div class="muted small">Langkah 1 dari 3 · Konfirmasi keberangkatan saat kamu siap jalan.</div>
           </div>
           <span class="badge">Menunggu Berangkat</span>
         </div>
@@ -107,7 +106,7 @@
     <section id="confirmationView" class="hidden">
       <div class="page-heading">
         <div class="section-title">Konfirmasi Tugas</div>
-        <div class="muted small">Tugas yang sudah berangkat akan diproses di sini sampai selesai.</div>
+        <div class="muted small">Selesaikan setiap langkah konfirmasi sampai tugas selesai.</div>
       </div>
       <div id="confirmationEmpty" class="card empty hidden">Belum ada tugas yang perlu dikonfirmasi.</div>
       <div id="confirmationList" class="courier-task-list"></div>
@@ -116,7 +115,7 @@
     <section id="historyView" class="hidden">
       <div class="page-heading">
         <div class="section-title">Riwayat Tugas</div>
-        <div class="muted small">Semua tugas kamu yang sudah selesai.</div>
+        <div class="muted small">Semua tugas yang sudah kamu selesaikan.</div>
       </div>
       <div id="historyEmpty" class="card empty hidden">Belum ada riwayat tugas.</div>
       <div id="historyList" class="courier-task-list"></div>
@@ -134,7 +133,7 @@
         <div class="dashboard-filter-head">
           <div>
             <div class="section-title">Filter aktivitas</div>
-            <div class="muted small">Semua data ditampilkan. Pilih hari dan kurir kalau ingin mempersempit hasil.</div>
+            <div class="muted small">Gunakan filter untuk melihat data yang lebih spesifik.</div>
           </div>
         </div>
         <div class="filters-grid dashboard-filter-grid">
@@ -171,7 +170,7 @@
         <div class="section-title-row">
           <div>
             <div class="section-title">Aktivitas per kurir</div>
-            <div class="muted small">Jumlah aktivitas setiap kurir berdasarkan filter yang dipilih.</div>
+            <div class="muted small">Jumlah aktivitas berdasarkan kurir yang dipilih.</div>
           </div>
         </div>
         <div id="courierChart" class="category-chart"></div>
@@ -182,7 +181,7 @@
         <div class="section-title-row">
           <div>
             <div class="section-title">Aktivitas per hasil</div>
-            <div class="muted small">Distribusi aktivitas berdasarkan hasil yang tercatat.</div>
+            <div class="muted small">Ringkasan aktivitas berdasarkan hasil tugas.</div>
           </div>
         </div>
         <div id="statusChart" class="category-chart"></div>
