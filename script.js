@@ -793,12 +793,25 @@ function parseIndonesiaDateTime(value){
   if(!value)return null;
   if(value instanceof Date && !isNaN(value.getTime()))return value;
   const text=String(value).trim();
-  // Spreadsheet/backend format: DD/MM/YYYY HH:mm:ss
+
+  // Spreadsheet/backend format utama: US MM/DD/YYYY HH:mm.
   let m=text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
   if(m){
-    const d=new Date(Number(m[3]),Number(m[2])-1,Number(m[1]),Number(m[4]||0),Number(m[5]||0),Number(m[6]||0));
+    const first=Number(m[1]);
+    const second=Number(m[2]);
+    const year=Number(m[3]);
+    const hour=Number(m[4]||0);
+    const minute=Number(m[5]||0);
+    const secondPart=Number(m[6]||0);
+
+    // Data lama yang memakai DD/MM tetap bisa dibaca jika salah satu bagian > 12.
+    // Untuk format baru yang ambigu (keduanya <= 12), gunakan format US.
+    const month=first>12 ? second : first;
+    const day=first>12 ? first : second;
+    const d=new Date(year,month-1,day,hour,minute,secondPart);
     return isNaN(d.getTime())?null:d;
   }
+
   // ISO timestamps: respect the supplied timezone when present.
   const iso=new Date(text);
   return isNaN(iso.getTime())?null:iso;
@@ -807,10 +820,12 @@ function parseIndonesiaDateTime(value){
 function displayIndonesiaDateTime(value){
   const d=parseIndonesiaDateTime(value);
   if(!d)return value?String(value).trim():"-";
-  return new Intl.DateTimeFormat("id-ID",{
-    timeZone:"Asia/Jakarta", day:"2-digit", month:"2-digit", year:"numeric",
+  const parts=new Intl.DateTimeFormat("id-ID",{
+    timeZone:"Asia/Jakarta", day:"2-digit", month:"short", year:"2-digit",
     hour:"2-digit", minute:"2-digit", hour12:false
-  }).format(d).replace(/\./g,":");
+  }).formatToParts(d);
+  const get=type=>parts.find(p=>p.type===type)?.value||"";
+  return `${get("day")} ${get("month")} ${get("year")} - ${get("hour")}:${get("minute")}`;
 }
 
 function displayIndonesiaTime(value){
