@@ -244,7 +244,7 @@ function setupNav(role){
   $("navUsers").classList.toggle("hidden",role!=="Super User");
   $("navActivity").onclick=()=>setView("courierView");
   $("navDashboard").onclick=async()=>{setView("dashboardView");setDashboardDefaultDay();await loadDashboard();requestAnimationFrame(syncDashboardFreeze);};
-  $("navReport").onclick=async()=>{setView("reportView");renderReport([]);await loadReportOptions();};
+  $("navReport").onclick=async()=>{setView("reportView");renderReport([]);await loadReportOptions();await loadReport();};
   $("navUsers").onclick=async()=>{setView("usersView");await loadUsers();};
 }
 
@@ -532,34 +532,29 @@ function renderCategoryLegend(elementId, entries, palette){
 }
 
 function renderCategoryBarChart(elementId, legendId, rows, key, emptyText, palette){
-  const chart=$(elementId);
-  const legend=$(legendId);
+  const chart=$(elementId), legend=$(legendId);
   if(!chart)return;
   if(!rows.length){
     chart.innerHTML=`<div class="category-chart-empty">${escapeHtml(emptyText)}</div>`;
     if(legend)legend.innerHTML='<span><i class="legend-line legend-empty"></i>Belum ada data</span>';
     return;
   }
-
   const counts={};
   rows.forEach(a=>{
     const label=String(a[key]||"Tidak diketahui").trim()||"Tidak diketahui";
     counts[label]=(counts[label]||0)+1;
   });
-
   const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
-  const max=Math.max(...entries.map(([,value])=>value),1);
-
+  const max=Math.max(...entries.map(([,v])=>v),1);
   chart.innerHTML=entries.map(([label,value],i)=>{
-    const width=Math.max(3,Math.round(value/max*100));
-    const color=palette[i % palette.length];
+    const color=palette[i%palette.length];
+    const width=Math.max(4,Math.round(value/max*100));
     return `<div class="category-chart-row">
       <div class="category-chart-label" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
       <div class="category-chart-track"><div class="category-chart-bar" style="width:${width}%;background:${color}"></div></div>
       <div class="category-chart-value">${value}</div>
     </div>`;
   }).join("");
-
   renderCategoryLegend(legendId,entries,palette);
 }
 
@@ -569,64 +564,81 @@ function renderCourierChart(rows){
 }
 
 function renderStatusChart(rows){
-  const chart=$("statusChart");
-  const legend=$("statusLegend");
+  const statusOrder=["Menunggu Berangkat","Lagi Jalan","Lagi Diproses","Selesai"];
+  const paletteByStatus={
+    "Menunggu Berangkat":"#2563EB",
+    "Lagi Jalan":"#F97316",
+    "Lagi Diproses":"#9333EA",
+    "Selesai":"#16A34A"
+  };
+  const chart=$("statusChart"), legend=$("statusLegend");
   if(!chart)return;
   if(!rows.length){
     chart.innerHTML='<div class="category-chart-empty">Belum ada aktivitas untuk ditampilkan.</div>';
     if(legend)legend.innerHTML='<span><i class="legend-line legend-empty"></i>Belum ada data</span>';
     return;
   }
-
-  const statusOrder=["Menunggu Berangkat","Lagi Jalan","Lagi Diproses","Selesai"];
   const counts={};
   rows.forEach(a=>{
     const status=String(a.status||"Tidak diketahui").trim()||"Tidak diketahui";
     counts[status]=(counts[status]||0)+1;
   });
-
   const ordered=[];
-  statusOrder.forEach(status=>{
-    if(counts[status])ordered.push([status,counts[status]]);
-  });
-  Object.entries(counts)
-    .filter(([status])=>!statusOrder.includes(status))
-    .sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))
-    .forEach(item=>ordered.push(item));
-
-  const palette=["#2563EB","#F97316","#16A34A","#9333EA","#DC2626","#0891B2","#CA8A04","#DB2777"];
-  const max=Math.max(...ordered.map(([,value])=>value),1);
-  chart.innerHTML=ordered.map(([label,value],i)=>{
-    const width=Math.max(3,Math.round(value/max*100));
-    const color=palette[i % palette.length];
+  statusOrder.forEach(s=>{if(counts[s])ordered.push([s,counts[s]]);});
+  Object.entries(counts).filter(([s])=>!statusOrder.includes(s)).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).forEach(x=>ordered.push(x));
+  const max=Math.max(...ordered.map(([,v])=>v),1);
+  chart.innerHTML=ordered.map(([label,value])=>{
+    const color=paletteByStatus[label]||"#64748B";
+    const width=Math.max(4,Math.round(value/max*100));
     return `<div class="category-chart-row">
       <div class="category-chart-label" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
       <div class="category-chart-track"><div class="category-chart-bar" style="width:${width}%;background:${color}"></div></div>
       <div class="category-chart-value">${value}</div>
     </div>`;
   }).join("");
-
-  renderCategoryLegend("statusLegend",ordered,palette);
+  if(legend)legend.innerHTML=ordered.map(([label])=>{
+    const color=paletteByStatus[label]||"#64748B";
+    return `<span><i class="legend-line" style="background:${color}"></i>${escapeHtml(label)}</span>`;
+  }).join("");
 }
 
 function renderActivityChart(rows){
   const chart=$("activityChart");
+  if(!chart)return;
   if(!rows.length){chart.innerHTML='<div class="chart-empty">Belum ada aktivitas untuk ditampilkan.</div>';return;}
+
   const days={};
   rows.forEach(a=>{
-    const d=parseActivityDate(a.berangkat||a.datang||a.selesai); if(!d)return;
-    const key=formatDateKey(d); if(!days[key])days[key]={total:0,done:0};
-    days[key].total++; if(a.status==="Selesai")days[key].done++;
+    const d=parseActivityDate(a.berangkat||a.datang||a.selesai);
+    const key=d?formatDateKey(d):"__nodate";
+    if(!days[key])days[key]={total:0,done:0};
+    days[key].total++;
+    if(String(a.status||"").trim()==="Selesai")days[key].done++;
   });
-  const entries=Object.entries(days).sort((a,b)=>a[0].localeCompare(b[0])).slice(-10);
+
+  const entries=Object.entries(days).sort((a,b)=>{
+    if(a[0]==="__nodate")return 1;if(b[0]==="__nodate")return -1;return a[0].localeCompare(b[0]);
+  }).slice(-10);
   const max=Math.max(...entries.map(([,v])=>v.total),1);
+  const colors={total:"#2563EB",done:"#16A34A",active:"#F97316"};
+
   chart.innerHTML=entries.map(([key,v])=>{
-    const d=new Date(key+"T00:00:00");
-    const label=d.toLocaleDateString("id-ID",{day:"2-digit",month:"short"});
-    const totalH=Math.max(10,Math.round(v.total/max*170));
-    const doneH=Math.max(v.done?6:0,Math.round(v.done/max*170));
+    const d=key==="__nodate"?null:new Date(key+"T00:00:00");
+    const label=d?d.toLocaleDateString("id-ID",{day:"2-digit",month:"short"}):"Tanpa tanggal";
     const active=v.total-v.done;
-    return `<div class="chart-col"><div class="chart-value">${v.total}</div><div class="chart-bars"><div class="chart-bar total" style="height:${totalH}px"><span class="chart-overlay done" style="height:${doneH}px"></span></div></div><div class="chart-label">${escapeHtml(label)}</div><div class="chart-active">${active} belum selesai</div></div>`;
+    const totalH=Math.max(12,Math.round(v.total/max*155));
+    const doneH=Math.max(v.done?10:0,Math.round(v.done/max*155));
+    const activeH=Math.max(active?10:0,Math.round(active/max*155));
+    return `<div class="chart-col">
+      <div class="chart-value">${v.total}</div>
+      <div class="chart-bars">
+        <div class="chart-series"><div class="chart-bar total" style="height:${totalH}px;background:${colors.total}"></div><span>Total</span></div>
+        <div class="chart-series"><div class="chart-bar done" style="height:${doneH}px;background:${colors.done}"></div><span>Selesai</span></div>
+        <div class="chart-series"><div class="chart-bar active" style="height:${activeH}px;background:${colors.active}"></div><span>Belum</span></div>
+      </div>
+      <div class="chart-label">${escapeHtml(label)}</div>
+      <div class="chart-active">${active} belum selesai</div>
+    </div>`;
   }).join("");
 }
 
@@ -679,7 +691,7 @@ function renderDashboard(data){
   const photoLink=(url)=>url?`<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Lihat Foto</a>`:"-";
   $("dashboardTable").innerHTML=rows.map(a=>`<tr>
     <td>${escapeHtml(a.kurir||"-")}</td>
-    <td>${escapeHtml(a.jenisTugas||"-")}</td>
+    <td>${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</td>
     <td>${escapeHtml(a.tujuan||"-")}</td>
     <td>${photoLink(a.fotoDokumen)}</td>
     <td>${photoLink(a.fotoBerangkat)}</td>
@@ -880,8 +892,7 @@ function resetReportFilters(){
   $("reportCourier").value="";
   $("reportOrigin").value="";
   $("reportDestination").value="";
-  renderReport([]);
-  msg("reportMsg","");
+  loadReport();
 }
 
 async function loadUsers(){

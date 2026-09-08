@@ -947,3 +947,26 @@ th {
   line-height:1.4;
   color:#7a808b;
 }
+
+/* V13 — Dashboard charts: modern grouped columns, stable semantic colors */
+.activity-chart{display:flex;align-items:flex-end;gap:18px;min-height:275px;padding:18px 8px 0;border-bottom:1px solid #e8e9ec;overflow-x:auto}
+.chart-col{min-width:120px;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:255px}
+.chart-value{font-size:12px;font-weight:800;margin-bottom:7px}
+.chart-bars{height:170px;display:flex;align-items:flex-end;justify-content:center;gap:7px}
+.chart-series{height:170px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px}
+.chart-series span{font-size:8px;color:#8a9099;line-height:1}
+.chart-bar{width:22px;min-height:0;border-radius:7px 7px 3px 3px;box-shadow:0 5px 12px rgba(20,25,35,.08);transition:height .35s ease}
+.chart-label{font-size:11px;font-weight:800;margin-top:10px;white-space:nowrap}
+.chart-active{font-size:9px;color:#858b94;margin-top:3px;white-space:nowrap}
+.chart-legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:12px;font-size:11px;color:#656b74;font-weight:600}
+.status-total{background:#2563EB}.status-done{background:#16A34A}.status-active{background:#F97316}
+.category-chart{display:grid;gap:16px;min-height:235px;padding:16px 4px 8px;border-bottom:1px solid #e8e9ec;overflow-y:auto}
+.category-chart-row{display:grid;grid-template-columns:155px 1fr 42px;align-items:center;gap:14px;min-height:38px}
+.category-chart-track{height:15px;background:#f0f2f5;border-radius:999px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(20,25,35,.04)}
+.category-chart-bar{height:100%;width:0;border-radius:999px;transition:width .45s ease;box-shadow:0 4px 10px rgba(20,25,35,.08)}
+.category-chart-label{font-size:13px;font-weight:800;color:#3f4650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.category-chart-value{text-align:right;font-size:14px;font-weight:900}
+.category-chart-legend{display:flex;flex-wrap:wrap;gap:16px;min-height:20px}
+@media(max-width:560px){
+ .activity-chart{gap:12px}.chart-col{min-width:105px}.chart-bar{width:18px}.chart-series{gap:3px}.category-chart-row{grid-template-columns:110px 1fr 34px;gap:9px}.category-chart-track{height:12px}
+}
