@@ -59,6 +59,121 @@ function fileToBase64(file){
   });
 }
 
+// V8 — draft form disimpan terpisah dari session login.
+// Teks disimpan di localStorage; foto disimpan di IndexedDB agar tidak bergantung
+// pada quota localStorage dan tetap tersedia setelah refresh di tab Incognito yang sama.
+const ACTIVITY_DRAFT_PREFIX = "aktivitasKurirDraft:";
+const ACTIVITY_DRAFT_DB = "aktivitasKurirDraftDB";
+const ACTIVITY_DRAFT_STORE = "files";
+
+function activityDraftKey(){
+  return `${ACTIVITY_DRAFT_PREFIX}${state.user?.id||"guest"}`;
+}
+
+function readActivityDraft(){
+  try{
+    const raw=localStorage.getItem(activityDraftKey());
+    if(!raw)return null;
+    const draft=JSON.parse(raw);
+    return draft&&typeof draft==="object"?draft:null;
+  }catch(e){return null;}
+}
+
+function writeActivityDraft(patch={}){
+  try{
+    const current=readActivityDraft()||{};
+    localStorage.setItem(activityDraftKey(),JSON.stringify({...current,...patch,updatedAt:Date.now()}));
+  }catch(e){}
+}
+
+function clearActivityDraft(){
+  try{localStorage.removeItem(activityDraftKey());}catch(e){}
+  if(!window.indexedDB)return;
+  const request=indexedDB.open(ACTIVITY_DRAFT_DB,1);
+  request.onupgradeneeded=()=>{
+    if(!request.result.objectStoreNames.contains(ACTIVITY_DRAFT_STORE))request.result.createObjectStore(ACTIVITY_DRAFT_STORE);
+  };
+  request.onsuccess=()=>{
+    try{
+      const db=request.result;
+      const tx=db.transaction(ACTIVITY_DRAFT_STORE,"readwrite");
+      tx.objectStore(ACTIVITY_DRAFT_STORE).delete(activityDraftKey());
+      tx.oncomplete=()=>db.close();
+    }catch(e){}
+  };
+}
+
+function saveDraftFile(inputId){
+  const input=$(inputId);
+  const file=input?.files?.[0];
+  if(!file)return;
+  if(!window.indexedDB)return;
+  const request=indexedDB.open(ACTIVITY_DRAFT_DB,1);
+  request.onupgradeneeded=()=>{
+    if(!request.result.objectStoreNames.contains(ACTIVITY_DRAFT_STORE))request.result.createObjectStore(ACTIVITY_DRAFT_STORE);
+  };
+  request.onsuccess=()=>{
+    try{
+      const db=request.result;
+      const tx=db.transaction(ACTIVITY_DRAFT_STORE,"readwrite");
+      tx.objectStore(ACTIVITY_DRAFT_STORE).put({blob:file,name:file.name,type:file.type,lastModified:file.lastModified},`${activityDraftKey()}:${inputId}`);
+      tx.oncomplete=()=>db.close();
+    }catch(e){}
+  };
+  const labelId=inputId==="fotoDokumen"?"fotoDokumenDraft":"fotoBerangkatDraft";
+  if($(labelId))$(labelId).textContent=`Foto tersimpan sementara: ${file.name}`;
+  writeActivityDraft({[`${inputId}Name`]:file.name});
+}
+
+function loadDraftFile(inputId){
+  return new Promise(resolve=>{
+    if(!window.indexedDB)return resolve(null);
+    const request=indexedDB.open(ACTIVITY_DRAFT_DB,1);
+    request.onupgradeneeded=()=>{
+      if(!request.result.objectStoreNames.contains(ACTIVITY_DRAFT_STORE))request.result.createObjectStore(ACTIVITY_DRAFT_STORE);
+    };
+    request.onerror=()=>resolve(null);
+    request.onsuccess=()=>{
+      try{
+        const db=request.result;
+        const tx=db.transaction(ACTIVITY_DRAFT_STORE,"readonly");
+        const get=tx.objectStore(ACTIVITY_DRAFT_STORE).get(`${activityDraftKey()}:${inputId}`);
+        get.onsuccess=()=>{
+          const value=get.result||null;
+          db.close();
+          resolve(value);
+        };
+        get.onerror=()=>{db.close();resolve(null);};
+      }catch(e){resolve(null);}
+    };
+  });
+}
+
+async function restoreActivityDraft(){
+  if(!state.user||state.user.peran!=="Kurir")return;
+  if(state.activity)return;
+  const draft=readActivityDraft();
+  if(!draft)return;
+
+  if(draft.jenisTugas!==undefined)$('jenisTugas').value=draft.jenisTugas||"";
+  if(draft.asal!==undefined)$('asalSearch').value=draft.asal||"";
+  if(draft.tujuan!==undefined)$('tujuanSearch').value=draft.tujuan||"";
+
+  const dok=await loadDraftFile("fotoDokumen");
+  const ber=await loadDraftFile("fotoBerangkat");
+  if(dok?.name&&$("fotoDokumenDraft"))$("fotoDokumenDraft").textContent=`Foto tersimpan sementara: ${dok.name}`;
+  if(ber?.name&&$("fotoBerangkatDraft"))$("fotoBerangkatDraft").textContent=`Foto tersimpan sementara: ${ber.name}`;
+  checkStart();
+}
+
+async function getDraftOrSelectedFile(inputId){
+  const selected=$(inputId)?.files?.[0];
+  if(selected)return selected;
+  const saved=await loadDraftFile(inputId);
+  if(!saved?.blob)return null;
+  return new File([saved.blob],saved.name||"foto.jpg",{type:saved.type||saved.blob.type||"image/jpeg",lastModified:saved.lastModified||Date.now()});
+}
+
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
 
 function clearSession(){
@@ -68,6 +183,7 @@ function clearSession(){
 }
 
 function logoutToLogin(message=""){
+  if(state.user)clearActivityDraft();
   clearSession();
   $("appView").classList.add("hidden");
   $("loginView").classList.remove("hidden");
@@ -158,17 +274,22 @@ async function loadActiveActivity(){
   }
 }
 
-function checkStart(){
-  const ready=!!($('jenisTugas').value&&state.locations.includes($('asalSearch').value.trim())&&state.locations.includes($('tujuanSearch').value.trim())&&$('fotoDokumen').files[0]&&$('fotoBerangkat').files[0]);
+async function checkStart(){
+  const dokumenFile=$('fotoDokumen').files[0] || await loadDraftFile("fotoDokumen");
+  const berangkatFile=$('fotoBerangkat').files[0] || await loadDraftFile("fotoBerangkat");
+  const ready=!!($('jenisTugas').value&&state.locations.includes($('asalSearch').value.trim())&&state.locations.includes($('tujuanSearch').value.trim())&&dokumenFile&&berangkatFile);
   $('startBtn').disabled=!ready;
 }
 
-function resetCourierCards(){
+function resetCourierCards(clearDraft=false){
   $("activityCard").classList.remove("hidden");
   $("activeCard").classList.add("hidden");
   $("resultCard").classList.add("hidden");
   $("activityForm").reset();
   $("startBtn").disabled=true;
+  if($("fotoDokumenDraft"))$("fotoDokumenDraft").textContent="";
+  if($("fotoBerangkatDraft"))$("fotoBerangkatDraft").textContent="";
+  if(clearDraft)clearActivityDraft();
   msg("activityMsg","");msg("arrivalMsg","");msg("resultMsg","");
   state.activity=null;
 }
@@ -228,9 +349,11 @@ async function restoreSession(){
       if(lastView==="courierView"){
         setView("courierView");
         await loadActiveActivity();
+        await restoreActivityDraft();
       }else{
         setView("courierView");
         await loadActiveActivity();
+        await restoreActivityDraft();
       }
     }else if(lastView==="reportView"){
       setView("reportView");
@@ -274,7 +397,7 @@ async function handleLogin(e){
     const loginAt=Date.now(); writeSession({user,loginAt,lastView:user.peran==="Kurir"?"courierView":"dashboardView"}); scheduleSessionExpiry(loginAt);
     $("loginView").classList.add("hidden");$("appView").classList.remove("hidden");
     setWelcome(user.nama);setupNav(user.peran);
-    if(user.peran==="Kurir"){await loadLocations();setView("courierView");}
+    if(user.peran==="Kurir"){await loadLocations();setView("courierView");await loadActiveActivity();await restoreActivityDraft();}
     else{setView("dashboardView");await loadDashboard();}
   }catch(err){msg("loginMsg",err.message)}
 }
@@ -284,9 +407,13 @@ async function handleCreateActivity(e){
   $("startBtn").disabled=true;msg("activityMsg","Sedang menyimpan aktivitas...");
   try{
     const asal=$("asalSearch").value.trim(), tujuan=$("tujuanSearch").value.trim(), jenisTugas=$("jenisTugas").value;
-    const data=await api("createActivity",{idPengguna:state.user.id,jenisTugas:jenisTugas,asal,tujuan,fotoDokumen:await fileToBase64($("fotoDokumen").files[0]),fotoBerangkat:await fileToBase64($("fotoBerangkat").files[0])});
+    const fotoDokumen=await getDraftOrSelectedFile("fotoDokumen");
+    const fotoBerangkat=await getDraftOrSelectedFile("fotoBerangkat");
+    if(!fotoDokumen||!fotoBerangkat)throw new Error("Foto dokumen dan foto berangkat belum tersedia.");
+    const data=await api("createActivity",{idPengguna:state.user.id,jenisTugas:jenisTugas,asal,tujuan,fotoDokumen:await fileToBase64(fotoDokumen),fotoBerangkat:await fileToBase64(fotoBerangkat)});
     const departure=await api("confirmDeparture",{idAktivitas:data.idAktivitas,idPengguna:state.user.id});
     state.activity={idAktivitas:data.idAktivitas,status:departure.status,jenisTugas:jenisTugas,asal,tujuan,waktuBerangkat:departure.waktuBerangkat};
+    clearActivityDraft();
     $("activityForm").classList.add("hidden");$("activityCard").classList.add("hidden");$("activeCard").classList.remove("hidden");showActivityInfo(state.activity);msg("activityMsg","");
   }catch(err){msg("activityMsg",err.message);checkStart();}
 }
@@ -335,7 +462,7 @@ async function handleSaveResult(e){
     });
     state.activity.status="Selesai";
     state.activity.waktuSelsai=data.waktuSelsai||"-";
-    resetCourierCards();
+    resetCourierCards(true);
     $("activityCard").classList.remove("hidden");
     $("activeCard").classList.add("hidden");
     $("resultCard").classList.add("hidden");
@@ -772,7 +899,13 @@ async function handleCreateUser(e){
 $("loginForm").addEventListener("submit",handleLogin);
 $("logoutBtn").addEventListener("click",()=>logoutToLogin(""));
 setupCombo("asalSearch","asalList");setupCombo("tujuanSearch","tujuanList");
-["jenisTugas","asalSearch","tujuanSearch","fotoDokumen","fotoBerangkat"].forEach(id=>$(id).addEventListener("input",checkStart));
+["jenisTugas","asalSearch","tujuanSearch"].forEach(id=>$(id).addEventListener("input",()=>{
+  writeActivityDraft({[id]:$(id).value});
+  checkStart();
+}));
+$("jenisTugas").addEventListener("change",()=>{writeActivityDraft({jenisTugas:$("jenisTugas").value});checkStart();});
+$("fotoDokumen").addEventListener("change",()=>{saveDraftFile("fotoDokumen");checkStart();});
+$("fotoBerangkat").addEventListener("change",()=>{saveDraftFile("fotoBerangkat");checkStart();});
 $("activityForm").addEventListener("submit",handleCreateActivity);
 $("arrivalBtn").addEventListener("click",handleArrival);
 $("resultForm").addEventListener("submit",handleSaveResult);

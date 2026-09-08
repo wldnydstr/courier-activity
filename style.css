@@ -937,3 +937,13 @@ th {
 /* Legend tetap terlihat walaupun grafik sedang kosong */
 .legend-empty{background:#cfd4da}
 .category-chart-legend{min-height:16px}
+
+
+/* V8 — simpan draft form kurir saat halaman di-refresh */
+.draft-file-message{
+  min-height:18px;
+  margin:6px 0 0;
+  font-size:12px;
+  line-height:1.4;
+  color:#7a808b;
+}
