@@ -296,7 +296,7 @@ function updateCourierNavBadges(){
 
 function courierInfoHtml(a,includeStatus=true){
   const status=includeStatus?`<div class="info-item"><span>Status</span><strong>${escapeHtml(a.status||"-")}</strong></div>`:"";
-  return `<div class="info-item"><span>Jenis Tugas</span><strong>${escapeHtml(a.jenisTugas||"-")}</strong></div>
+  return `<div class="info-item"><span>Jenis Tugas</span><strong>${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</strong></div>
   <div class="info-item"><span>Rute</span><strong>${escapeHtml((a.asal||"-")+" → "+(a.tujuan||"-"))}</strong></div>
   <div class="info-item"><span>Berangkat</span><strong>${escapeHtml(displayIndonesiaDateTime(a.waktuBerangkat))}</strong></div>
   <div class="info-item"><span>Datang</span><strong>${escapeHtml(displayIndonesiaDateTime(a.waktuDatang))}</strong></div>${status}`;
@@ -322,9 +322,9 @@ function renderConfirmations(){
     const arrivalNeeded=a.status==="Lagi Jalan";
     const resultReady=!!a.hasil;
     return `<div class="card courier-task-card">
-      <div class="section-title-row"><div><div class="section-title">${escapeHtml(a.jenisTugas||"Tugas")}</div><div class="muted small">${escapeHtml(a.idAktivitas||"")}</div></div><span class="badge">${escapeHtml(a.status||"")}</span></div>
+      <div class="section-title-row"><div><div class="section-title">${escapeHtml(a.jenisTugas||a.pekerjaan||"Tugas")}</div><div class="muted small">${escapeHtml(a.idAktivitas||"")}</div></div><span class="badge">${escapeHtml(a.status||"")}</span></div>
       <div class="info-grid">${courierInfoHtml(a)}</div>
-      ${arrivalNeeded?`<div class="confirm-action"><div class="muted small"><strong>Konfirmasi 1 dari 2:</strong> tugas sudah berangkat. Konfirmasi datang dengan foto saat tiba.</div><button class="primary confirm-arrival-task" data-id="${escapeHtml(a.idAktivitas)}" type="button">Konfirmasi Datang</button><p class="message" id="confirmMsg-${escapeHtml(a.idAktivitas)}"></p></div>`:`<div class="confirm-action"><div class="muted small"><strong>Konfirmasi 2 dari 2:</strong> tugas sudah sampai. Isi hasil lalu konfirmasi selesai.</div><label>Hasil<select class="task-result" data-id="${escapeHtml(a.idAktivitas)}"><option value="">Pilih hasil</option><option ${a.hasil==="Berhasil"?"selected":""}>Berhasil</option><option ${a.hasil==="Sebagian Berhasil"?"selected":""}>Sebagian Berhasil</option><option ${a.hasil==="Tidak Berhasil"?"selected":""}>Tidak Berhasil</option></select></label><label>Keterangan<textarea class="task-note" data-id="${escapeHtml(a.idAktivitas)}" rows="3" placeholder="Keterangan hasil tugas (opsional).">${escapeHtml(a.keterangan||"")}</textarea><button class="primary complete-task" data-id="${escapeHtml(a.idAktivitas)}" type="button">Konfirmasi Selesai</button><p class="message" id="confirmMsg-${escapeHtml(a.idAktivitas)}"></p></div>`}
+      ${arrivalNeeded?`<div class="confirm-action"><div class="muted small"><strong>Konfirmasi 2 dari 3:</strong> tugas sedang berjalan. Konfirmasi datang dengan foto saat tiba.</div><button class="primary confirm-arrival-task" data-id="${escapeHtml(a.idAktivitas)}" type="button">Konfirmasi Datang</button><p class="message" id="confirmMsg-${escapeHtml(a.idAktivitas)}"></p></div>`:`<div class="confirm-action"><div class="muted small"><strong>Konfirmasi 3 dari 3:</strong> tugas sudah sampai. Isi hasil lalu konfirmasi selesai.</div><label>Hasil<select class="task-result" data-id="${escapeHtml(a.idAktivitas)}"><option value="">Pilih hasil</option><option ${a.hasil==="Berhasil"?"selected":""}>Berhasil</option><option ${a.hasil==="Sebagian Berhasil"?"selected":""}>Sebagian Berhasil</option><option ${a.hasil==="Tidak Berhasil"?"selected":""}>Tidak Berhasil</option></select></label><label>Keterangan<textarea class="task-note" data-id="${escapeHtml(a.idAktivitas)}" rows="3" placeholder="Keterangan hasil tugas (opsional).">${escapeHtml(a.keterangan||"")}</textarea><button class="primary complete-task" data-id="${escapeHtml(a.idAktivitas)}" type="button">Konfirmasi Selesai</button><p class="message" id="confirmMsg-${escapeHtml(a.idAktivitas)}"></p></div>`}
     </div>`;
   }).join("");
   list.querySelectorAll(".confirm-arrival-task").forEach(btn=>btn.onclick=()=>handleCourierArrival(btn.dataset.id,btn));
@@ -336,7 +336,7 @@ function renderHistory(){
   const list=$("historyList");
   if(!list)return;
   $("historyEmpty").classList.toggle("hidden",rows.length>0);
-  list.innerHTML=rows.map(a=>`<div class="card courier-task-card history-task-card"><div class="section-title-row"><div><div class="section-title">${escapeHtml(a.jenisTugas||"Tugas")}</div><div class="muted small">${escapeHtml(a.idAktivitas||"")}</div></div><span class="badge">Selesai</span></div><div class="info-grid">${courierInfoHtml(a)}<div class="info-item"><span>Hasil</span><strong>${escapeHtml(a.hasil||"-")}</strong></div><div class="info-item"><span>Waktu Selesai</span><strong>${escapeHtml(displayIndonesiaDateTime(a.waktuSelsai))}</strong></div><div class="info-item"><span>Keterangan</span><strong>${escapeHtml(a.keterangan||"-")}</strong></div></div></div>`).join("");
+  list.innerHTML=rows.map(a=>`<div class="card courier-task-card history-task-card"><div class="section-title-row"><div><div class="section-title">${escapeHtml(a.jenisTugas||a.pekerjaan||"Tugas")}</div><div class="muted small">${escapeHtml(a.idAktivitas||"")}</div></div><span class="badge">Selesai</span></div><div class="info-grid">${courierInfoHtml(a)}<div class="info-item"><span>Hasil</span><strong>${escapeHtml(a.hasil||"-")}</strong></div><div class="info-item"><span>Waktu Selesai</span><strong>${escapeHtml(displayIndonesiaDateTime(a.waktuSelsai))}</strong></div><div class="info-item"><span>Keterangan</span><strong>${escapeHtml(a.keterangan||"-")}</strong></div></div></div>`).join("");
 }
 
 async function handlePendingDeparture(){
@@ -510,7 +510,7 @@ async function handleCreateActivity(e){
     const data=await api("createActivity",{idPengguna:state.user.id,jenisPekerjaan,asal,tujuan,fotoDokumen:await fileToBase64(fotoDokumen),fotoBerangkat:await fileToBase64(fotoBerangkat)});
     clearActivityDraft();
     $("activityForm").reset();
-    msg("activityMsg","Tugas berhasil dibuat. Sekarang konfirmasi berangkat kalau sudah siap.");
+    msg("activityMsg",`Tugas berhasil dibuat: ${data.jenisTugas||jenisTugas}. Sekarang konfirmasi berangkat kalau sudah siap.`);
     await loadCourierTasks();
   }catch(err){msg("activityMsg",err.message);checkStart();}
 }
@@ -884,7 +884,7 @@ function renderReport(rows){
     <td>${statusClass(a.status)}</td>
     <td>${escapeHtml(a.idPengguna||"")}</td>
     <td>${escapeHtml(a.nama||a.kurir||"")}</td>
-    <td>${escapeHtml(a.jenisTugas||"")}</td>
+    <td>${escapeHtml(a.jenisTugas||a.pekerjaan||"")}</td>
     <td>${escapeHtml(a.asal||"")}</td>
     <td>${escapeHtml(a.tujuan||"")}</td>
     <td>${photoLink(a.fotoDokumen)}</td>
@@ -917,7 +917,7 @@ function exportReportExcel(){
     "Status":a.status||"",
     "ID Pengguna":a.idPengguna||"",
     "Nama":a.nama||a.kurir||"",
-    "Jenis Tugas":a.jenisTugas||"",
+    "Jenis Tugas":a.jenisTugas||a.pekerjaan||"",
     "Asal":a.asal||"",
     "Tujuan":a.tujuan||"",
     "Foto Dokumen":a.fotoDokumen||"",
