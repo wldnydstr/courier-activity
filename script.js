@@ -2,15 +2,15 @@ const API_URL = "https://script.google.com/macros/s/AKfycbzsVUudEB169aaXav19C7tN
 
 let state = { user:null, activity:null, locations:[], dashboardActivities:[] };
 let sessionExpiryTimer = null;
-const SESSION_LIMIT = 60 * 60 * 1000;
+// Sesi tidak memiliki batas waktu. Session tetap aktif sampai user logout manual.
+const SESSION_LIMIT = null;
 const SESSION_KEY = "aktivitasKurirSession";
 const SESSION_FALLBACK_KEY = "aktivitasKurirSessionTab";
 const $ = id => document.getElementById(id);
 
 // V69 — tampilan Dashboard/Report dan filter Report diperbarui tanpa mengubah alur sesi.
 // Sesi dibuat sederhana seperti aplikasi Transport Schedule yang sudah terbukti stabil.
-// LocalStorage tidak hilang saat tab/browser ditutup. Sesi hanya dihapus saat logout
-// manual atau umur sesi sudah mencapai 1 jam.
+// LocalStorage tidak hilang saat tab/browser ditutup. Sesi hanya dihapus saat logout manual.
 function parseStoredSession(raw){
   try{
     if(!raw)return null;
@@ -212,18 +212,12 @@ function logoutToLogin(message=""){
 
 function scheduleSessionExpiry(loginAt){
   if(sessionExpiryTimer)clearTimeout(sessionExpiryTimer);
-  const remaining=Number(loginAt)+SESSION_LIMIT-Date.now();
-  if(remaining<=0){logoutToLogin("Sesi kamu telah berakhir. Silakan masuk kembali.");return;}
-  sessionExpiryTimer=setTimeout(()=>logoutToLogin("Sesi kamu telah berakhir. Silakan masuk kembali."),remaining);
+  sessionExpiryTimer=null;
 }
 
 function checkSessionExpiry(){
   const saved=readSession();
   if(!saved)return true;
-  if(Date.now()-Number(saved.loginAt)>=SESSION_LIMIT){
-    logoutToLogin("Sesi kamu telah berakhir. Silakan masuk kembali.");
-    return false;
-  }
   scheduleSessionExpiry(saved.loginAt);
   return true;
 }
@@ -344,10 +338,6 @@ async function restoreSession(){
   const saved=readSession();
   if(!saved)return false;
 
-  if(Date.now()-Number(saved.loginAt)>=SESSION_LIMIT){
-    removeStoredSession();
-    return false;
-  }
 
   state.user=saved.user;
   scheduleSessionExpiry(saved.loginAt);
@@ -426,7 +416,7 @@ async function handleCreateActivity(e){
     const fotoDokumen=await getDraftOrSelectedFile("fotoDokumen");
     const fotoBerangkat=await getDraftOrSelectedFile("fotoBerangkat");
     if(!fotoDokumen||!fotoBerangkat)throw new Error("Foto dokumen dan foto berangkat belum tersedia.");
-    const data=await api("createActivity",{idPengguna:state.user.id,jenisTugas:jenisTugas,asal,tujuan,fotoDokumen:await fileToBase64(fotoDokumen),fotoBerangkat:await fileToBase64(fotoBerangkat)});
+    const data=await api("createActivity",{idPengguna:state.user.id,jenisPekerjaan:jenisTugas,asal,tujuan,fotoDokumen:await fileToBase64(fotoDokumen),fotoBerangkat:await fileToBase64(fotoBerangkat)});
     const departure=await api("confirmDeparture",{idAktivitas:data.idAktivitas,idPengguna:state.user.id});
     state.activity={idAktivitas:data.idAktivitas,status:departure.status,jenisTugas:jenisTugas,asal,tujuan,waktuBerangkat:departure.waktuBerangkat};
     clearActivityDraft();
@@ -711,8 +701,8 @@ async function loadDashboard(){
 
 function applyDashboardFilters(){renderDashboard({activities:state.dashboardActivities||[]});}
 function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
-function setDashboardDefaultDay(){if(!$("dashboardDate").value)$("dashboardDate").value=todayKey();}
-function resetDashboardFilters(){$("dashboardDate").value=todayKey();$("dashboardCourier").value="";applyDashboardFilters();}
+function setDashboardDefaultDay(){$("dashboardDate").value="";}
+function resetDashboardFilters(){$("dashboardDate").value="";$("dashboardCourier").value="";applyDashboardFilters();}
 
 
 function populateReportOptions(data){
