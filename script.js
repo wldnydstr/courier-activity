@@ -296,7 +296,8 @@ function updateCourierNavBadges(){
 
 function courierInfoHtml(a,includeStatus=true){
   const status=includeStatus?`<div class="info-item"><span>Status</span><strong>${escapeHtml(a.status||"-")}</strong></div>`:"";
-  return `<div class="info-item"><span>Jenis Tugas</span><strong>${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</strong></div>
+  return `<div class="info-item"><span>Trip</span><strong>${escapeHtml(a.trip||"-")}</strong></div>
+  <div class="info-item"><span>Jenis Tugas</span><strong>${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</strong></div>
   <div class="info-item"><span>Rute</span><strong>${escapeHtml((a.asal||"-")+" → "+(a.tujuan||"-"))}</strong></div>
   <div class="info-item"><span>Berangkat</span><strong>${escapeHtml(displayIndonesiaDateTime(a.waktuBerangkat))}</strong></div>
   <div class="info-item"><span>Datang</span><strong>${escapeHtml(displayIndonesiaDateTime(a.waktuDatang))}</strong></div>${status}`;
@@ -806,6 +807,7 @@ function renderDashboard(data){
   const photoLink=(url)=>url?`<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Lihat Foto</a>`:"-";
   $("dashboardTable").innerHTML=rows.map(a=>`<tr>
     <td>${escapeHtml(a.kurir||"-")}</td>
+    <td>${escapeHtml(a.trip||"-")}</td>
     <td>${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</td>
     <td>${escapeHtml(a.tujuan||"-")}</td>
     <td>${photoLink(a.fotoDokumen)}</td>
@@ -884,6 +886,7 @@ function renderReport(rows){
     <td>${statusClass(a.status)}</td>
     <td>${escapeHtml(a.idPengguna||"")}</td>
     <td>${escapeHtml(a.nama||a.kurir||"")}</td>
+    <td>${escapeHtml(a.trip||"")}</td>
     <td>${escapeHtml(a.jenisTugas||a.pekerjaan||"")}</td>
     <td>${escapeHtml(a.asal||"")}</td>
     <td>${escapeHtml(a.tujuan||"")}</td>
@@ -917,6 +920,7 @@ function exportReportExcel(){
     "Status":a.status||"",
     "ID Pengguna":a.idPengguna||"",
     "Nama":a.nama||a.kurir||"",
+    "Trip":a.trip||"",
     "Jenis Tugas":a.jenisTugas||a.pekerjaan||"",
     "Asal":a.asal||"",
     "Tujuan":a.tujuan||"",
