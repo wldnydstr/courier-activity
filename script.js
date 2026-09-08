@@ -382,11 +382,11 @@ async function handleCourierComplete(id,btn){
   }catch(err){msg(`confirmMsg-${id}`,err.message);btn.disabled=false;}
 }
 
-async function getSelectedJenisTugas(){
+function getSelectedJenisTugas(){
   return Array.from(document.querySelectorAll('#jenisTugasGroup input[name="jenisTugas"]:checked')).map(cb=>cb.value);
 }
 
-function checkStart(){
+async function checkStart(){
   const dokumenFile=$('fotoDokumen').files[0] || await loadDraftFile("fotoDokumen");
   const berangkatFile=$('fotoBerangkat').files[0] || await loadDraftFile("fotoBerangkat");
   const ready=!!(getSelectedJenisTugas().length&&state.locations.includes($('asalSearch').value.trim())&&state.locations.includes($('tujuanSearch').value.trim())&&dokumenFile&&berangkatFile);
