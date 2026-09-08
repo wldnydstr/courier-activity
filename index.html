@@ -55,15 +55,16 @@
           </div>
         </div>
         <form id="activityForm">
-          <label>Jenis Tugas
-            <select id="jenisTugas" required>
-              <option value="">Pilih jenis tugas</option>
-              <option>Penagihan</option>
-              <option>Kirim PO</option>
-              <option>Ambil BA/PO</option>
-              <option>Tukar Faktur</option>
-            </select>
-          </label>
+          <fieldset class="jenis-tugas-fieldset">
+            <legend>Jenis Tugas <span class="required-mark">*</span></legend>
+            <div id="jenisTugasGroup" class="jenis-tugas-group" aria-label="Pilih satu atau lebih jenis tugas">
+              <label class="jenis-tugas-option"><input type="checkbox" name="jenisTugas" value="Penagihan"><span>Penagihan</span></label>
+              <label class="jenis-tugas-option"><input type="checkbox" name="jenisTugas" value="Kirim PO"><span>Kirim PO</span></label>
+              <label class="jenis-tugas-option"><input type="checkbox" name="jenisTugas" value="Ambil BA/PO"><span>Ambil BA/PO</span></label>
+              <label class="jenis-tugas-option"><input type="checkbox" name="jenisTugas" value="Tukar Faktur"><span>Tukar Faktur</span></label>
+            </div>
+            <div id="jenisTugasHint" class="muted small">Bisa pilih lebih dari satu.</div>
+          </fieldset>
           <div class="two">
             <div class="combo-wrap">
               <label for="asalSearch">Berangkat Dari</label>

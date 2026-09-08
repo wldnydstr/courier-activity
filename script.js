@@ -171,7 +171,10 @@ async function restoreActivityDraft(){
   const draft=readActivityDraft();
   if(!draft)return;
 
-  if(draft.jenisTugas!==undefined)$('jenisTugas').value=draft.jenisTugas||"";
+  if(draft.jenisTugas!==undefined){
+    const selected=Array.isArray(draft.jenisTugas)?draft.jenisTugas:String(draft.jenisTugas||"").split("|").map(v=>v.trim()).filter(Boolean);
+    document.querySelectorAll('#jenisTugasGroup input[name="jenisTugas"]').forEach(cb=>cb.checked=selected.includes(cb.value));
+  }
   if(draft.asal!==undefined)$('asalSearch').value=draft.asal||"";
   if(draft.tujuan!==undefined)$('tujuanSearch').value=draft.tujuan||"";
 
@@ -379,10 +382,14 @@ async function handleCourierComplete(id,btn){
   }catch(err){msg(`confirmMsg-${id}`,err.message);btn.disabled=false;}
 }
 
-async function checkStart(){
+async function getSelectedJenisTugas(){
+  return Array.from(document.querySelectorAll('#jenisTugasGroup input[name="jenisTugas"]:checked')).map(cb=>cb.value);
+}
+
+function checkStart(){
   const dokumenFile=$('fotoDokumen').files[0] || await loadDraftFile("fotoDokumen");
   const berangkatFile=$('fotoBerangkat').files[0] || await loadDraftFile("fotoBerangkat");
-  const ready=!!($('jenisTugas').value&&state.locations.includes($('asalSearch').value.trim())&&state.locations.includes($('tujuanSearch').value.trim())&&dokumenFile&&berangkatFile);
+  const ready=!!(getSelectedJenisTugas().length&&state.locations.includes($('asalSearch').value.trim())&&state.locations.includes($('tujuanSearch').value.trim())&&dokumenFile&&berangkatFile);
   $('startBtn').disabled=!ready;
 }
 
@@ -501,17 +508,17 @@ async function handleCreateActivity(e){
   e.preventDefault();if($("startBtn").disabled)return;
   $("startBtn").disabled=true;msg("activityMsg","Sedang membuat tugas...");
   try{
-    const asal=$("asalSearch").value.trim(), tujuan=$("tujuanSearch").value.trim(), jenisTugas=$("jenisTugas").value.trim();
-    const jenisMap={"penagihan":"Penagihan","kirim po":"Kirim PO","ambil ba/po":"Ambil BA/PO","ambil ba / po":"Ambil BA/PO","tukar faktur":"Tukar Faktur"};
-    const jenisPekerjaan=jenisMap[jenisTugas.toLowerCase().replace(/\s+/g," ")]||"";
-    if(!jenisPekerjaan)throw new Error("Pilih jenis tugas dulu.");
+    const asal=$("asalSearch").value.trim(), tujuan=$("tujuanSearch").value.trim();
+    const jenisTugas=getSelectedJenisTugas();
+    if(!jenisTugas.length)throw new Error("Pilih minimal satu jenis tugas dulu.");
+    const jenisPekerjaan=jenisTugas.join(" | ");
     const fotoDokumen=await getDraftOrSelectedFile("fotoDokumen");
     const fotoBerangkat=await getDraftOrSelectedFile("fotoBerangkat");
     if(!fotoDokumen||!fotoBerangkat)throw new Error("Foto dokumen dan foto berangkat belum tersedia.");
     const data=await api("createActivity",{idPengguna:state.user.id,jenisPekerjaan,asal,tujuan,fotoDokumen:await fileToBase64(fotoDokumen),fotoBerangkat:await fileToBase64(fotoBerangkat)});
     clearActivityDraft();
     $("activityForm").reset();
-    msg("activityMsg",`Tugas berhasil dibuat: ${data.jenisTugas||jenisTugas}. Sekarang konfirmasi berangkat kalau sudah siap.`);
+    msg("activityMsg",`Tugas berhasil dibuat: ${data.jenisTugas||jenisTugas.join(" | ")}. Sekarang konfirmasi berangkat kalau sudah siap.`);
     await loadCourierTasks();
   }catch(err){msg("activityMsg",err.message);checkStart();}
 }
@@ -1018,11 +1025,15 @@ async function handleCreateUser(e){
 $("loginForm").addEventListener("submit",handleLogin);
 $("logoutBtn").addEventListener("click",()=>logoutToLogin(""));
 setupCombo("asalSearch","asalList");setupCombo("tujuanSearch","tujuanList");
-["jenisTugas","asalSearch","tujuanSearch"].forEach(id=>$(id).addEventListener("input",()=>{
+["asalSearch","tujuanSearch"].forEach(id=>$(id).addEventListener("input",()=>{
   writeActivityDraft({[id]:$(id).value});
   checkStart();
 }));
-$("jenisTugas").addEventListener("change",()=>{writeActivityDraft({jenisTugas:$("jenisTugas").value});checkStart();});
+document.querySelectorAll('#jenisTugasGroup input[name="jenisTugas"]').forEach(cb=>cb.addEventListener("change",()=>{
+  const selected=getSelectedJenisTugas();
+  writeActivityDraft({jenisTugas:selected.join("|")});
+  checkStart();
+}));
 $("fotoDokumen").addEventListener("change",()=>{saveDraftFile("fotoDokumen");checkStart();});
 $("fotoBerangkat").addEventListener("change",()=>{saveDraftFile("fotoBerangkat");checkStart();});
 $("activityForm").addEventListener("submit",handleCreateActivity);

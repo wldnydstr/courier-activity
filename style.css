@@ -975,3 +975,14 @@ th {
 /* V14 — alur baru Kurir: Penugasan > Konfirmasi Tugas > Riwayat Tugas */
 .courier-task-list{display:grid;gap:16px}.courier-task-card{padding:20px}.courier-task-card .info-grid{margin-bottom:14px}.confirm-action{border-top:1px solid #ececef;padding-top:15px;display:grid;gap:10px}.confirm-action label{margin:0}.history-task-card{border-left:4px solid #16a34a}.courier-task-card .badge{background:#f5f6f7}.courier-task-card .primary{width:100%}.page-heading{padding:4px 2px 2px}.nav-btn{transition:transform .15s ease,box-shadow .15s ease}.nav-btn:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(20,25,35,.07)}
 @media(min-width:700px){.courier-task-card .info-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.courier-task-card .confirm-action{max-width:720px}}
+
+
+/* V28 — multi-select jenis tugas */
+.jenis-tugas-fieldset{border:0;padding:0;margin:0 0 16px;min-width:0}
+.jenis-tugas-fieldset legend{font-size:13px;font-weight:800;margin-bottom:8px;padding:0}
+.required-mark{font-weight:800}
+.jenis-tugas-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.jenis-tugas-option{display:flex;align-items:center;gap:9px;margin:0;padding:11px 12px;border:1px solid #e3e5e8;border-radius:10px;background:#fff;cursor:pointer}
+.jenis-tugas-option input{width:auto;margin:0}
+.jenis-tugas-option:has(input:checked){border-color:#9aa3ad;box-shadow:0 0 0 2px rgba(20,25,35,.06)}
+@media(max-width:560px){.jenis-tugas-group{grid-template-columns:1fr}}
