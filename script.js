@@ -1,6 +1,6 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbzsVUudEB169aaXav19C7tNPTL6RpPNqQv5E_o6Bn368zbAgetT4L2N7ZZwjA4WTTcv/exec";
 
-let state = { user:null, activity:null, locations:[], dashboardActivities:[] };
+let state = { user:null, activity:null, locations:[], dashboardActivities:[], courierTasks:{pendingDeparture:null,confirmations:[],history:[]} };
 let sessionExpiryTimer = null;
 // Sesi tidak memiliki batas waktu. Session tetap aktif sampai user logout manual.
 const SESSION_LIMIT = null;
@@ -195,7 +195,7 @@ function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;",
 function clearSession(){
   if(sessionExpiryTimer){clearTimeout(sessionExpiryTimer);sessionExpiryTimer=null;}
   removeStoredSession();
-  state={user:null,activity:null,locations:[],dashboardActivities:[]};
+  state={user:null,activity:null,locations:[],dashboardActivities:[],courierTasks:{pendingDeparture:null,confirmations:[],history:[]}};
 }
 
 function logoutToLogin(message=""){
@@ -204,9 +204,8 @@ function logoutToLogin(message=""){
   $("appView").classList.add("hidden");
   $("loginView").classList.remove("hidden");
   $("loginForm").reset();
-  resetCourierCards();
-  $("resultForm").reset();
-  $("userForm").reset();
+  if($("activityForm"))$("activityForm").reset();
+  if($("userForm"))$("userForm").reset();
   msg("loginMsg",message);
 }
 
@@ -223,10 +222,10 @@ function checkSessionExpiry(){
 }
 
 function setView(view){
-  ["courierView","dashboardView","reportView","usersView"].forEach(id=>$(id).classList.add("hidden"));
+  ["courierView","confirmationView","historyView","dashboardView","reportView","usersView"].forEach(id=>$(id).classList.add("hidden"));
   $(view).classList.remove("hidden");
-  ["navActivity","navDashboard","navReport","navUsers"].forEach(id=>$(id).classList.remove("active"));
-  const nav={courierView:"navActivity",dashboardView:"navDashboard",reportView:"navReport",usersView:"navUsers"}[view];
+  ["navActivity","navConfirm","navHistory","navDashboard","navReport","navUsers"].forEach(id=>$(id).classList.remove("active"));
+  const nav={courierView:"navActivity",confirmationView:"navConfirm",historyView:"navHistory",dashboardView:"navDashboard",reportView:"navReport",usersView:"navUsers"}[view];
   if(nav)$(nav).classList.add("active");
   if(state.user){
     try{
@@ -238,11 +237,16 @@ function setView(view){
 
 function setupNav(role){
   $("nav").classList.remove("hidden");
-  $("navActivity").classList.toggle("hidden",role!=="Kurir");
+  const isCourier=role==="Kurir";
+  $("navActivity").classList.toggle("hidden",!isCourier);
+  $("navConfirm").classList.toggle("hidden",!isCourier);
+  $("navHistory").classList.toggle("hidden",!isCourier);
   $("navDashboard").classList.toggle("hidden",role!=="Admin"&&role!=="Super User");
   $("navReport").classList.toggle("hidden",role!=="Admin"&&role!=="Super User");
   $("navUsers").classList.toggle("hidden",role!=="Super User");
-  $("navActivity").onclick=()=>setView("courierView");
+  $("navActivity").onclick=async()=>{setView("courierView");await loadCourierTasks();await restoreActivityDraft();};
+  $("navConfirm").onclick=async()=>{setView("confirmationView");await loadCourierTasks();};
+  $("navHistory").onclick=async()=>{setView("historyView");await loadCourierTasks();};
   $("navDashboard").onclick=async()=>{setView("dashboardView");setDashboardDefaultDay();await loadDashboard();requestAnimationFrame(syncDashboardFreeze);};
   $("navReport").onclick=async()=>{setView("reportView");renderReport([]);await loadReportOptions();await loadReport();};
   $("navUsers").onclick=async()=>{setView("usersView");await loadUsers();};
@@ -265,23 +269,113 @@ document.addEventListener("click",e=>{if(!list.contains(e.target)&&e.target!==in
 
 async function loadLocations(){const data=await api("getLocations");state.locations=data.locations||[];}
 
-async function loadActiveActivity(){
+async function loadCourierTasks(){
   try{
-    const data=await api("getActiveActivity",{idPengguna:state.user.id});
-    if(data.activity){
-      state.activity=data.activity;
-      showActiveState(state.activity);
-      if(state.activity.status==="Lagi Diproses"){
-        if(state.activity.hasil){$("hasil").value=state.activity.hasil;}
-        if(state.activity.keterangan){$("keterangan").value=state.activity.keterangan;}
-        if(state.activity.hasil){$("saveResultBtn").classList.add("hidden");$("completeBtn").classList.remove("hidden");}
-      }
-    }else{
-      resetCourierCards();
-    }
+    const data=await api("getCourierTasks",{idPengguna:state.user.id});
+    state.courierTasks={
+      pendingDeparture:data.pendingDeparture||null,
+      confirmations:Array.isArray(data.confirmations)?data.confirmations:[],
+      history:Array.isArray(data.history)?data.history:[]
+    };
+    renderPendingDeparture();
+    renderConfirmations();
+    renderHistory();
+    updateCourierNavBadges();
+    return state.courierTasks;
   }catch(err){
     msg("activityMsg",err.message);
+    return state.courierTasks;
   }
+}
+
+function updateCourierNavBadges(){
+  const count=(state.courierTasks.confirmations||[]).length;
+  const nav=$("navConfirm");
+  if(nav)nav.textContent=count?`Konfirmasi Tugas (${count})`:"Konfirmasi Tugas";
+}
+
+function courierInfoHtml(a,includeStatus=true){
+  const status=includeStatus?`<div class="info-item"><span>Status</span><strong>${escapeHtml(a.status||"-")}</strong></div>`:"";
+  return `<div class="info-item"><span>Jenis Tugas</span><strong>${escapeHtml(a.jenisTugas||"-")}</strong></div>
+  <div class="info-item"><span>Rute</span><strong>${escapeHtml((a.asal||"-")+" → "+(a.tujuan||"-"))}</strong></div>
+  <div class="info-item"><span>Berangkat</span><strong>${escapeHtml(a.waktuBerangkat||"-")}</strong></div>
+  <div class="info-item"><span>Datang</span><strong>${escapeHtml(a.waktuDatang||"-")}</strong></div>${status}`;
+}
+
+function renderPendingDeparture(){
+  const a=state.courierTasks.pendingDeparture;
+  const card=$("pendingDepartureCard");
+  const form=$("activityCard");
+  if(!a){card.classList.add("hidden");form.classList.remove("hidden");return;}
+  card.classList.remove("hidden");form.classList.add("hidden");
+  $("pendingDepartureInfo").innerHTML=courierInfoHtml(a,false);
+  $("pendingDepartureMsg").textContent="";
+  $("pendingDepartureBtn").disabled=false;
+}
+
+function renderConfirmations(){
+  const rows=state.courierTasks.confirmations||[];
+  const list=$("confirmationList");
+  if(!list)return;
+  $("confirmationEmpty").classList.toggle("hidden",rows.length>0);
+  list.innerHTML=rows.map(a=>{
+    const arrivalNeeded=a.status==="Lagi Jalan";
+    const resultReady=!!a.hasil;
+    return `<div class="card courier-task-card">
+      <div class="section-title-row"><div><div class="section-title">${escapeHtml(a.jenisTugas||"Tugas")}</div><div class="muted small">${escapeHtml(a.idAktivitas||"")}</div></div><span class="badge">${escapeHtml(a.status||"")}</span></div>
+      <div class="info-grid">${courierInfoHtml(a)}</div>
+      ${arrivalNeeded?`<div class="confirm-action"><div class="muted small">Satu konfirmasi lagi: foto saat tiba.</div><button class="primary confirm-arrival-task" data-id="${escapeHtml(a.idAktivitas)}" type="button">Konfirmasi Datang</button><p class="message" id="confirmMsg-${escapeHtml(a.idAktivitas)}"></p></div>`:`<div class="confirm-action"><label>Hasil<select class="task-result" data-id="${escapeHtml(a.idAktivitas)}"><option value="">Pilih hasil</option><option ${a.hasil==="Berhasil"?"selected":""}>Berhasil</option><option ${a.hasil==="Sebagian Berhasil"?"selected":""}>Sebagian Berhasil</option><option ${a.hasil==="Tidak Berhasil"?"selected":""}>Tidak Berhasil</option></select></label><label>Keterangan<textarea class="task-note" data-id="${escapeHtml(a.idAktivitas)}" rows="3" placeholder="Keterangan hasil tugas (opsional).">${escapeHtml(a.keterangan||"")}</textarea><button class="primary complete-task" data-id="${escapeHtml(a.idAktivitas)}" type="button">Konfirmasi Selesai</button><p class="message" id="confirmMsg-${escapeHtml(a.idAktivitas)}"></p></div>`}
+    </div>`;
+  }).join("");
+  list.querySelectorAll(".confirm-arrival-task").forEach(btn=>btn.onclick=()=>handleCourierArrival(btn.dataset.id,btn));
+  list.querySelectorAll(".complete-task").forEach(btn=>btn.onclick=()=>handleCourierComplete(btn.dataset.id,btn));
+}
+
+function renderHistory(){
+  const rows=state.courierTasks.history||[];
+  const list=$("historyList");
+  if(!list)return;
+  $("historyEmpty").classList.toggle("hidden",rows.length>0);
+  list.innerHTML=rows.map(a=>`<div class="card courier-task-card history-task-card"><div class="section-title-row"><div><div class="section-title">${escapeHtml(a.jenisTugas||"Tugas")}</div><div class="muted small">${escapeHtml(a.idAktivitas||"")}</div></div><span class="badge">Selesai</span></div><div class="info-grid">${courierInfoHtml(a)}<div class="info-item"><span>Hasil</span><strong>${escapeHtml(a.hasil||"-")}</strong></div><div class="info-item"><span>Waktu Selesai</span><strong>${escapeHtml(a.waktuSelsai||"-")}</strong></div><div class="info-item"><span>Keterangan</span><strong>${escapeHtml(a.keterangan||"-")}</strong></div></div></div>`).join("");
+}
+
+async function handlePendingDeparture(){
+  const a=state.courierTasks.pendingDeparture;
+  if(!a)return;
+  const btn=$("pendingDepartureBtn");btn.disabled=true;msg("pendingDepartureMsg","Sedang mencatat keberangkatan...");
+  try{
+    const data=await api("confirmDeparture",{idAktivitas:a.idAktivitas,idPengguna:state.user.id});
+    msg("pendingDepartureMsg","");
+    await loadCourierTasks();
+    setView("confirmationView");
+  }catch(err){msg("pendingDepartureMsg",err.message);btn.disabled=false;}
+}
+
+async function handleCourierArrival(id,btn){
+  const input=document.createElement("input");input.type="file";input.accept="image/*";input.capture="environment";input.style.display="none";document.body.appendChild(input);input.click();
+  input.onchange=async()=>{
+    if(!input.files[0]){input.remove();return;}
+    btn.disabled=true;msg(`confirmMsg-${id}`,"Sedang menyimpan foto saat tiba...");
+    try{
+      await api("confirmArrival",{idAktivitas:id,idPengguna:state.user.id,fotoDatang:await fileToBase64(input.files[0])});
+      await loadCourierTasks();
+      setView("confirmationView");
+    }catch(err){msg(`confirmMsg-${id}`,err.message);btn.disabled=false;}
+    input.remove();
+  };
+}
+
+async function handleCourierComplete(id,btn){
+  const resultEl=document.querySelector(`.task-result[data-id="${CSS.escape(id)}"]`);
+  const noteEl=document.querySelector(`.task-note[data-id="${CSS.escape(id)}"]`);
+  const hasil=resultEl?.value||"";
+  if(!hasil){msg(`confirmMsg-${id}`,"Pilih hasil tugas terlebih dahulu.");return;}
+  btn.disabled=true;msg(`confirmMsg-${id}`,"Sedang menyelesaikan tugas...");
+  try{
+    await api("completeTask",{idAktivitas:id,idPengguna:state.user.id,hasil,keterangan:noteEl?.value.trim()||""});
+    await loadCourierTasks();
+    setView("confirmationView");
+  }catch(err){msg(`confirmMsg-${id}`,err.message);btn.disabled=false;}
 }
 
 async function checkStart(){
@@ -352,15 +446,9 @@ async function restoreSession(){
   try{
     if(state.user.peran==="Kurir"){
       await loadLocations();
-      if(lastView==="courierView"){
-        setView("courierView");
-        await loadActiveActivity();
-        await restoreActivityDraft();
-      }else{
-        setView("courierView");
-        await loadActiveActivity();
-        await restoreActivityDraft();
-      }
+      if(lastView==="confirmationView"){setView("confirmationView");await loadCourierTasks();}
+      else if(lastView==="historyView"){setView("historyView");await loadCourierTasks();}
+      else{setView("courierView");await loadCourierTasks();await restoreActivityDraft();}
     }else if(lastView==="reportView"){
       setView("reportView");
       renderReport([]);
@@ -403,24 +491,24 @@ async function handleLogin(e){
     const loginAt=Date.now(); writeSession({user,loginAt,lastView:user.peran==="Kurir"?"courierView":"dashboardView"}); scheduleSessionExpiry(loginAt);
     $("loginView").classList.add("hidden");$("appView").classList.remove("hidden");
     setWelcome(user.nama);setupNav(user.peran);
-    if(user.peran==="Kurir"){await loadLocations();setView("courierView");await loadActiveActivity();await restoreActivityDraft();}
+    if(user.peran==="Kurir"){await loadLocations();setView("courierView");await loadCourierTasks();await restoreActivityDraft();}
     else{setView("dashboardView");await loadDashboard();}
   }catch(err){msg("loginMsg",err.message)}
 }
 
 async function handleCreateActivity(e){
   e.preventDefault();if($("startBtn").disabled)return;
-  $("startBtn").disabled=true;msg("activityMsg","Sedang menyimpan aktivitas...");
+  $("startBtn").disabled=true;msg("activityMsg","Sedang membuat tugas...");
   try{
     const asal=$("asalSearch").value.trim(), tujuan=$("tujuanSearch").value.trim(), jenisTugas=$("jenisTugas").value;
     const fotoDokumen=await getDraftOrSelectedFile("fotoDokumen");
     const fotoBerangkat=await getDraftOrSelectedFile("fotoBerangkat");
     if(!fotoDokumen||!fotoBerangkat)throw new Error("Foto dokumen dan foto berangkat belum tersedia.");
     const data=await api("createActivity",{idPengguna:state.user.id,jenisPekerjaan:jenisTugas,asal,tujuan,fotoDokumen:await fileToBase64(fotoDokumen),fotoBerangkat:await fileToBase64(fotoBerangkat)});
-    const departure=await api("confirmDeparture",{idAktivitas:data.idAktivitas,idPengguna:state.user.id});
-    state.activity={idAktivitas:data.idAktivitas,status:departure.status,jenisTugas:jenisTugas,asal,tujuan,waktuBerangkat:departure.waktuBerangkat};
     clearActivityDraft();
-    $("activityForm").classList.add("hidden");$("activityCard").classList.add("hidden");$("activeCard").classList.remove("hidden");showActivityInfo(state.activity);msg("activityMsg","");
+    $("activityForm").reset();
+    msg("activityMsg","Tugas berhasil dibuat. Sekarang konfirmasi berangkat kalau sudah siap.");
+    await loadCourierTasks();
   }catch(err){msg("activityMsg",err.message);checkStart();}
 }
 
@@ -924,9 +1012,7 @@ $("jenisTugas").addEventListener("change",()=>{writeActivityDraft({jenisTugas:$(
 $("fotoDokumen").addEventListener("change",()=>{saveDraftFile("fotoDokumen");checkStart();});
 $("fotoBerangkat").addEventListener("change",()=>{saveDraftFile("fotoBerangkat");checkStart();});
 $("activityForm").addEventListener("submit",handleCreateActivity);
-$("arrivalBtn").addEventListener("click",handleArrival);
-$("resultForm").addEventListener("submit",handleSaveResult);
-$("completeBtn").addEventListener("click",handleComplete);
+$("pendingDepartureBtn").addEventListener("click",handlePendingDeparture);
 $("applyDashboardFilterBtn").addEventListener("click",applyDashboardFilters);
 $("resetDashboardFilterBtn").addEventListener("click",resetDashboardFilters);
 $("refreshReportBtn").addEventListener("click",async()=>{await loadReportOptions();msg("reportMsg","");});

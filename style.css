@@ -970,3 +970,8 @@ th {
 @media(max-width:560px){
  .activity-chart{gap:12px}.chart-col{min-width:105px}.chart-bar{width:18px}.chart-series{gap:3px}.category-chart-row{grid-template-columns:110px 1fr 34px;gap:9px}.category-chart-track{height:12px}
 }
+
+
+/* V14 — alur baru Kurir: Penugasan > Konfirmasi Tugas > Riwayat Tugas */
+.courier-task-list{display:grid;gap:16px}.courier-task-card{padding:20px}.courier-task-card .info-grid{margin-bottom:14px}.confirm-action{border-top:1px solid #ececef;padding-top:15px;display:grid;gap:10px}.confirm-action label{margin:0}.history-task-card{border-left:4px solid #16a34a}.courier-task-card .badge{background:#f5f6f7}.courier-task-card .primary{width:100%}.page-heading{padding:4px 2px 2px}.nav-btn{transition:transform .15s ease,box-shadow .15s ease}.nav-btn:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(20,25,35,.07)}
+@media(min-width:700px){.courier-task-card .info-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.courier-task-card .confirm-action{max-width:720px}}

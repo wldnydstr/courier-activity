@@ -37,6 +37,8 @@
 
     <nav id="nav" class="nav hidden">
       <button id="navActivity" class="nav-btn" type="button">Penugasan</button>
+      <button id="navConfirm" class="nav-btn hidden" type="button">Konfirmasi Tugas</button>
+      <button id="navHistory" class="nav-btn hidden" type="button">Riwayat Tugas</button>
       <button id="navDashboard" class="nav-btn hidden" type="button">Dashboard</button>
       <button id="navReport" class="nav-btn hidden" type="button">Laporan</button>
       <button id="navUsers" class="nav-btn hidden" type="button">Manajemen Pengguna</button>
@@ -49,7 +51,7 @@
         <div class="section-title-row">
           <div>
             <div class="section-title">Tambah Aktivitas</div>
-            <div class="muted small">Buat aktivitas di sini.</div>
+            <div class="muted small">Buat tugas baru di sini.</div>
           </div>
         </div>
         <form id="activityForm">
@@ -62,7 +64,6 @@
               <option>Tukar Faktur</option>
             </select>
           </label>
-
           <div class="two">
             <div class="combo-wrap">
               <label for="asalSearch">Asal</label>
@@ -75,7 +76,6 @@
               <div id="tujuanList" class="combo-list hidden"></div>
             </div>
           </div>
-
           <label>Foto Dokumen
             <input id="fotoDokumen" type="file" accept="image/*" required>
             <p id="fotoDokumenDraft" class="draft-file-message"></p>
@@ -84,49 +84,41 @@
             <input id="fotoBerangkat" type="file" accept="image/*" required>
             <p id="fotoBerangkatDraft" class="draft-file-message"></p>
           </label>
-          <button id="startBtn" class="primary" type="submit" disabled>Konfirmasi Berangkat</button>
+          <button id="startBtn" class="primary" type="submit" disabled>Buat Tugas</button>
           <p id="activityMsg" class="message"></p>
         </form>
       </div>
 
-      <div id="activeCard" class="card hidden">
+      <div id="pendingDepartureCard" class="card hidden">
         <div class="section-title-row">
           <div>
-            <div class="section-title">Aktivitas Kamu</div>
-            <div class="muted small">Pantau proses tugas sampai selesai.</div>
+            <div class="section-title">Tugas Menunggu Berangkat</div>
+            <div class="muted small">Konfirmasi berangkat kalau kamu sudah siap jalan.</div>
           </div>
-          <span id="activeStatus" class="badge"></span>
+          <span class="badge">Menunggu Berangkat</span>
         </div>
-        <div id="activeInfo" class="info-grid"></div>
-        <button id="arrivalBtn" class="primary" type="button">Konfirmasi Datang</button>
-        <p id="arrivalMsg" class="message"></p>
+        <div id="pendingDepartureInfo" class="info-grid"></div>
+        <button id="pendingDepartureBtn" class="primary" type="button">Konfirmasi Berangkat</button>
+        <p id="pendingDepartureMsg" class="message"></p>
       </div>
+    </section>
 
-      <div id="resultCard" class="card hidden">
-        <div class="section-title-row">
-          <div>
-            <div class="section-title">Selesaikan Tugas</div>
-            <div id="arrivalTime" class="muted small"></div>
-          </div>
-          <span id="resultStatus" class="badge"></span>
-        </div>
-        <form id="resultForm">
-          <label>Hasil
-            <select id="hasil" required>
-              <option value="">Pilih hasil</option>
-              <option>Berhasil</option>
-              <option>Sebagian Berhasil</option>
-              <option>Tidak Berhasil</option>
-            </select>
-          </label>
-          <label>Keterangan
-            <textarea id="keterangan" rows="4" placeholder="Masukkan keterangan hasil tugas (opsional)."></textarea>
-          </label>
-          <button id="saveResultBtn" class="primary" type="submit">Selesaikan Tugas</button>
-          <button id="completeBtn" class="primary hidden" type="button">Selesaikan Tugas</button>
-          <p id="resultMsg" class="message"></p>
-        </form>
+    <section id="confirmationView" class="hidden">
+      <div class="page-heading">
+        <div class="section-title">Konfirmasi Tugas</div>
+        <div class="muted small">Tugas yang sudah berangkat akan diproses di sini sampai selesai.</div>
       </div>
+      <div id="confirmationEmpty" class="card empty hidden">Belum ada tugas yang perlu dikonfirmasi.</div>
+      <div id="confirmationList" class="courier-task-list"></div>
+    </section>
+
+    <section id="historyView" class="hidden">
+      <div class="page-heading">
+        <div class="section-title">Riwayat Tugas</div>
+        <div class="muted small">Semua tugas kamu yang sudah selesai.</div>
+      </div>
+      <div id="historyEmpty" class="card empty hidden">Belum ada riwayat tugas.</div>
+      <div id="historyList" class="courier-task-list"></div>
     </section>
 
     <section id="dashboardView" class="hidden">
