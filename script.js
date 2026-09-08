@@ -298,8 +298,8 @@ function courierInfoHtml(a,includeStatus=true){
   const status=includeStatus?`<div class="info-item"><span>Status</span><strong>${escapeHtml(a.status||"-")}</strong></div>`:"";
   return `<div class="info-item"><span>Jenis Tugas</span><strong>${escapeHtml(a.jenisTugas||"-")}</strong></div>
   <div class="info-item"><span>Rute</span><strong>${escapeHtml((a.asal||"-")+" → "+(a.tujuan||"-"))}</strong></div>
-  <div class="info-item"><span>Berangkat</span><strong>${escapeHtml(a.waktuBerangkat||"-")}</strong></div>
-  <div class="info-item"><span>Datang</span><strong>${escapeHtml(a.waktuDatang||"-")}</strong></div>${status}`;
+  <div class="info-item"><span>Berangkat</span><strong>${escapeHtml(displayIndonesiaDateTime(a.waktuBerangkat))}</strong></div>
+  <div class="info-item"><span>Datang</span><strong>${escapeHtml(displayIndonesiaDateTime(a.waktuDatang))}</strong></div>${status}`;
 }
 
 function renderPendingDeparture(){
@@ -336,7 +336,7 @@ function renderHistory(){
   const list=$("historyList");
   if(!list)return;
   $("historyEmpty").classList.toggle("hidden",rows.length>0);
-  list.innerHTML=rows.map(a=>`<div class="card courier-task-card history-task-card"><div class="section-title-row"><div><div class="section-title">${escapeHtml(a.jenisTugas||"Tugas")}</div><div class="muted small">${escapeHtml(a.idAktivitas||"")}</div></div><span class="badge">Selesai</span></div><div class="info-grid">${courierInfoHtml(a)}<div class="info-item"><span>Hasil</span><strong>${escapeHtml(a.hasil||"-")}</strong></div><div class="info-item"><span>Waktu Selesai</span><strong>${escapeHtml(a.waktuSelsai||"-")}</strong></div><div class="info-item"><span>Keterangan</span><strong>${escapeHtml(a.keterangan||"-")}</strong></div></div></div>`).join("");
+  list.innerHTML=rows.map(a=>`<div class="card courier-task-card history-task-card"><div class="section-title-row"><div><div class="section-title">${escapeHtml(a.jenisTugas||"Tugas")}</div><div class="muted small">${escapeHtml(a.idAktivitas||"")}</div></div><span class="badge">Selesai</span></div><div class="info-grid">${courierInfoHtml(a)}<div class="info-item"><span>Hasil</span><strong>${escapeHtml(a.hasil||"-")}</strong></div><div class="info-item"><span>Waktu Selesai</span><strong>${escapeHtml(displayIndonesiaDateTime(a.waktuSelsai))}</strong></div><div class="info-item"><span>Keterangan</span><strong>${escapeHtml(a.keterangan||"-")}</strong></div></div></div>`).join("");
 }
 
 async function handlePendingDeparture(){
@@ -399,7 +399,7 @@ function resetCourierCards(clearDraft=false){
 }
 
 function showActivityInfo(activity){
-  $("activeInfo").innerHTML=`<div class="info-item"><span>Tipe Tugas</span><strong>${escapeHtml(activity.jenisTugas)}</strong></div><div class="info-item"><span>Rute</span><strong>${escapeHtml(activity.asal)} → ${escapeHtml(activity.tujuan)}</strong></div><div class="info-item"><span>Berangkat</span><strong>${escapeHtml(activity.waktuBerangkat||"-")}</strong></div><div class="info-item"><span>Status</span><strong>${escapeHtml(activity.status)}</strong></div>`;
+  $("activeInfo").innerHTML=`<div class="info-item"><span>Tipe Tugas</span><strong>${escapeHtml(activity.jenisTugas)}</strong></div><div class="info-item"><span>Rute</span><strong>${escapeHtml(activity.asal)} → ${escapeHtml(activity.tujuan)}</strong></div><div class="info-item"><span>Berangkat</span><strong>${escapeHtml(displayIndonesiaDateTime(activity.waktuBerangkat))}</strong></div><div class="info-item"><span>Status</span><strong>${escapeHtml(activity.status)}</strong></div>`;
   $("activeStatus").textContent=activity.status;
 }
 
@@ -414,7 +414,7 @@ function showActiveState(activity){
     $("activeCard").classList.add("hidden");
     $("resultCard").classList.remove("hidden");
     $("resultStatus").textContent=activity.status;
-    $("arrivalTime").textContent=`Sampai: ${activity.waktuDatang||"-"}`;
+    $("arrivalTime").textContent=`Sampai: ${displayIndonesiaDateTime(activity.waktuDatang)}`;
   }
 }
 
@@ -500,11 +500,14 @@ async function handleCreateActivity(e){
   e.preventDefault();if($("startBtn").disabled)return;
   $("startBtn").disabled=true;msg("activityMsg","Sedang membuat tugas...");
   try{
-    const asal=$("asalSearch").value.trim(), tujuan=$("tujuanSearch").value.trim(), jenisTugas=$("jenisTugas").value;
+    const asal=$("asalSearch").value.trim(), tujuan=$("tujuanSearch").value.trim(), jenisTugas=$("jenisTugas").value.trim();
+    const jenisMap={"penagihan":"Penagihan","kirim po":"Kirim PO","ambil ba/po":"Ambil BA/PO","ambil ba / po":"Ambil BA/PO","tukar faktur":"Tukar Faktur"};
+    const jenisPekerjaan=jenisMap[jenisTugas.toLowerCase().replace(/\s+/g," ")]||"";
+    if(!jenisPekerjaan)throw new Error("Pilih jenis tugas dulu.");
     const fotoDokumen=await getDraftOrSelectedFile("fotoDokumen");
     const fotoBerangkat=await getDraftOrSelectedFile("fotoBerangkat");
     if(!fotoDokumen||!fotoBerangkat)throw new Error("Foto dokumen dan foto berangkat belum tersedia.");
-    const data=await api("createActivity",{idPengguna:state.user.id,jenisPekerjaan:jenisTugas,asal,tujuan,fotoDokumen:await fileToBase64(fotoDokumen),fotoBerangkat:await fileToBase64(fotoBerangkat)});
+    const data=await api("createActivity",{idPengguna:state.user.id,jenisPekerjaan,asal,tujuan,fotoDokumen:await fileToBase64(fotoDokumen),fotoBerangkat:await fileToBase64(fotoBerangkat)});
     clearActivityDraft();
     $("activityForm").reset();
     msg("activityMsg","Tugas berhasil dibuat. Sekarang konfirmasi berangkat kalau sudah siap.");
@@ -525,7 +528,7 @@ async function handleArrival(){
       $("activeCard").classList.add("hidden");
       $("resultCard").classList.remove("hidden");
       $("resultStatus").textContent="Lagi Diproses";
-      $("arrivalTime").textContent=`Sampai: ${state.activity.waktuDatang}`;
+      $("arrivalTime").textContent=`Sampai: ${displayIndonesiaDateTime(state.activity.waktuDatang)}`;
       $("hasil").value="";
       $("keterangan").value="";
       $("saveResultBtn").classList.remove("hidden");
@@ -730,14 +733,38 @@ function renderActivityChart(rows){
   }).join("");
 }
 
-function displayTimeOnly(value){
-  if(!value)return "-";
+function parseIndonesiaDateTime(value){
+  if(!value)return null;
+  if(value instanceof Date && !isNaN(value.getTime()))return value;
   const text=String(value).trim();
-  const d=new Date(text);
-  if(!isNaN(d.getTime()))return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
-  const m=text.match(/(?:T|\\s)(\\d{1,2}):(\\d{2})(?::\\d{2})?/);
-  if(m)return `${String(m[1]).padStart(2,"0")}:${m[2]}`;
-  return text;
+  // Spreadsheet/backend format: DD/MM/YYYY HH:mm:ss
+  let m=text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  if(m){
+    const d=new Date(Number(m[3]),Number(m[2])-1,Number(m[1]),Number(m[4]||0),Number(m[5]||0),Number(m[6]||0));
+    return isNaN(d.getTime())?null:d;
+  }
+  // ISO timestamps: respect the supplied timezone when present.
+  const iso=new Date(text);
+  return isNaN(iso.getTime())?null:iso;
+}
+
+function displayIndonesiaDateTime(value){
+  const d=parseIndonesiaDateTime(value);
+  if(!d)return value?String(value).trim():"-";
+  return new Intl.DateTimeFormat("id-ID",{
+    timeZone:"Asia/Jakarta", day:"2-digit", month:"2-digit", year:"numeric",
+    hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false
+  }).format(d).replace(/\./g,":");
+}
+
+function displayIndonesiaTime(value){
+  const d=parseIndonesiaDateTime(value);
+  if(!d)return value?String(value).trim():"-";
+  return new Intl.DateTimeFormat("id-ID",{timeZone:"Asia/Jakarta",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(d).replace(/\./g,":");
+}
+
+function displayTimeOnly(value){
+  return displayIndonesiaTime(value);
 }
 
 function displayDuration(value){
@@ -846,24 +873,7 @@ async function loadReportOptions(){
 let currentReportRows=[];
 
 function displayReportTime(value){
-  if(!value)return "-";
-  const text=String(value).trim();
-  const d=new Date(text);
-  if(!isNaN(d.getTime())){
-    const dd=String(d.getDate()).padStart(2,"0");
-    const mm=String(d.getMonth()+1).padStart(2,"0");
-    const yyyy=d.getFullYear();
-    const hh=String(d.getHours()).padStart(2,"0");
-    const mi=String(d.getMinutes()).padStart(2,"0");
-    const ss=String(d.getSeconds()).padStart(2,"0");
-    return `${mm}/${dd}/${yyyy} ${hh}:${mi}:${ss}`;
-  }
-  const m=text.match(/(\d{1,2})[\/:](\d{1,2})[\/:](\d{2,4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-  if(m){
-    const year=String(m[3]).length===2?`20${m[3]}`:m[3];
-    return `${String(m[2]).padStart(2,"0")}/${String(m[1]).padStart(2,"0")}/${year} ${String(m[4]).padStart(2,"0")}:${m[5]}:${m[6]||"00"}`;
-  }
-  return text;
+  return displayIndonesiaDateTime(value);
 }
 
 function renderReport(rows){
