@@ -314,7 +314,9 @@ function renderPendingDeparture(){
   card.classList.remove("hidden");form.classList.add("hidden");
   $("pendingDepartureInfo").innerHTML=courierInfoHtml(a,false);
   $("pendingDepartureMsg").textContent="";
-  $("pendingDepartureBtn").disabled=false;
+  const ready=!!(a.fotoDokumen&&a.fotoBerangkat);
+  $("pendingDepartureBtn").disabled=!ready;
+  if(!ready) $("pendingDepartureMsg").textContent="Tugas belum lengkap karena foto dokumen atau foto berangkat belum tersedia.";
 }
 
 function renderConfirmations(){
@@ -324,14 +326,52 @@ function renderConfirmations(){
   $("confirmationEmpty").classList.toggle("hidden",rows.length>0);
   list.innerHTML=rows.map(a=>{
     const arrivalNeeded=a.status==="Lagi Jalan";
+    const safeId=escapeHtml(a.idAktivitas||"");
+    if(arrivalNeeded){
+      return `<div class="card courier-task-card">
+        <div class="section-title-row"><div><div class="section-title">${escapeHtml(a.jenisTugas||a.pekerjaan||"Tugas")}</div><div class="muted small">${safeId}</div></div><span class="badge">${escapeHtml(a.status||"")}</span></div>
+        <div class="info-grid">${courierInfoHtml(a)}</div>
+        <div class="confirm-action">
+          <div class="muted small"><strong>Konfirmasi 2 dari 3:</strong> tugas sedang berjalan. Foto saat tiba wajib diisi sebelum konfirmasi.</div>
+          <label>Foto Saat Datang <span class="required-mark">*</span>
+            <input class="task-arrival-photo" data-id="${safeId}" type="file" accept="image/*" capture="environment" required>
+          </label>
+          <button class="primary confirm-arrival-task" data-id="${safeId}" type="button" disabled>Konfirmasi Datang</button>
+          <p class="message" id="confirmMsg-${safeId}"></p>
+        </div>
+      </div>`;
+    }
     const resultReady=!!a.hasil;
+    const noteReady=!!String(a.keterangan||"").trim();
+    const completeReady=resultReady&&noteReady;
     return `<div class="card courier-task-card">
-      <div class="section-title-row"><div><div class="section-title">${escapeHtml(a.jenisTugas||a.pekerjaan||"Tugas")}</div><div class="muted small">${escapeHtml(a.idAktivitas||"")}</div></div><span class="badge">${escapeHtml(a.status||"")}</span></div>
+      <div class="section-title-row"><div><div class="section-title">${escapeHtml(a.jenisTugas||a.pekerjaan||"Tugas")}</div><div class="muted small">${safeId}</div></div><span class="badge">${escapeHtml(a.status||"")}</span></div>
       <div class="info-grid">${courierInfoHtml(a)}</div>
-      ${arrivalNeeded?`<div class="confirm-action"><div class="muted small"><strong>Konfirmasi 2 dari 3:</strong> tugas sedang berjalan. Konfirmasi datang dengan foto saat tiba.</div><button class="primary confirm-arrival-task" data-id="${escapeHtml(a.idAktivitas)}" type="button">Konfirmasi Datang</button><p class="message" id="confirmMsg-${escapeHtml(a.idAktivitas)}"></p></div>`:`<div class="confirm-action"><div class="muted small"><strong>Konfirmasi 3 dari 3:</strong> tugas sudah sampai. Isi hasil lalu konfirmasi selesai.</div><label>Hasil<select class="task-result" data-id="${escapeHtml(a.idAktivitas)}"><option value="">Pilih hasil</option><option ${a.hasil==="Berhasil"?"selected":""}>Berhasil</option><option ${a.hasil==="Sebagian Berhasil"?"selected":""}>Sebagian Berhasil</option><option ${a.hasil==="Tidak Berhasil"?"selected":""}>Tidak Berhasil</option></select></label><label>Keterangan<textarea class="task-note" data-id="${escapeHtml(a.idAktivitas)}" rows="3" placeholder="Keterangan hasil tugas (opsional).">${escapeHtml(a.keterangan||"")}</textarea><button class="primary complete-task" data-id="${escapeHtml(a.idAktivitas)}" type="button">Konfirmasi Selesai</button><p class="message" id="confirmMsg-${escapeHtml(a.idAktivitas)}"></p></div>`}
+      <div class="confirm-action">
+        <div class="muted small"><strong>Konfirmasi 3 dari 3:</strong> tugas sudah sampai. Semua isian wajib dilengkapi sebelum konfirmasi selesai.</div>
+        <label>Hasil <span class="required-mark">*</span><select class="task-result" data-id="${safeId}" required><option value="">Pilih hasil</option><option ${a.hasil==="Berhasil"?"selected":""}>Berhasil</option><option ${a.hasil==="Sebagian Berhasil"?"selected":""}>Sebagian Berhasil</option><option ${a.hasil==="Tidak Berhasil"?"selected":""}>Tidak Berhasil</option></select></label>
+        <label>Keterangan <span class="required-mark">*</span><textarea class="task-note" data-id="${safeId}" rows="3" placeholder="Isi keterangan hasil tugas..." required>${escapeHtml(a.keterangan||"")}</textarea></label>
+        <button class="primary complete-task" data-id="${safeId}" type="button" ${completeReady?"":"disabled"}>Konfirmasi Selesai</button>
+        <p class="message" id="confirmMsg-${safeId}"></p>
+      </div>
     </div>`;
   }).join("");
+
+  list.querySelectorAll(".task-arrival-photo").forEach(input=>{
+    input.addEventListener("change",()=>{
+      const btn=list.querySelector(`.confirm-arrival-task[data-id="${CSS.escape(input.dataset.id)}"]`);
+      if(btn)btn.disabled=!input.files[0];
+    });
+  });
   list.querySelectorAll(".confirm-arrival-task").forEach(btn=>btn.onclick=()=>handleCourierArrival(btn.dataset.id,btn));
+
+  list.querySelectorAll(".task-result, .task-note").forEach(el=>el.addEventListener("input",()=>{
+    const id=el.dataset.id;
+    const result=list.querySelector(`.task-result[data-id="${CSS.escape(id)}"]`)?.value.trim()||"";
+    const note=list.querySelector(`.task-note[data-id="${CSS.escape(id)}"]`)?.value.trim()||"";
+    const btn=list.querySelector(`.complete-task[data-id="${CSS.escape(id)}"]`);
+    if(btn)btn.disabled=!(result&&note);
+  }));
   list.querySelectorAll(".complete-task").forEach(btn=>btn.onclick=()=>handleCourierComplete(btn.dataset.id,btn));
 }
 
@@ -356,17 +396,25 @@ async function handlePendingDeparture(){
 }
 
 async function handleCourierArrival(id,btn){
-  const input=document.createElement("input");input.type="file";input.accept="image/*";input.capture="environment";input.style.display="none";document.body.appendChild(input);input.click();
-  input.onchange=async()=>{
-    if(!input.files[0]){input.remove();return;}
-    btn.disabled=true;msg(`confirmMsg-${id}`,"Sedang menyimpan foto saat tiba...");
-    try{
-      await api("confirmArrival",{idAktivitas:id,idPengguna:state.user.id,fotoDatang:await fileToBase64(input.files[0])});
-      await loadCourierTasks();
-      setView("confirmationView");
-    }catch(err){msg(`confirmMsg-${id}`,err.message);btn.disabled=false;}
-    input.remove();
-  };
+  const input=document.querySelector(`.task-arrival-photo[data-id="${CSS.escape(id)}"]`);
+  if(!input?.files[0]){msg(`confirmMsg-${id}`,"Foto saat datang wajib diisi terlebih dahulu.");return;}
+
+  // Setelah konfirmasi 2/3 dikirim, sembunyikan card 2/3 terlebih dahulu.
+  // Card 3/3 baru dibuat ulang setelah backend mengonfirmasi status "Lagi Diproses".
+  const card=btn.closest('.courier-task-card');
+  btn.disabled=true;
+  msg(`confirmMsg-${id}`,"Sedang menyimpan foto saat tiba...");
+  if(card) card.classList.add('hidden');
+
+  try{
+    await api("confirmArrival",{idAktivitas:id,idPengguna:state.user.id,fotoDatang:await fileToBase64(input.files[0])});
+    await loadCourierTasks();
+    setView("confirmationView");
+  }catch(err){
+    if(card) card.classList.remove('hidden');
+    msg(`confirmMsg-${id}`,err.message);
+    btn.disabled=false;
+  }
 }
 
 async function handleCourierComplete(id,btn){
