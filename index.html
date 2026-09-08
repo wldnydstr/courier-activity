@@ -56,7 +56,7 @@
         <form id="activityForm">
           <fieldset class="jenis-tugas-fieldset">
             <legend>Jenis Tugas <span class="required-mark">*</span></legend>
-            <div id="jenisTugasGroup" class="jenis-tugas-group" aria-label="Pilih satu atau lebih jenis tugas">
+            <div id="jenisTugasGroup" class="jenis-tugas-group" aria-label="Pilih satu atau lebih jenis tugas" aria-required="true">
               <label class="jenis-tugas-option"><input type="checkbox" name="jenisTugas" value="Penagihan"><span>Penagihan</span></label>
               <label class="jenis-tugas-option"><input type="checkbox" name="jenisTugas" value="Kirim PO"><span>Kirim PO</span></label>
               <label class="jenis-tugas-option"><input type="checkbox" name="jenisTugas" value="Ambil BA/PO"><span>Ambil BA/PO</span></label>
@@ -66,21 +66,21 @@
           </fieldset>
           <div class="two">
             <div class="combo-wrap">
-              <label for="asalSearch">Berangkat Dari</label>
+              <label for="asalSearch">Berangkat Dari <span class="required-mark">*</span></label>
               <input id="asalSearch" autocomplete="off" placeholder="Cari lokasi keberangkatan..." required>
               <div id="asalList" class="combo-list hidden"></div>
             </div>
             <div class="combo-wrap">
-              <label for="tujuanSearch">Menuju</label>
+              <label for="tujuanSearch">Menuju <span class="required-mark">*</span></label>
               <input id="tujuanSearch" autocomplete="off" placeholder="Cari lokasi tujuan..." required>
               <div id="tujuanList" class="combo-list hidden"></div>
             </div>
           </div>
-          <label>Foto Dokumen
+          <label>Foto Dokumen <span class="required-mark">*</span>
             <input id="fotoDokumen" type="file" accept="image/*" required>
             <p id="fotoDokumenDraft" class="draft-file-message"></p>
           </label>
-          <label>Foto Saat Berangkat
+          <label>Foto Saat Berangkat <span class="required-mark">*</span>
             <input id="fotoBerangkat" type="file" accept="image/*" required>
             <p id="fotoBerangkatDraft" class="draft-file-message"></p>
           </label>
