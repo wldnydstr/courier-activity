@@ -4,15 +4,15 @@ let state = { user:null, activity:null, locations:[], dashboardActivities:[] };
 let sessionExpiryTimer = null;
 const SESSION_LIMIT = 60 * 60 * 1000;
 const SESSION_KEY = "aktivitasKurirSession";
+const SESSION_FALLBACK_KEY = "aktivitasKurirSessionTab";
 const $ = id => document.getElementById(id);
 
 // V69 — tampilan Dashboard/Report dan filter Report diperbarui tanpa mengubah alur sesi.
 // Sesi dibuat sederhana seperti aplikasi Transport Schedule yang sudah terbukti stabil.
 // LocalStorage tidak hilang saat tab/browser ditutup. Sesi hanya dihapus saat logout
 // manual atau umur sesi sudah mencapai 1 jam.
-function readSession(){
+function parseStoredSession(raw){
   try{
-    const raw=localStorage.getItem(SESSION_KEY);
     if(!raw)return null;
     const saved=JSON.parse(raw);
     if(!saved || !saved.user || !saved.loginAt)return null;
@@ -21,12 +21,28 @@ function readSession(){
   }catch(e){return null;}
 }
 
+function readSession(){
+  // localStorage keeps the login across normal reloads; sessionStorage is a
+  // same-tab fallback so an Incognito tab can still restore after refresh if
+  // persistent storage is restricted by the browser.
+  try{
+    const saved=parseStoredSession(localStorage.getItem(SESSION_KEY));
+    if(saved)return saved;
+  }catch(e){}
+  try{
+    return parseStoredSession(sessionStorage.getItem(SESSION_FALLBACK_KEY));
+  }catch(e){return null;}
+}
+
 function writeSession(saved){
-  try{localStorage.setItem(SESSION_KEY,JSON.stringify(saved));}catch(e){}
+  const raw=JSON.stringify(saved);
+  try{localStorage.setItem(SESSION_KEY,raw);}catch(e){}
+  try{sessionStorage.setItem(SESSION_FALLBACK_KEY,raw);}catch(e){}
 }
 
 function removeStoredSession(){
   try{localStorage.removeItem(SESSION_KEY);}catch(e){}
+  try{sessionStorage.removeItem(SESSION_FALLBACK_KEY);}catch(e){}
 }
 
 const msg = (id,text="") => { if($(id)) $(id).textContent=text; };
