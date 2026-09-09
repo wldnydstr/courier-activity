@@ -896,23 +896,32 @@ function renderJourneyPanel(allRows, day){
   const source=Array.isArray(allRows)?allRows:[];
   const names=[...new Set(source.map(a=>String(a.kurir||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"id",{sensitivity:"base"}));
   const current=select.value;
-  select.innerHTML=names.length?names.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join(''):'<option value="">Pilih kurir</option>';
-  if(names.includes(current))select.value=current; else if(names.length)select.value=names[0];
+  const options=['<option value="">Semua kurir</option>'].concat(names.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`));
+  select.innerHTML=options.join('');
+  if(names.includes(current))select.value=current; else select.value="";
   const courier=select.value;
-  const list=source.filter(a=>a.kurir===courier&&activityMatchesDay(a,day)).sort((a,b)=>(parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0)-(parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0));
-  if(!list.length){panel.innerHTML='<div class="journey-empty">Belum ada perjalanan untuk kurir ini.</div>';return;}
-  panel.innerHTML=list.slice(0,8).map((a,i)=>{
+  const list=source.filter(a=>(!courier||a.kurir===courier)&&activityMatchesDay(a,day)).sort((a,b)=>{
+    if(!courier){
+      const nc=String(a.kurir||"").localeCompare(String(b.kurir||""),"id",{sensitivity:"base"});
+      if(nc!==0)return nc;
+    }
+    const ta=parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0;
+    const tb=parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0;
+    return ta-tb;
+  });
+  if(!list.length){panel.innerHTML='<div class="journey-empty">Belum ada perjalanan untuk filter yang dipilih.</div>';return;}
+  panel.innerHTML=list.slice(0,24).map((a,i)=>{
     const status=a.status||"-";
     const cls=status==="Selesai"?'done':status==="Lagi Diproses"?'process':status==="Lagi Jalan"?'road':'wait';
+    const courierLabel=courier?'':`<small class="journey-courier-label">${escapeHtml(a.kurir||"-")}</small>`;
     return `<div class="journey-item"><div class="journey-marker"><span>${i+1}</span></div><div class="journey-line"></div><div class="journey-content">
-      <div class="journey-top"><strong>Trip ${escapeHtml(a.trip||String(i+1))}</strong><span class="journey-status ${cls}">${escapeHtml(status)}</span></div>
+      <div class="journey-top">${courierLabel}<strong>Trip ${escapeHtml(a.trip||String(i+1))}</strong><span class="journey-status ${cls}">${escapeHtml(status)}</span></div>
       <div class="journey-route"><span class="journey-dot start"></span><div><small>Berangkat dari</small><b>${escapeHtml(a.asal||"-")}</b></div><time>${escapeHtml(displayIndonesiaTime(a.berangkat))}</time></div>
       <div class="journey-route"><span class="journey-dot end"></span><div><small>Menuju</small><b>${escapeHtml(a.tujuan||"-")}</b><em>${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</em></div><time>${escapeHtml(displayIndonesiaTime(a.datang))}</time></div>
       <div class="journey-meta"><span>Durasi mengemudi <b>${escapeHtml(displayDuration(a.durasiMengemudi))}</b></span><span>Selesai <b>${escapeHtml(displayIndonesiaTime(a.selesai))}</b></span></div>
     </div></div>`;
   }).join('');
 }
-
 function renderProofGallery(rows){
   const el=$("proofGallery"); if(!el)return;
   const items=[];
@@ -940,7 +949,7 @@ function renderDashboard(data){
   $("dashboardTable").innerHTML=recent.map(a=>{const bukti=a.fotoDatang||a.fotoBerangkat||a.fotoDokumen||"";return `<tr>
     <td>${escapeHtml(displayIndonesiaTime(a.berangkat))}</td><td>${escapeHtml(displayIndonesiaTime(a.datang))}</td><td>${escapeHtml(displayDuration(a.durasiMengemudi))}</td>
     <td><span class="recent-courier"><span class="recent-avatar">${escapeHtml(String(a.kurir||"?").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase())}</span>${escapeHtml(a.kurir||"-")}</span></td>
-    <td>${escapeHtml(a.trip||"-")}</td><td><div class="dashboard-destination"><strong>${escapeHtml(a.tujuan||"-")}</strong><span>${escapeHtml(a.asal||"-")}</span></div></td>
+    <td><div class="dashboard-destination"><strong>${escapeHtml(a.tujuan||"-")}</strong><span>${escapeHtml(a.asal||"-")}</span></div></td>
     <td><span class="task-tag">${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</span></td><td class="dashboard-note">${escapeHtml(a.keterangan||"-")}</td>
     <td><span class="dashboard-status-pill ${statusClass(a.status)}">${escapeHtml(a.status||"-")}</span></td><td>${bukti?`<a class="proof-link" href="${escapeHtml(bukti)}" target="_blank" rel="noopener">Lihat Foto</a>`:'-'}</td>
   </tr>`;}).join('');
