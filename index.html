@@ -6,7 +6,7 @@
   <title>Aktivitas Kurir</title>
   <link rel="preconnect" href="https://fonts.cdnfonts.com">
   <link href="https://fonts.cdnfonts.com/css/gilroy" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=640">
+  <link rel="stylesheet" href="style.css?v=650">
 </head>
 <body>
 <main class="app">
@@ -180,23 +180,25 @@
     </section>
 
     <section id="reportView" class="hidden report-page">
-      <div class="section-title-row page-heading report-page-heading">
+      <div class="report-hero">
         <div>
-          <div class="section-title">Laporan</div>
-          <div class="muted small">Pantau dan unduh data aktivitas kurir berdasarkan filter yang dipilih.</div>
+          <div class="eyebrow report-eyebrow">LAPORAN AKTIVITAS</div>
+          <div class="section-title report-hero-title">Laporan</div>
+          <div class="muted report-hero-subtitle">Pantau, filter, dan unduh data aktivitas kurir dari satu halaman.</div>
         </div>
-        <div class="heading-actions report-heading-actions">
+        <div class="report-hero-actions">
           <button id="refreshReportBtn" class="ghost" type="button">Muat Ulang</button>
           <button id="exportReportBtn" class="primary" type="button">Ekspor Excel</button>
         </div>
       </div>
 
       <div class="card report-filter-card">
-        <div class="section-title-row report-filter-head">
+        <div class="report-filter-title-row">
           <div>
             <div class="section-title">Filter laporan</div>
-            <div class="muted small">Pilih rentang tanggal, status, kurir, asal, atau tujuan untuk mempersempit data.</div>
+            <div class="muted small">Gunakan filter di bawah untuk menampilkan data yang kamu butuhkan.</div>
           </div>
+          <div class="report-filter-label">FILTER DATA</div>
         </div>
         <div class="filters-grid report-filters-grid">
           <label>Dari tanggal
@@ -240,6 +242,7 @@
       <div class="card report-data-card">
         <div class="section-title-row report-data-head">
           <div>
+            <div class="eyebrow report-data-eyebrow">HASIL LAPORAN</div>
             <div class="section-title">Data Aktivitas</div>
             <div class="muted small">Daftar aktivitas sesuai filter laporan yang diterapkan.</div>
           </div>
