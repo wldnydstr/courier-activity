@@ -1569,6 +1569,7 @@ td{color:#4d5865}
   -webkit-line-clamp:2;
   overflow:hidden;
   max-height:2.9em;
+  line-height:1.45;
 }
 #dashboardView .dashboard-detail-table .dashboard-note-text.expanded{
   display:block;
