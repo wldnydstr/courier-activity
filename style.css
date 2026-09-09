@@ -1468,22 +1468,170 @@ td{color:#4d5865}
   #dashboardView .dashboard-detail-table th:nth-child(9),#dashboardView .dashboard-detail-table td:nth-child(9){width:6%;}
 }
 
-/* V58 — Perjalanan Kurir: accordion per nama kurir */
-#dashboardView .journey-panel{display:grid;gap:8px;overflow:visible;max-height:none;padding:0}
-#dashboardView .journey-group{border:1px solid #e7ebf0;border-radius:12px;background:#fff;overflow:hidden}
-#dashboardView .journey-group-toggle{width:100%;min-height:48px;padding:10px 12px;display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:center;gap:8px;border:0;border-radius:0;background:#fff;color:#26313e;text-align:left;cursor:pointer}
-#dashboardView .journey-group-toggle:hover{background:#f8fafc}
-#dashboardView .journey-chevron{width:22px;height:22px;display:grid;place-items:center;border-radius:7px;background:#f3f5f7;color:#687586;font-size:20px;line-height:1;transform:rotate(0deg);transition:transform .18s ease,background .18s ease}
-#dashboardView .journey-group.is-open .journey-chevron{transform:rotate(90deg);background:#eef1f4}
-#dashboardView .journey-group-name{min-width:0;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#dashboardView .journey-group-count{font-size:9px;font-weight:600;color:#8a95a1;white-space:nowrap}
-#dashboardView .journey-group-body{padding:0 12px 10px;border-top:1px solid #f0f2f5}
-#dashboardView .journey-group-body[hidden]{display:none}
-#dashboardView .journey-group-body .journey-item{padding-top:10px}
-#dashboardView .journey-group-body .journey-item:last-child{min-height:0}
-#dashboardView .journey-group-body .journey-item:last-child .journey-content{padding-bottom:2px}
-#dashboardView .journey-group-body .journey-marker span{font-size:9px}
-@media(max-width:820px){
-  #dashboardView .journey-group-toggle{min-height:46px;padding:9px 10px}
-  #dashboardView .journey-group-body{padding-left:9px;padding-right:9px}
+/* V52 — Dashboard detail table: balance kolom tanpa horizontal scroll */
+#dashboardView .dashboard-detail-wrap{
+  overflow-x:hidden !important;
+  width:100%;
+  max-width:100%;
+  padding-left:8px;
+  padding-right:8px;
+}
+
+#dashboardView .dashboard-detail-table{
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100%;
+  table-layout:fixed !important;
+  font-size:11px;
+}
+
+#dashboardView .dashboard-detail-table th{
+  white-space:normal !important;
+  word-break:normal !important;
+  overflow-wrap:break-word !important;
+  line-height:1.2;
+  padding:9px 6px !important;
+}
+
+#dashboardView .dashboard-detail-table td{
+  padding:9px 6px !important;
+  overflow-wrap:break-word;
+  word-break:normal;
+}
+
+/* Lebar dibuat lebih kecil untuk waktu/durasi, dan cukup untuk Kurir */
+#dashboardView .dashboard-detail-table th:nth-child(1),
+#dashboardView .dashboard-detail-table td:nth-child(1){width:9% !important;}
+
+#dashboardView .dashboard-detail-table th:nth-child(2),
+#dashboardView .dashboard-detail-table td:nth-child(2){width:7% !important;}
+
+#dashboardView .dashboard-detail-table th:nth-child(3),
+#dashboardView .dashboard-detail-table td:nth-child(3){width:9% !important;}
+
+#dashboardView .dashboard-detail-table th:nth-child(4),
+#dashboardView .dashboard-detail-table td:nth-child(4){width:11% !important;}
+
+#dashboardView .dashboard-detail-table th:nth-child(5),
+#dashboardView .dashboard-detail-table td:nth-child(5){width:18% !important;}
+
+#dashboardView .dashboard-detail-table th:nth-child(6),
+#dashboardView .dashboard-detail-table td:nth-child(6){width:12% !important;}
+
+#dashboardView .dashboard-detail-table th:nth-child(7),
+#dashboardView .dashboard-detail-table td:nth-child(7){width:15% !important;}
+
+#dashboardView .dashboard-detail-table th:nth-child(8),
+#dashboardView .dashboard-detail-table td:nth-child(8){width:12% !important;}
+
+#dashboardView .dashboard-detail-table th:nth-child(9),
+#dashboardView .dashboard-detail-table td:nth-child(9){width:7% !important;}
+
+/* Jam dan durasi tetap satu baris; Kurir tidak terpotong */
+#dashboardView .dashboard-detail-table td:nth-child(1),
+#dashboardView .dashboard-detail-table td:nth-child(2),
+#dashboardView .dashboard-detail-table td:nth-child(3){
+  white-space:nowrap !important;
+}
+
+#dashboardView .dashboard-detail-table .recent-courier{
+  min-width:0;
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:nowrap;
+  white-space:nowrap;
+  overflow:hidden;
+}
+
+#dashboardView .dashboard-detail-table .recent-courier .recent-avatar{
+  flex:0 0 24px;
+}
+
+#dashboardView .dashboard-detail-table .recent-courier .recent-avatar + *{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+
+/* V56 — Dashboard: keterangan maksimal 2 baris; Load more berada di baris kedua. */
+#dashboardView .dashboard-detail-table .dashboard-note{
+  max-width:none !important;
+  vertical-align:top;
+  line-height:1.45;
+  overflow-wrap:anywhere;
+  position:relative;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-text{
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  overflow:hidden;
+  max-height:2.9em;
+  line-height:1.45;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-text.expanded{
+  display:block;
+  max-height:none;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-toggle{
+  position:absolute;
+  right:0;
+  bottom:0;
+  display:block;
+  min-height:auto;
+  margin:0;
+  padding:0 0 0 8px;
+  border:0;
+  border-radius:0;
+  background:#fff;
+  color:#2563eb;
+  font:inherit;
+  font-size:9px;
+  font-weight:700;
+  line-height:1.45;
+  cursor:pointer;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-toggle:hover{
+  text-decoration:underline;
+}
+
+/* V57 — Keterangan: Load more menyatu di baris kedua, bukan baris ketiga. */
+#dashboardView .dashboard-detail-table .dashboard-note-text{
+  display:block;
+  max-height:2.9em;
+  overflow:hidden;
+  line-height:1.45;
+  overflow-wrap:anywhere;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-text.expanded{
+  display:block;
+  max-height:none;
+  overflow:visible;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-inline-toggle{
+  display:inline;
+  min-height:0;
+  height:auto;
+  margin:0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:#2563eb;
+  font:inherit;
+  font-size:9px;
+  font-weight:700;
+  line-height:inherit;
+  cursor:pointer;
+  vertical-align:baseline;
+  white-space:nowrap;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-inline-toggle:hover{
+  text-decoration:underline;
+}
+#dashboardView .dashboard-detail-table .dashboard-note > .dashboard-note-toggle{
+  display:none !important;
 }
