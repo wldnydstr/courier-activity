@@ -706,49 +706,61 @@ function renderCategoryBarChart(elementId, legendId, rows, key, emptyText, palet
 }
 
 function renderCourierChart(rows){
-  const palette=["#2563EB","#F97316","#16A34A","#9333EA","#DC2626","#0891B2","#CA8A04","#DB2777"];
-  renderCategoryBarChart("courierChart","courierLegend",rows,"kurir","Belum ada aktivitas.",palette);
-}
-
-function renderStatusChart(rows){
-  const statusOrder=["Menunggu Berangkat","Lagi Jalan","Lagi Diproses","Selesai"];
-  const paletteByStatus={
-    "Menunggu Berangkat":"#2563EB",
-    "Lagi Jalan":"#F97316",
-    "Lagi Diproses":"#9333EA",
-    "Selesai":"#16A34A"
-  };
-  const chart=$("statusChart"), legend=$("statusLegend");
+  const chart=$("courierChart"), legend=$("courierLegend");
+  const colors={"Menunggu Berangkat":"#FBC64D","Lagi Jalan":"#5B8FE8","Lagi Diproses":"#9B7BDE","Selesai":"#54B978"};
+  const statuses=["Menunggu Berangkat","Lagi Jalan","Lagi Diproses","Selesai"];
   if(!chart)return;
   if(!rows.length){
     chart.innerHTML='<div class="category-chart-empty">Belum ada aktivitas.</div>';
-    if(legend)legend.innerHTML='<span><i class="legend-line legend-empty"></i>Belum ada data</span>';
+    if(legend)legend.innerHTML='';
+    return;
+  }
+  const byCourier={};
+  rows.forEach(a=>{
+    const name=String(a.kurir||"Tidak diketahui").trim()||"Tidak diketahui";
+    if(!byCourier[name])byCourier[name]={total:0,counts:{}};
+    byCourier[name].total++;
+    const status=String(a.status||"Tidak diketahui").trim()||"Tidak diketahui";
+    byCourier[name].counts[status]=(byCourier[name].counts[status]||0)+1;
+  });
+  const entries=Object.entries(byCourier).sort((a,b)=>b[1].total-a[1].total||a[0].localeCompare(b[0]));
+  const max=Math.max(...entries.map(([,v])=>v.total),1);
+  chart.innerHTML=entries.map(([name,data])=>{
+    const initials=name.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase();
+    const segments=statuses.filter(st=>data.counts[st]).map(st=>{
+      const pct=(data.counts[st]/data.total)*100;
+      return `<span class="courier-stack-segment" style="width:${pct}%;background:${colors[st]||'#94A3B8'}">${data.counts[st] >= 2 ? data.counts[st] : ''}</span>`;
+    }).join('');
+    const fallback=Object.entries(data.counts).filter(([st])=>!statuses.includes(st)).map(([st,v])=>`<span class="courier-stack-segment" style="width:${v/data.total*100}%;background:#94A3B8">${v}</span>`).join('');
+    return `<div class="courier-chart-row">
+      <div class="courier-person"><div class="courier-avatar">${escapeHtml(initials)}</div><div><div class="courier-name">${escapeHtml(name)}</div><div class="courier-sub">${data.total} aktivitas</div></div></div>
+      <div class="courier-stack-wrap"><div class="courier-stack" style="width:${Math.max(34,Math.round(data.total/max*100))}%">${segments}${fallback}</div></div>
+      <div class="courier-total">${data.total}</div>
+    </div>`;
+  }).join('');
+  if(legend)legend.innerHTML=statuses.map(st=>`<span><i class="legend-dot" style="background:${colors[st]}"></i>${escapeHtml(st)}</span>`).join('');
+}
+function renderStatusChart(rows){
+  const chart=$("statusChart"), legend=$("statusLegend");
+  const statusOrder=["Menunggu Berangkat","Lagi Jalan","Lagi Diproses","Selesai"];
+  const colors={"Menunggu Berangkat":"#FBC64D","Lagi Jalan":"#5B8FE8","Lagi Diproses":"#9B7BDE","Selesai":"#54B978"};
+  if(!chart)return;
+  if(!rows.length){
+    chart.innerHTML='<div class="category-chart-empty">Belum ada aktivitas.</div>';
+    if(legend)legend.innerHTML='';
     return;
   }
   const counts={};
-  rows.forEach(a=>{
-    const status=String(a.status||"Tidak diketahui").trim()||"Tidak diketahui";
-    counts[status]=(counts[status]||0)+1;
-  });
+  rows.forEach(a=>{const st=String(a.status||"Tidak diketahui").trim()||"Tidak diketahui";counts[st]=(counts[st]||0)+1;});
   const ordered=[];
-  statusOrder.forEach(s=>{if(counts[s])ordered.push([s,counts[s]]);});
-  Object.entries(counts).filter(([s])=>!statusOrder.includes(s)).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).forEach(x=>ordered.push(x));
-  const max=Math.max(...ordered.map(([,v])=>v),1);
-  chart.innerHTML=ordered.map(([label,value])=>{
-    const color=paletteByStatus[label]||"#64748B";
-    const width=Math.max(4,Math.round(value/max*100));
-    return `<div class="category-chart-row">
-      <div class="category-chart-label" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
-      <div class="category-chart-track"><div class="category-chart-bar" style="width:${width}%;background:${color}"></div></div>
-      <div class="category-chart-value">${value}</div>
-    </div>`;
-  }).join("");
-  if(legend)legend.innerHTML=ordered.map(([label])=>{
-    const color=paletteByStatus[label]||"#64748B";
-    return `<span><i class="legend-line" style="background:${color}"></i>${escapeHtml(label)}</span>`;
-  }).join("");
+  statusOrder.forEach(st=>{if(counts[st])ordered.push([st,counts[st]]);});
+  Object.entries(counts).filter(([st])=>!statusOrder.includes(st)).forEach(x=>ordered.push(x));
+  const total=rows.length;
+  const gradient=[]; let cursor=0;
+  ordered.forEach(([st,v])=>{const end=cursor+(v/total)*360;gradient.push(`${colors[st]||'#94A3B8'} ${cursor}deg ${end}deg`);cursor=end;});
+  chart.innerHTML=`<div class="donut-ring" style="background:conic-gradient(${gradient.join(',')})"><div class="donut-hole"><strong>${total}</strong><span>Total<br>Aktivitas</span></div></div>`;
+  if(legend)legend.innerHTML=ordered.map(([st,v])=>`<div class="status-summary-row"><div><i class="legend-dot" style="background:${colors[st]||'#94A3B8'}"></i><span>${escapeHtml(st)}</span></div><strong>${v}</strong><small>${Math.round(v/total*100)}%</small></div>`).join('');
 }
-
 function renderActivityChart(rows){
   const chart=$("activityChart");
   if(!chart)return;
@@ -869,29 +881,37 @@ function renderDashboard(data){
   const day=$("dashboardDate").value, courier=$("dashboardCourier").value;
   const rows=allRows.filter(a=>(!courier||a.kurir===courier)&&activityMatchesDay(a,day));
   const stats={total:rows.length,menungguBerangkat:rows.filter(a=>a.status==="Menunggu Berangkat").length,lagiJalan:rows.filter(a=>a.status==="Lagi Jalan").length,lagiDiproses:rows.filter(a=>a.status==="Lagi Diproses").length,selesai:rows.filter(a=>a.status==="Selesai").length};
-  $("statTotal").textContent = stats.total || 0;$("statJalan").textContent=stats.lagiJalan;$("statProses").textContent=stats.lagiDiproses;$("statSelesai").textContent=stats.selesai;
-  renderActivityChart(rows);
+  $("statTotal").textContent=stats.total||0;
+  $("statMenunggu").textContent=stats.menungguBerangkat||0;
+  $("statJalan").textContent=stats.lagiJalan||0;
+  $("statSelesai").textContent=stats.selesai||0;
+  const pct=(n)=>stats.total?Math.round(n/stats.total*100):0;
+  [["Menunggu",stats.menungguBerangkat],["Jalan",stats.lagiJalan],["Selesai",stats.selesai]].forEach(([key,n])=>{
+    const p=pct(n); const el=$("stat"+key+"Progress"), tx=$("stat"+key+"Percent");
+    if(el)el.style.width=p+"%"; if(tx)tx.textContent=p+"%";
+  });
+  const prosesEl=$("statProses"); if(prosesEl)prosesEl.textContent=stats.lagiDiproses;
   renderCourierChart(rows);
   renderStatusChart(rows);
-  $("chartSubtitle").textContent="Aktivitas sesuai dengan filter yang dipilih.";
-  const photoLink=(url)=>url?`<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Lihat Foto</a>`:"-";
-  $("dashboardTable").innerHTML=rows.map(a=>`<tr>
-    <td>${escapeHtml(a.kurir||"-")}</td>
-    <td>${escapeHtml(a.trip||"-")}</td>
+  $("chartSubtitle") && ($("chartSubtitle").textContent="Aktivitas sesuai dengan filter yang dipilih.");
+  const statusClass=(status)=>status==="Selesai"?"done":status==="Lagi Jalan"?"jalan":status==="Lagi Diproses"?"proses":"waiting";
+  const recent=[...rows].sort((a,b)=>{
+    const da=parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0;
+    const db=parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0;
+    return db-da;
+  }).slice(0,8);
+  $("dashboardTable").innerHTML=recent.map(a=>`<tr>
+    <td class="recent-id">${escapeHtml(a.idAktivitas||"-")}</td>
+    <td><span class="recent-courier"><span class="recent-avatar">${escapeHtml(String(a.kurir||"?").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase())}</span>${escapeHtml(a.kurir||"-")}</span></td>
     <td>${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</td>
+    <td>${escapeHtml(a.asal||"-")}</td>
     <td>${escapeHtml(a.tujuan||"-")}</td>
-    <td>${photoLink(a.fotoDokumen)}</td>
-    <td>${photoLink(a.fotoBerangkat)}</td>
-    <td>${escapeHtml(displayTimeOnly(a.berangkat))}</td>
-    <td>${photoLink(a.fotoDatang)}</td>
-    <td>${escapeHtml(displayTimeOnly(a.datang))}</td>
-    <td>${escapeHtml(displayTimeOnly(a.selesai))}</td>
-    <td>${escapeHtml(displayDuration(a.durasiMengemudi))}</td>
-    <td>${escapeHtml(displayDuration(a.durasiTugas))}</td>
-  </tr>`).join("");
-  $("dashboardEmpty").classList.toggle("hidden",rows.length>0);
+    <td><span class="dashboard-status-pill ${statusClass(a.status)}">${escapeHtml(a.status||"-")}</span></td>
+    <td>${escapeHtml(displayIndonesiaDateTime(a.berangkat||a.datang||a.selesai))}</td>
+    <td><button class="recent-more" type="button" aria-label="Lihat detail">•••</button></td>
+  </tr>`).join('');
+  $("dashboardEmpty").classList.toggle("hidden",recent.length>0);
 }
-
 async function loadDashboard(){
   msg("dashboardMsg","Memuat data aktivitas...");
   try{setDashboardDefaultDay();const data=await api("getDashboard",{idPengguna:state.user.id});state.dashboardActivities=data.activities||[];renderDashboard(data);msg("dashboardMsg","");}

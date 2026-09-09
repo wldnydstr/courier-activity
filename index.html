@@ -6,7 +6,7 @@
   <title>Aktivitas Kurir</title>
   <link rel="preconnect" href="https://fonts.cdnfonts.com">
   <link href="https://fonts.cdnfonts.com/css/gilroy" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=320">
+  <link rel="stylesheet" href="style.css?v=420">
 </head>
 <body>
 <main class="app">
@@ -121,89 +121,49 @@
       <div id="historyList" class="courier-task-list"></div>
     </section>
 
-    <section id="dashboardView" class="hidden">
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Total Aktivitas</div><div id="statTotal" class="stat-value">0</div></div>
-        <div class="stat-card"><div class="stat-label">Lagi Jalan</div><div id="statJalan" class="stat-value">0</div></div>
-        <div class="stat-card"><div class="stat-label">Lagi Diproses</div><div id="statProses" class="stat-value">0</div></div>
-        <div class="stat-card"><div class="stat-label">Selesai</div><div id="statSelesai" class="stat-value">0</div></div>
+    <section id="dashboardView" class="hidden dashboard-page">
+      <div class="dashboard-summary">
+        <div class="dashboard-stat stat-total-card"><div class="dashboard-stat-icon">▣</div><div><div class="stat-label">Total Aktivitas</div><div id="statTotal" class="stat-value">0</div><div class="stat-foot"><span class="stat-trend">↗ <span id="statTotalTrend">12%</span></span><span>dari kemarin</span></div></div></div>
+        <div class="dashboard-stat stat-wait-card"><div class="dashboard-stat-icon">◷</div><div><div class="stat-label">Menunggu Berangkat</div><div id="statMenunggu" class="stat-value">0</div><div class="stat-progress"><span id="statMenungguProgress"></span></div><div class="stat-percent" id="statMenungguPercent">0%</div></div></div>
+        <div class="dashboard-stat stat-road-card"><div class="dashboard-stat-icon">▰</div><div><div class="stat-label">Lagi Jalan</div><div id="statJalan" class="stat-value">0</div><div class="stat-progress"><span id="statJalanProgress"></span></div><div class="stat-percent" id="statJalanPercent">0%</div></div></div>
+        <div class="dashboard-stat stat-done-card"><div class="dashboard-stat-icon">✓</div><div><div class="stat-label">Selesai</div><div id="statSelesai" class="stat-value">0</div><div class="stat-progress"><span id="statSelesaiProgress"></span></div><div class="stat-percent" id="statSelesaiPercent">0%</div></div></div>
       </div>
 
-      <div class="card dashboard-filters">
+      <div class="card dashboard-filters dashboard-filter-compact">
         <div class="dashboard-filter-head">
-          <div>
-            <div class="section-title">Filter aktivitas</div>
-            <div class="muted small">Gunakan filter untuk melihat data yang lebih spesifik.</div>
-          </div>
+          <div><div class="section-title">Filter aktivitas</div><div class="muted small">Gunakan filter untuk melihat data yang lebih spesifik.</div></div>
         </div>
         <div class="filters-grid dashboard-filter-grid">
-          <label>Hari
-            <input id="dashboardDate" type="date">
-          </label>
-          <label>Kurir
-            <select id="dashboardCourier"><option value="">Semua kurir</option></select>
-          </label>
-          <div class="dashboard-filter-actions">
-            <button id="applyDashboardFilterBtn" class="primary" type="button">Terapkan</button>
-            <button id="resetDashboardFilterBtn" class="ghost" type="button">Reset</button>
-          </div>
+          <label>Hari<input id="dashboardDate" type="date"></label>
+          <label>Kurir<select id="dashboardCourier"><option value="">Semua kurir</option></select></label>
+          <div class="dashboard-filter-actions"><button id="applyDashboardFilterBtn" class="primary" type="button">Terapkan</button><button id="resetDashboardFilterBtn" class="ghost" type="button">Reset</button></div>
         </div>
       </div>
 
-
-      <div class="card chart-card">
-        <div class="section-title-row">
-          <div>
-            <div class="section-title">Tren aktivitas</div>
-            <div class="muted small" id="chartSubtitle">Jumlah aktivitas per hari berdasarkan data yang tersedia.</div>
-          </div>
+      <div class="dashboard-chart-grid">
+        <div class="card chart-card dashboard-courier-card">
+          <div class="section-title-row"><div><div class="section-title">Aktivitas per Kurir</div><div class="muted small">Jumlah dan status aktivitas yang ditangani oleh setiap kurir.</div></div><select id="dashboardCourierQuick"><option value="">Hari ini</option></select></div>
+          <div id="courierChart" class="category-chart dashboard-courier-chart"></div>
+          <div id="courierLegend" class="chart-legend category-chart-legend"></div>
         </div>
-        <div id="activityChart" class="activity-chart"></div>
-        <div class="chart-legend">
-          <span><i class="legend-dot status-total"></i>Total</span>
-          <span><i class="legend-dot status-done"></i>Selesai</span>
-          <span><i class="legend-dot status-active"></i>Belum selesai</span>
+
+        <div class="card chart-card dashboard-status-card">
+          <div class="section-title-row"><div><div class="section-title">Status Aktivitas Saat Ini</div><div class="muted small">Distribusi seluruh aktivitas berdasarkan status.</div></div></div>
+          <div class="status-dashboard-layout"><div id="statusChart" class="status-donut"></div><div id="statusLegend" class="status-summary"></div></div>
         </div>
       </div>
 
-      <div class="card chart-card">
-        <div class="section-title-row">
-          <div>
-            <div class="section-title">Aktivitas per kurir</div>
-            <div class="muted small">Jumlah aktivitas berdasarkan kurir yang dipilih.</div>
-          </div>
-        </div>
-        <div id="courierChart" class="category-chart"></div>
-        <div id="courierLegend" class="chart-legend category-chart-legend"></div>
-      </div>
-
-      <div class="card chart-card">
-        <div class="section-title-row">
-          <div>
-            <div class="section-title">Aktivitas per hasil</div>
-            <div class="muted small">Ringkasan aktivitas berdasarkan hasil tugas.</div>
-          </div>
-        </div>
-        <div id="statusChart" class="category-chart"></div>
-        <div id="statusLegend" class="chart-legend category-chart-legend"></div>
-      </div>
-
-      <div class="card">
-        <div class="section-title">Aktivitas Kurir</div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th><span>Kurir</span></th><th><span>Trip</span></th><th><span>Tipe Tugas</span></th><th><span>Tujuan</span></th><th><span>Foto Dokumen</span></th><th><span>Foto Berangkat</span></th><th><span>Jam Berangkat</span></th><th><span>Foto Datang</span></th><th><span>Jam Datang</span></th><th><span>Jam Selesai</span></th><th><span>Durasi Mengemudi</span></th><th><span>Durasi Tugas</span></th>
-              </tr>
-            </thead>
+      <div class="card dashboard-recent-card">
+        <div class="section-title-row dashboard-recent-head"><div><div class="section-title">Aktivitas Terbaru</div><div class="muted small">Daftar aktivitas kurir terbaru secara real-time.</div></div><button id="dashboardSeeAllBtn" class="ghost" type="button">Lihat Semua →</button></div>
+        <div class="table-wrap dashboard-recent-wrap">
+          <table class="dashboard-recent-table">
+            <thead><tr><th>ID Aktivitas</th><th>Kurir</th><th>Jenis Tugas</th><th>Asal</th><th>Tujuan</th><th>Status</th><th>Waktu</th><th>Aksi</th></tr></thead>
             <tbody id="dashboardTable"></tbody>
           </table>
         </div>
         <div id="dashboardEmpty" class="empty hidden">Belum ada aktivitas.</div>
       </div>
     </section>
-
 
     <section id="reportView" class="hidden">
       <div class="section-title-row page-heading">
