@@ -1839,3 +1839,90 @@ td{color:#4d5865}
 #appView #reportView .report-data-card .table-wrap{border-radius:0}
 @media(max-width:900px){#appView #reportView .report-filters-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){#appView #reportView .report-hero{align-items:flex-start;flex-direction:column;gap:16px;margin-bottom:18px}#appView #reportView .report-hero-title{font-size:24px}#appView #reportView .report-hero-actions{width:100%}#appView #reportView .report-hero-actions button{flex:1}#appView #reportView .report-filter-card{padding:20px 18px;border-radius:18px}#appView #reportView .report-filter-title-row{align-items:flex-start}#appView #reportView .report-filters-grid{grid-template-columns:1fr}#appView #reportView .report-filter-card .filter-actions{justify-content:stretch}#appView #reportView .report-filter-card .filter-actions button{flex:1}#appView #reportView .report-data-head{padding:20px 18px;align-items:flex-start;gap:12px}}
+
+/* V66 — Report memakai penuh lebar laptop + Load more Keterangan */
+@media (min-width: 701px) {
+  #appView #reportView.report-page {
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100vw - 96px) !important;
+    max-width: none !important;
+  }
+}
+
+#appView #reportView .report-hero {
+  width: 100%;
+}
+
+#appView #reportView .report-filter-card,
+#appView #reportView .report-data-card {
+  width: 100%;
+}
+
+#appView #reportView .report-filters-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+#appView #reportView #applyReportBtn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+#appView #reportView .report-note {
+  position: relative;
+  max-width: 280px;
+  line-height: 1.45;
+}
+
+#appView #reportView .report-note-text {
+  display: block;
+  max-height: 2.9em;
+  overflow: hidden;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+#appView #reportView .report-note-text.expanded {
+  max-height: none;
+  overflow: visible;
+}
+
+#appView #reportView .report-note-inline-toggle {
+  display: inline;
+  min-height: 0;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #2563eb;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: inherit;
+  cursor: pointer;
+  vertical-align: baseline;
+  white-space: nowrap;
+}
+
+#appView #reportView .report-note-inline-toggle:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  #appView #reportView .report-filters-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  #appView #reportView .report-filters-grid {
+    grid-template-columns: 1fr;
+  }
+  #appView #reportView .report-note {
+    max-width: 240px;
+  }
+}

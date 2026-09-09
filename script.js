@@ -1058,9 +1058,11 @@ function fillReportSelect(id, values, firstLabel){
   const el = $(id);
   if(!el) return;
   const current = el.value;
-  el.innerHTML = `<option value="">${escapeHtml(firstLabel)}</option>` +
+  const placeholder = firstLabel.replace(/^Semua /, "Pilih ");
+  el.innerHTML = `<option value="" selected disabled>${escapeHtml(placeholder)}</option><option value="__ALL__">${escapeHtml(firstLabel)}</option>` +
     (values || []).map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
-  if(current && (values || []).includes(current)) el.value = current;
+  if(current && (["__ALL__", ...(values || [])]).includes(current)) el.value = current;
+  updateReportApplyState();
 }
 
 async function loadReportOptions(){
@@ -1103,13 +1105,42 @@ function renderReport(rows){
     <td>${escapeHtml(displayReportTime(a.datang))}</td>
     <td>${photoLink(a.fotoDatang)}</td>
     <td>${escapeHtml(a.hasil||"-")}</td>
-    <td>${escapeHtml(a.keterangan||"-")}</td>
+    <td class="report-note"><div class="report-note-text">${escapeHtml(a.keterangan||"-")}</div></td>
     <td>${escapeHtml(displayReportTime(a.selesai))}</td>
     <td>${escapeHtml(displayDuration(a.durasiMengemudi))}</td>
     <td>${escapeHtml(displayDuration(a.durasiTugas))}</td>
   </tr>`).join("");
   $("reportEmpty").classList.toggle("hidden",currentReportRows.length>0);
   $("reportCount").textContent = `${currentReportRows.length} aktivitas`;
+  setupReportNoteLoadMore();
+}
+
+function setupReportNoteLoadMore(){
+  document.querySelectorAll("#reportView .report-note").forEach(note=>{
+    const text=note.querySelector(".report-note-text");
+    if(!text)return;
+    const fullText=text.textContent.trim()||"-";
+    text.textContent=fullText;
+    if(text.scrollHeight<=text.clientHeight+1)return;
+    let lo=1,hi=fullText.length,best=1;
+    while(lo<=hi){
+      const mid=Math.floor((lo+hi)/2);
+      text.textContent=fullText.slice(0,mid).trimEnd();
+      if(text.scrollHeight<=text.clientHeight+1){best=mid;lo=mid+1;}else{hi=mid-1;}
+    }
+    const truncated=fullText.slice(0,best).trimEnd();
+    const renderCollapsed=()=>{
+      text.classList.remove("expanded");
+      text.innerHTML=escapeHtml(truncated)+` <button class="report-note-inline-toggle" type="button">Load more...</button>`;
+      text.querySelector(".report-note-inline-toggle").addEventListener("click",renderExpanded);
+    };
+    const renderExpanded=()=>{
+      text.classList.add("expanded");
+      text.innerHTML=escapeHtml(fullText)+` <button class="report-note-inline-toggle" type="button">Show less</button>`;
+      text.querySelector(".report-note-inline-toggle").addEventListener("click",renderCollapsed);
+    };
+    renderCollapsed();
+  });
 }
 
 function exportReportExcel(){
@@ -1174,17 +1205,52 @@ function exportReportExcel(){
   msg("reportMsg","File Excel siap.");
 }
 
+function getReportFilterValues(){
+  return {
+    from: $("reportDateFrom")?.value || "",
+    to: $("reportDateTo")?.value || "",
+    status: $("reportStatus")?.value || "",
+    courier: $("reportCourier")?.value || "",
+    origin: $("reportOrigin")?.value || "",
+    destination: $("reportDestination")?.value || ""
+  };
+}
+
+function updateReportApplyState(){
+  const btn=$("applyReportBtn");
+  if(!btn)return;
+  const f=getReportFilterValues();
+  const allFilled=Object.values(f).every(Boolean);
+  const validRange=!f.from||!f.to||f.from<=f.to;
+  btn.disabled=!(allFilled&&validRange);
+}
+
+function normalizedReportValue(value){
+  return value==="__ALL__" ? "" : value;
+}
+
 async function loadReport(){
+  const f=getReportFilterValues();
+  if(Object.values(f).some(v=>!v)){
+    msg("reportMsg","Lengkapi semua filter terlebih dahulu.");
+    updateReportApplyState();
+    return;
+  }
+  if(f.from>f.to){
+    msg("reportMsg","Tanggal Dari tidak boleh lebih besar dari Sampai tanggal.");
+    updateReportApplyState();
+    return;
+  }
   msg("reportMsg","Memuat data laporan...");
   try{
     const data = await api("getReport",{
       idPengguna:state.user.id,
       tanggalDari:$("reportDateFrom").value,
       tanggalSampai:$("reportDateTo").value,
-      status:$("reportStatus").value,
-      kurir:$("reportCourier").value,
-      asal:$("reportOrigin").value,
-      tujuan:$("reportDestination").value
+      status:normalizedReportValue(f.status),
+      kurir:normalizedReportValue(f.courier),
+      asal:normalizedReportValue(f.origin),
+      tujuan:normalizedReportValue(f.destination)
     });
     renderReport(data.activities||[]);
     msg("reportMsg","");
@@ -1201,7 +1267,9 @@ function resetReportFilters(){
   $("reportCourier").value="";
   $("reportOrigin").value="";
   $("reportDestination").value="";
-  loadReport();
+  renderReport([]);
+  msg("reportMsg","");
+  updateReportApplyState();
 }
 
 async function loadUsers(){
@@ -1253,10 +1321,15 @@ $("journeyPanel").addEventListener("click",e=>{
   const body=group.querySelector(".journey-group-body");
   if(body)body.hidden=!open;
 });
-$("refreshReportBtn").addEventListener("click",async()=>{await loadReportOptions();msg("reportMsg","");});
+$("refreshReportBtn").addEventListener("click",async()=>{await loadReportOptions();msg("reportMsg","");updateReportApplyState();});
 $("exportReportBtn").addEventListener("click",exportReportExcel);
 $("applyReportBtn").addEventListener("click",loadReport);
 $("resetReportBtn").addEventListener("click",resetReportFilters);
+["reportDateFrom","reportDateTo","reportStatus","reportCourier","reportOrigin","reportDestination"].forEach(id=>{
+  const el=$(id);
+  if(el)el.addEventListener("change",updateReportApplyState);
+});
+updateReportApplyState();
 $("userForm").addEventListener("submit",handleCreateUser);
 $("refreshUsersBtn").addEventListener("click",loadUsers);
 
