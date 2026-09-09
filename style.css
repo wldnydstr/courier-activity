@@ -1554,3 +1554,41 @@ td{color:#4d5865}
   overflow:hidden;
   text-overflow:ellipsis;
 }
+
+
+/* V54 — Dashboard: keterangan ringkas dengan Load more, supaya tinggi baris tetap konsisten. */
+#dashboardView .dashboard-detail-table .dashboard-note{
+  max-width:none !important;
+  vertical-align:top;
+  line-height:1.45;
+  overflow-wrap:anywhere;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-text{
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  overflow:hidden;
+  max-height:2.9em;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-text.expanded{
+  display:block;
+  max-height:none;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-toggle{
+  display:inline-block;
+  min-height:auto;
+  margin:5px 0 0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:#2563eb;
+  font:inherit;
+  font-size:9px;
+  font-weight:700;
+  line-height:1.3;
+  cursor:pointer;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-toggle:hover{
+  text-decoration:underline;
+}

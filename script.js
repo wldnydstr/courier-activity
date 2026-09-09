@@ -950,10 +950,16 @@ function renderDashboard(data){
     <td>${escapeHtml(displayIndonesiaTime(a.berangkat))}</td><td>${escapeHtml(displayIndonesiaTime(a.datang))}</td><td>${escapeHtml(displayDuration(a.durasiMengemudi))}</td>
     <td><span class="recent-courier"><span class="recent-avatar">${escapeHtml(String(a.kurir||"?").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase())}</span>${escapeHtml(a.kurir||"-")}</span></td>
     <td><div class="dashboard-destination"><strong>${escapeHtml(a.tujuan||"-")}</strong><span>${escapeHtml(a.asal||"-")}</span></div></td>
-    <td><span class="task-tag">${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</span></td><td class="dashboard-note">${escapeHtml(a.keterangan||"-")}</td>
+    <td><span class="task-tag">${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</span></td><td class="dashboard-note"><div class="dashboard-note-text">${escapeHtml(a.keterangan||"-")}</div>${String(a.keterangan||"").trim().length>90?`<button class="dashboard-note-toggle" type="button" aria-expanded="false">Load more...</button>`:""}</td>
     <td><span class="dashboard-status-pill ${statusClass(a.status)}">${escapeHtml(a.status||"-")}</span></td><td>${bukti?`<a class="proof-link" href="${escapeHtml(bukti)}" target="_blank" rel="noopener">Lihat Foto</a>`:'-'}</td>
   </tr>`;}).join('');
   $("dashboardEmpty").classList.toggle("hidden",recent.length>0);
+  document.querySelectorAll(".dashboard-note-toggle").forEach(btn=>btn.addEventListener("click",()=>{
+    const expanded=btn.getAttribute("aria-expanded")==="true";
+    btn.setAttribute("aria-expanded",String(!expanded));
+    btn.previousElementSibling?.classList.toggle("expanded",!expanded);
+    btn.textContent=expanded?"Load more...":"Show less";
+  }));
 }
 async function loadDashboard(){
   msg("dashboardMsg","Memuat data aktivitas...");
