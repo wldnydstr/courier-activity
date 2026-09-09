@@ -956,19 +956,32 @@ function renderDashboard(data){
   $("dashboardEmpty").classList.toggle("hidden",recent.length>0);
   document.querySelectorAll("#dashboardView .dashboard-note").forEach(note=>{
     const text=note.querySelector(".dashboard-note-text");
-    const btn=note.querySelector(".dashboard-note-toggle");
-    if(!text||!btn)return;
+    if(!text)return;
+    const fullText=text.textContent.trim()||"-";
+    let truncated=fullText;
+    const renderCollapsed=()=>{
+      text.classList.remove("expanded");
+      text.innerHTML=escapeHtml(truncated)+' <button class="dashboard-note-inline-toggle" type="button">Load more...</button>';
+      const b=text.querySelector(".dashboard-note-inline-toggle");
+      b.addEventListener("click",renderExpanded);
+    };
+    const renderExpanded=()=>{
+      text.classList.add("expanded");
+      text.innerHTML=escapeHtml(fullText)+' <button class="dashboard-note-inline-toggle" type="button">Show less</button>';
+      text.querySelector(".dashboard-note-inline-toggle").addEventListener("click",renderCollapsed);
+    };
     text.classList.remove("expanded");
-    btn.setAttribute("aria-expanded","false");
-    btn.textContent="Load more...";
-    btn.hidden=!(text.scrollHeight>text.clientHeight+1);
-    btn.addEventListener("click",()=>{
-      const expanded=btn.getAttribute("aria-expanded")==="true";
-      btn.setAttribute("aria-expanded",String(!expanded));
-      text.classList.toggle("expanded",!expanded);
-      btn.textContent=expanded?"Load more...":"Show less";
-    });
-  });
+    text.textContent=fullText;
+    if(text.scrollHeight<=text.clientHeight+1)return;
+    let lo=1,hi=fullText.length,best=1;
+    while(lo<=hi){
+      const mid=Math.floor((lo+hi)/2);
+      text.innerHTML=escapeHtml(fullText.slice(0,mid).trimEnd())+' <button class="dashboard-note-inline-toggle" type="button">Load more...</button>';
+      if(text.scrollHeight<=text.clientHeight+1){best=mid;lo=mid+1;}else{hi=mid-1;}
+    }
+    truncated=fullText.slice(0,best).trimEnd();
+    renderCollapsed();
+  });;
 }
 async function loadDashboard(){
   msg("dashboardMsg","Memuat data aktivitas...");
