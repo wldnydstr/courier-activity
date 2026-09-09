@@ -1467,3 +1467,90 @@ td{color:#4d5865}
   #dashboardView .dashboard-detail-table th:nth-child(8),#dashboardView .dashboard-detail-table td:nth-child(8){width:9%;}
   #dashboardView .dashboard-detail-table th:nth-child(9),#dashboardView .dashboard-detail-table td:nth-child(9){width:6%;}
 }
+
+/* V52 — Dashboard detail table: balance kolom tanpa horizontal scroll */
+#dashboardView .dashboard-detail-wrap{
+  overflow-x:hidden !important;
+  width:100%;
+  max-width:100%;
+  padding-left:8px;
+  padding-right:8px;
+}
+
+#dashboardView .dashboard-detail-table{
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100%;
+  table-layout:fixed !important;
+  font-size:11px;
+}
+
+#dashboardView .dashboard-detail-table th{
+  white-space:normal !important;
+  word-break:normal !important;
+  overflow-wrap:break-word !important;
+  line-height:1.2;
+  padding:9px 6px !important;
+}
+
+#dashboardView .dashboard-detail-table td{
+  padding:9px 6px !important;
+  overflow-wrap:break-word;
+  word-break:normal;
+}
+
+/* Lebar dibuat lebih kecil untuk waktu/durasi, dan cukup untuk Kurir */
+#dashboardView .dashboard-detail-table th:nth-child(1),
+#dashboardView .dashboard-detail-table td:nth-child(1){width:7% !important;}
+
+#dashboardView .dashboard-detail-table th:nth-child(2),
+#dashboardView .dashboard-detail-table td:nth-child(2){width:7% !important;}
+
+#dashboardView .dashboard-detail-table th:nth-child(3),
+#dashboardView .dashboard-detail-table td:nth-child(3){width:9% !important;}
+
+#dashboardView .dashboard-detail-table th:nth-child(4),
+#dashboardView .dashboard-detail-table td:nth-child(4){width:11% !important;}
+
+#dashboardView .dashboard-detail-table th:nth-child(5),
+#dashboardView .dashboard-detail-table td:nth-child(5){width:19% !important;}
+
+#dashboardView .dashboard-detail-table th:nth-child(6),
+#dashboardView .dashboard-detail-table td:nth-child(6){width:12% !important;}
+
+#dashboardView .dashboard-detail-table th:nth-child(7),
+#dashboardView .dashboard-detail-table td:nth-child(7){width:16% !important;}
+
+#dashboardView .dashboard-detail-table th:nth-child(8),
+#dashboardView .dashboard-detail-table td:nth-child(8){width:12% !important;}
+
+#dashboardView .dashboard-detail-table th:nth-child(9),
+#dashboardView .dashboard-detail-table td:nth-child(9){width:7% !important;}
+
+/* Jam dan durasi tetap satu baris; Kurir tidak terpotong */
+#dashboardView .dashboard-detail-table td:nth-child(1),
+#dashboardView .dashboard-detail-table td:nth-child(2),
+#dashboardView .dashboard-detail-table td:nth-child(3){
+  white-space:nowrap !important;
+}
+
+#dashboardView .dashboard-detail-table .recent-courier{
+  min-width:0;
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:nowrap;
+  white-space:nowrap;
+  overflow:hidden;
+}
+
+#dashboardView .dashboard-detail-table .recent-courier .recent-avatar{
+  flex:0 0 24px;
+}
+
+#dashboardView .dashboard-detail-table .recent-courier .recent-avatar + *{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
