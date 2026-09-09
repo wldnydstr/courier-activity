@@ -855,6 +855,9 @@ th {
 #reportView .card:has(#reportTable) .table-wrap td:nth-child(16) { width: 150px; }
 #reportView .card:has(#reportTable) .table-wrap th:nth-child(17),
 #reportView .card:has(#reportTable) .table-wrap td:nth-child(17) { width: 130px; }
+#reportView .card:has(#reportTable) .table-wrap table { width: max-content; min-width: 2600px; table-layout: fixed; }
+#reportView .card:has(#reportTable) .table-wrap th:nth-child(18),
+#reportView .card:has(#reportTable) .table-wrap td:nth-child(18) { width: 120px; }
 
 @media (max-width: 700px) {
   #reportView .card:has(#reportTable) .table-wrap {
