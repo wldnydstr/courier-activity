@@ -969,6 +969,21 @@ function renderDashboard(data){
   populateDashboardCouriers(allRows);
   const day=$("dashboardDate").value, courier=$("dashboardCourier").value;
   const rows=allRows.filter(a=>(!courier||a.kurir===courier)&&activityMatchesDay(a,day));
+  const detailDateEl=$("dashboardDetailDate");
+  if(detailDateEl){
+    let detailDateLabel="Semua tanggal";
+    if(day){
+      const d=parseActivityDate(day);
+      if(d) detailDateLabel=displayIndonesiaDateTime(d).split(" - ")[0];
+    }else{
+      const uniqueDays=[...new Set(rows.map(a=>{const d=parseActivityDate(a.berangkat||a.datang||a.selesai);return d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`:null;}).filter(Boolean))];
+      if(uniqueDays.length===1){
+        const d=parseActivityDate(uniqueDays[0]);
+        if(d) detailDateLabel=displayIndonesiaDateTime(d).split(" - ")[0];
+      }
+    }
+    detailDateEl.textContent="Data: "+detailDateLabel;
+  }
   const stats={total:rows.length,menungguBerangkat:rows.filter(a=>a.status==="Menunggu Berangkat").length,lagiJalan:rows.filter(a=>a.status==="Lagi Jalan").length,lagiDiproses:rows.filter(a=>a.status==="Lagi Diproses").length,selesai:rows.filter(a=>a.status==="Selesai").length};
   $("statTotal").textContent=stats.total||0; $("statMenunggu").textContent=stats.menungguBerangkat||0; $("statJalan").textContent=stats.lagiJalan||0; $("statSelesai").textContent=stats.selesai||0;
   const prosesEl=$("statProses"); if(prosesEl)prosesEl.textContent=stats.lagiDiproses||0;

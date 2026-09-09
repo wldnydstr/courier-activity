@@ -1656,3 +1656,23 @@ td{color:#4d5865}
   #dashboardView .journey-group-toggle{min-height:46px;padding:9px 10px}
   #dashboardView .journey-group-body{padding-left:9px;padding-right:9px}
 }
+
+
+/* V62: tanggal data pada header Detail Aktivitas Kurir */
+.dashboard-detail-head{align-items:flex-start;justify-content:space-between;gap:16px}
+.dashboard-detail-date{flex:0 0 auto;margin-left:auto;padding:7px 11px;border:1px solid #e4e9f0;border-radius:999px;background:#f8fafc;color:#64748b;font-size:12px;font-weight:600;line-height:1.2;white-space:nowrap}
+@media(max-width:700px){.dashboard-detail-head{gap:10px}.dashboard-detail-date{font-size:11px;padding:6px 9px}}
+
+/* V63 — Header dashboard mengikuti lebar penuh card di laptop */
+@media (min-width: 1100px){
+  #appView .dashboard-sticky-top{
+    padding-left:0 !important;
+    padding-right:0 !important;
+  }
+  #appView .dashboard-sticky-top .topbar,
+  #appView .dashboard-sticky-top .nav{
+    width:100% !important;
+    margin-left:0 !important;
+    margin-right:0 !important;
+  }
+}
