@@ -723,7 +723,7 @@ function renderCourierChart(rows){
     const status=String(a.status||"Tidak diketahui").trim()||"Tidak diketahui";
     byCourier[name].counts[status]=(byCourier[name].counts[status]||0)+1;
   });
-  const entries=Object.entries(byCourier).sort((a,b)=>b[1].total-a[1].total||a[0].localeCompare(b[0]));
+  const entries=Object.entries(byCourier).sort((a,b)=>a[0].localeCompare(b[0],"id",{sensitivity:"base"})||b[1].total-a[1].total);
   const max=Math.max(...entries.map(([,v])=>v.total),1);
   chart.innerHTML=entries.map(([name,data])=>{
     const initials=name.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase();
@@ -874,6 +874,54 @@ function displayDuration(value){
   return text;
 }
 
+function renderActivityTypeSummary(rows){
+  const chart=$("activityTypeChart"), legend=$("activityTypeLegend");
+  if(!chart)return;
+  const counts={};
+  rows.forEach(a=>{
+    String(a.jenisTugas||a.pekerjaan||"Tidak diketahui").split("|").map(v=>v.trim()).filter(Boolean).forEach(label=>counts[label]=(counts[label]||0)+1);
+  });
+  const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"id"));
+  if(!entries.length){chart.innerHTML='<div class="type-empty">Belum ada data</div>';if(legend)legend.innerHTML='';return;}
+  const colors=["#2563EB","#54B978","#8B5CF6","#22A6B3","#F59E0B","#94A3B8"];
+  const total=entries.reduce((sum,[,v])=>sum+v,0); let cursor=0;
+  const stops=entries.map(([label,v],i)=>{const end=cursor+(v/total)*360;const stop=`${colors[i%colors.length]} ${cursor}deg ${end}deg`;cursor=end;return stop;});
+  chart.innerHTML=`<div class="type-donut-ring" style="background:conic-gradient(${stops.join(',')})"><div class="type-donut-hole"><strong>${total}</strong><span>Total<br>Aktivitas</span></div></div>`;
+  if(legend)legend.innerHTML=entries.slice(0,6).map(([label,v],i)=>`<div class="type-legend-row"><div><i class="legend-dot" style="background:${colors[i%colors.length]}"></i><span>${escapeHtml(label)}</span></div><strong>${v}</strong><small>${Math.round(v/total*100)}%</small></div>`).join('');
+}
+
+function renderJourneyPanel(rows){
+  const select=$("journeyCourier"), panel=$("journeyPanel");
+  if(!select||!panel)return;
+  const names=[...new Set(rows.map(a=>String(a.kurir||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"id",{sensitivity:"base"}));
+  const current=select.value;
+  select.innerHTML=names.length?names.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join(''):'<option value="">Pilih kurir</option>';
+  if(names.includes(current))select.value=current; else if(names.length)select.value=names[0];
+  const courier=select.value;
+  const list=rows.filter(a=>a.kurir===courier).sort((a,b)=>(parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0)-(parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0));
+  if(!list.length){panel.innerHTML='<div class="journey-empty">Belum ada perjalanan untuk kurir ini.</div>';return;}
+  panel.innerHTML=list.slice(0,8).map((a,i)=>{
+    const status=a.status||"-";
+    const cls=status==="Selesai"?'done':status==="Lagi Diproses"?'process':status==="Lagi Jalan"?'road':'wait';
+    return `<div class="journey-item"><div class="journey-marker"><span>${i+1}</span></div><div class="journey-line"></div><div class="journey-content">
+      <div class="journey-top"><strong>Trip ${escapeHtml(a.trip||String(i+1))}</strong><span class="journey-status ${cls}">${escapeHtml(status)}</span></div>
+      <div class="journey-route"><span class="journey-dot start"></span><div><small>Berangkat dari</small><b>${escapeHtml(a.asal||"-")}</b></div><time>${escapeHtml(displayIndonesiaTime(a.berangkat))}</time></div>
+      <div class="journey-route"><span class="journey-dot end"></span><div><small>Menuju</small><b>${escapeHtml(a.tujuan||"-")}</b><em>${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</em></div><time>${escapeHtml(displayIndonesiaTime(a.datang))}</time></div>
+      <div class="journey-meta"><span>Durasi mengemudi <b>${escapeHtml(displayDuration(a.durasiMengemudi))}</b></span><span>Selesai <b>${escapeHtml(displayIndonesiaTime(a.selesai))}</b></span></div>
+    </div></div>`;
+  }).join('');
+}
+
+function renderProofGallery(rows){
+  const el=$("proofGallery"); if(!el)return;
+  const items=[];
+  rows.slice().sort((a,b)=>(parseActivityDate(b.selesai||b.datang||b.berangkat)?.getTime()||0)-(parseActivityDate(a.selesai||a.datang||a.berangkat)?.getTime()||0)).forEach(a=>{
+    [[a.fotoDatang,'Foto Saat Datang'],[a.fotoBerangkat,'Foto Berangkat'],[a.fotoDokumen,'Foto Dokumen']].forEach(([url,label])=>{if(url&&items.length<6)items.push({url,label});});
+  });
+  if(!items.length){el.innerHTML='<div class="proof-empty">Belum ada foto bukti.</div>';return;}
+  el.innerHTML=items.map(item=>`<a class="proof-thumb" href="${escapeHtml(item.url)}" target="_blank" rel="noopener"><img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.label)}"><span>${escapeHtml(item.label)}</span></a>`).join('');
+}
+
 function renderDashboard(data){
   requestAnimationFrame(syncDashboardFreeze);
   const allRows=data.activities||[];
@@ -881,38 +929,20 @@ function renderDashboard(data){
   const day=$("dashboardDate").value, courier=$("dashboardCourier").value;
   const rows=allRows.filter(a=>(!courier||a.kurir===courier)&&activityMatchesDay(a,day));
   const stats={total:rows.length,menungguBerangkat:rows.filter(a=>a.status==="Menunggu Berangkat").length,lagiJalan:rows.filter(a=>a.status==="Lagi Jalan").length,lagiDiproses:rows.filter(a=>a.status==="Lagi Diproses").length,selesai:rows.filter(a=>a.status==="Selesai").length};
-  $("statTotal").textContent=stats.total||0;
-  $("statMenunggu").textContent=stats.menungguBerangkat||0;
-  $("statJalan").textContent=stats.lagiJalan||0;
-  $("statSelesai").textContent=stats.selesai||0;
-  const pct=(n)=>stats.total?Math.round(n/stats.total*100):0;
-  [["Menunggu",stats.menungguBerangkat],["Jalan",stats.lagiJalan],["Proses",stats.lagiDiproses],["Selesai",stats.selesai]].forEach(([key,n])=>{
-    const p=pct(n); const el=$("stat"+key+"Progress"), tx=$("stat"+key+"Percent");
-    if(el)el.style.width=p+"%"; if(tx)tx.textContent=p+"%";
-  });
-  const prosesEl=$("statProses"); if(prosesEl)prosesEl.textContent=stats.lagiDiproses;
-  renderCourierChart(rows);
-  renderStatusChart(rows);
-  $("chartSubtitle") && ($("chartSubtitle").textContent="Aktivitas sesuai dengan filter yang dipilih.");
-  const statusClass=(status)=>status==="Selesai"?"done":status==="Lagi Jalan"?"jalan":status==="Lagi Diproses"?"proses":"waiting";
-  const recent=[...rows].sort((a,b)=>{
-    const da=parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0;
-    const db=parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0;
-    return db-da;
-  }).slice(0,8);
-  $("dashboardTable").innerHTML=recent.map(a=>`<tr>
-    <td class="recent-id">${escapeHtml(a.idAktivitas||"-")}</td>
+  $("statTotal").textContent=stats.total||0; $("statMenunggu").textContent=stats.menungguBerangkat||0; $("statJalan").textContent=stats.lagiJalan||0; $("statSelesai").textContent=stats.selesai||0;
+  const prosesEl=$("statProses"); if(prosesEl)prosesEl.textContent=stats.lagiDiproses||0;
+  const pct=n=>stats.total?Math.round(n/stats.total*100):0;
+  [["Menunggu",stats.menungguBerangkat],["Jalan",stats.lagiJalan],["Proses",stats.lagiDiproses],["Selesai",stats.selesai]].forEach(([key,n])=>{const p=pct(n),el=$("stat"+key+"Progress"),tx=$("stat"+key+"Percent");if(el)el.style.width=p+"%";if(tx)tx.textContent=p+"%";});
+  renderCourierChart(rows); renderStatusChart(rows); renderActivityTypeSummary(rows); renderJourneyPanel(rows); renderProofGallery(rows);
+  const statusClass=status=>status==="Selesai"?"done":status==="Lagi Jalan"?"jalan":status==="Lagi Diproses"?"proses":"waiting";
+  const recent=[...rows].sort((a,b)=>(parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0)-(parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0)).slice(0,12);
+  $("dashboardTable").innerHTML=recent.map(a=>{const bukti=a.fotoDatang||a.fotoBerangkat||a.fotoDokumen||"";return `<tr>
+    <td>${escapeHtml(displayIndonesiaTime(a.berangkat))}</td><td>${escapeHtml(displayIndonesiaTime(a.datang))}</td><td>${escapeHtml(displayDuration(a.durasiMengemudi))}</td>
     <td><span class="recent-courier"><span class="recent-avatar">${escapeHtml(String(a.kurir||"?").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase())}</span>${escapeHtml(a.kurir||"-")}</span></td>
-    <td>${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</td>
-    <td>${escapeHtml(a.asal||"-")}</td>
-    <td>${escapeHtml(a.tujuan||"-")}</td>
-    <td><span class="dashboard-status-pill ${statusClass(a.status)}">${escapeHtml(a.status||"-")}</span></td>
-    <td>${escapeHtml(displayReportTime(a.berangkat))}</td>
-    <td>${escapeHtml(displayReportTime(a.datang))}</td>
-    <td>${escapeHtml(displayReportTime(a.selesai))}</td>
-    <td>${escapeHtml(displayDuration(a.durasiMengemudi))}</td>
-    <td>${escapeHtml(displayDuration(a.durasiTugas))}</td>
-  </tr>`).join('');
+    <td>${escapeHtml(a.trip||"-")}</td><td><div class="dashboard-destination"><strong>${escapeHtml(a.tujuan||"-")}</strong><span>${escapeHtml(a.asal||"-")}</span></div></td>
+    <td><span class="task-tag">${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</span></td><td class="dashboard-note">${escapeHtml(a.keterangan||"-")}</td>
+    <td><span class="dashboard-status-pill ${statusClass(a.status)}">${escapeHtml(a.status||"-")}</span></td><td>${bukti?`<a class="proof-link" href="${escapeHtml(bukti)}" target="_blank" rel="noopener">Lihat Foto</a>`:'-'}</td>
+  </tr>`;}).join('');
   $("dashboardEmpty").classList.toggle("hidden",recent.length>0);
 }
 async function loadDashboard(){
@@ -1126,6 +1156,7 @@ $("activityForm").addEventListener("submit",handleCreateActivity);
 $("pendingDepartureBtn").addEventListener("click",handlePendingDeparture);
 $("applyDashboardFilterBtn").addEventListener("click",applyDashboardFilters);
 $("resetDashboardFilterBtn").addEventListener("click",resetDashboardFilters);
+$("journeyCourier").addEventListener("change",()=>renderJourneyPanel((state.dashboardActivities||[]).filter(a=>(!$("dashboardCourier").value||a.kurir===$("dashboardCourier").value)&&activityMatchesDay(a,$("dashboardDate").value))));
 $("refreshReportBtn").addEventListener("click",async()=>{await loadReportOptions();msg("reportMsg","");});
 $("exportReportBtn").addEventListener("click",exportReportExcel);
 $("applyReportBtn").addEventListener("click",loadReport);

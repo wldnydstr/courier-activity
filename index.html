@@ -6,7 +6,7 @@
   <title>Aktivitas Kurir</title>
   <link rel="preconnect" href="https://fonts.cdnfonts.com">
   <link href="https://fonts.cdnfonts.com/css/gilroy" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=420">
+  <link rel="stylesheet" href="style.css?v=470">
 </head>
 <body>
 <main class="app">
@@ -141,28 +141,40 @@
         </div>
       </div>
 
-      <div class="dashboard-chart-grid">
-        <div class="card chart-card dashboard-courier-card">
-          <div class="section-title-row"><div><div class="section-title">Aktivitas per Kurir</div><div class="muted small">Jumlah dan status aktivitas yang ditangani oleh setiap kurir.</div></div><select id="dashboardCourierQuick"><option value="">Hari ini</option></select></div>
-          <div id="courierChart" class="category-chart dashboard-courier-chart"></div>
-          <div id="courierLegend" class="chart-legend category-chart-legend"></div>
+      <div class="dashboard-main-grid">
+        <div class="card dashboard-detail-card">
+          <div class="section-title-row dashboard-section-head">
+            <div><div class="section-title">Detail Aktivitas Kurir</div><div class="muted small">Pantau aktivitas kurir berdasarkan filter yang dipilih.</div></div>
+          </div>
+          <div class="table-wrap dashboard-detail-wrap">
+            <table class="dashboard-detail-table">
+              <thead><tr><th>Jam Berangkat</th><th>Jam Tiba</th><th>Durasi Perjalanan</th><th>Kurir</th><th>Trip</th><th>Tujuan</th><th>Jenis Tugas</th><th>Keterangan</th><th>Status</th><th>Foto Bukti</th></tr></thead>
+              <tbody id="dashboardTable"></tbody>
+            </table>
+          </div>
+          <div id="dashboardEmpty" class="empty hidden">Belum ada aktivitas.</div>
         </div>
 
-        <div class="card chart-card dashboard-status-card">
-          <div class="section-title-row"><div><div class="section-title">Status Aktivitas Saat Ini</div><div class="muted small">Distribusi seluruh aktivitas berdasarkan status.</div></div></div>
-          <div class="status-dashboard-layout"><div id="statusChart" class="status-donut"></div><div id="statusLegend" class="status-summary"></div></div>
+        <div class="card dashboard-journey-card">
+          <div class="section-title-row dashboard-section-head">
+            <div><div class="section-title">Perjalanan Kurir</div><div class="muted small">Lihat urutan perjalanan kurir berdasarkan Trip.</div></div>
+            <select id="journeyCourier" class="journey-courier-select" aria-label="Pilih kurir"></select>
+          </div>
+          <div id="journeyPanel" class="journey-panel"></div>
         </div>
       </div>
 
-      <div class="card dashboard-recent-card">
-        <div class="section-title-row dashboard-recent-head"><div><div class="section-title">Aktivitas Terbaru</div><div class="muted small">Daftar aktivitas kurir terbaru secara real-time.</div></div><button id="dashboardSeeAllBtn" class="ghost" type="button">Lihat Semua →</button></div>
-        <div class="table-wrap dashboard-recent-wrap">
-          <table class="dashboard-recent-table">
-            <thead><tr><th>ID Aktivitas</th><th>Kurir</th><th>Jenis Tugas</th><th>Asal</th><th>Tujuan</th><th>Status</th><th>Waktu Berangkat</th><th>Waktu Tiba</th><th>Waktu Selsai</th><th>Durasi Mengemudi</th><th>Durasi Tugas</th></tr></thead>
-            <tbody id="dashboardTable"></tbody>
-          </table>
+      <div class="dashboard-bottom-grid">
+        <div class="card dashboard-type-card">
+          <div class="section-title-row dashboard-section-head"><div><div class="section-title">Rekap Jenis Tugas</div><div class="muted small">Distribusi jenis tugas pada aktivitas yang tampil.</div></div></div>
+          <div class="type-summary-layout"><div id="activityTypeChart" class="type-donut"></div><div id="activityTypeLegend" class="type-legend"></div></div>
         </div>
-        <div id="dashboardEmpty" class="empty hidden">Belum ada aktivitas.</div>
+
+        <div class="card dashboard-proof-card">
+          <div class="section-title-row dashboard-section-head"><div><div class="section-title">Keterangan / Foto Bukti</div><div class="muted small">Bukti aktivitas terbaru dari data yang tampil.</div></div></div>
+          <div id="proofGallery" class="proof-gallery"></div>
+          <div class="proof-hint">ⓘ Klik foto untuk melihat bukti dalam ukuran penuh.</div>
+        </div>
       </div>
     </section>
 
