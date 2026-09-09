@@ -890,38 +890,69 @@ function renderActivityTypeSummary(rows){
   if(legend)legend.innerHTML=entries.slice(0,6).map(([label,v],i)=>`<div class="type-legend-row"><div><i class="legend-dot" style="background:${colors[i%colors.length]}"></i><span>${escapeHtml(label)}</span></div><strong>${v}</strong><small>${Math.round(v/total*100)}%</small></div>`).join('');
 }
 
+let dashboardJourneyOpen = new Set();
+
 function renderJourneyPanel(allRows, day){
-  const select=$("journeyCourier"), panel=$("journeyPanel");
-  if(!select||!panel)return;
-  const source=Array.isArray(allRows)?allRows:[];
-  const names=[...new Set(source.map(a=>String(a.kurir||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"id",{sensitivity:"base"}));
-  const current=select.value;
-  const options=['<option value="">Semua kurir</option>'].concat(names.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`));
-  select.innerHTML=options.join('');
-  if(names.includes(current))select.value=current; else select.value="";
-  const courier=select.value;
-  const list=source.filter(a=>(!courier||a.kurir===courier)&&activityMatchesDay(a,day)).sort((a,b)=>{
-    if(!courier){
-      const nc=String(a.kurir||"").localeCompare(String(b.kurir||""),"id",{sensitivity:"base"});
-      if(nc!==0)return nc;
-    }
-    const ta=parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0;
-    const tb=parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0;
-    return ta-tb;
+  const panel=$("journeyPanel");
+  if(!panel)return;
+  const source=(Array.isArray(allRows)?allRows:[]).filter(a=>String(a.idAktivitas||"").trim());
+  const grouped={};
+
+  source.filter(a=>activityMatchesDay(a,day)).forEach(a=>{
+    const name=String(a.kurir||"").trim();
+    if(!name)return;
+    if(!grouped[name])grouped[name]=[];
+    grouped[name].push(a);
   });
-  if(!list.length){panel.innerHTML='<div class="journey-empty">Belum ada perjalanan untuk filter yang dipilih.</div>';return;}
-  panel.innerHTML=list.slice(0,24).map((a,i)=>{
-    const status=a.status||"-";
-    const cls=status==="Selesai"?'done':status==="Lagi Diproses"?'process':status==="Lagi Jalan"?'road':'wait';
-    const courierLabel=courier?'':`<small class="journey-courier-label">${escapeHtml(a.kurir||"-")}</small>`;
-    return `<div class="journey-item"><div class="journey-marker"><span>${i+1}</span></div><div class="journey-line"></div><div class="journey-content">
-      <div class="journey-top">${courierLabel}<strong>Trip ${escapeHtml(a.trip||String(i+1))}</strong><span class="journey-status ${cls}">${escapeHtml(status)}</span></div>
-      <div class="journey-route"><span class="journey-dot start"></span><div><small>Berangkat dari</small><b>${escapeHtml(a.asal||"-")}</b></div><time>${escapeHtml(displayIndonesiaTime(a.berangkat))}</time></div>
-      <div class="journey-route"><span class="journey-dot end"></span><div><small>Menuju</small><b>${escapeHtml(a.tujuan||"-")}</b><em>${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</em></div><time>${escapeHtml(displayIndonesiaTime(a.datang))}</time></div>
-      <div class="journey-meta"><span>Durasi mengemudi <b>${escapeHtml(displayDuration(a.durasiMengemudi))}</b></span><span>Selesai <b>${escapeHtml(displayIndonesiaTime(a.selesai))}</b></span></div>
-    </div></div>`;
-  }).join('');
+
+  const names=Object.keys(grouped).sort((a,b)=>a.localeCompare(b,"id",{sensitivity:"base"}));
+  if(!names.length){
+    panel.innerHTML='<div class="journey-empty">Belum ada perjalanan untuk filter yang dipilih.</div>';
+    return;
+  }
+
+  // Saat pertama kali dibuka, buka kurir pertama. Setelah itu pertahankan
+  // pilihan expand/collapse user selama dashboard masih aktif.
+  if(!dashboardJourneyOpen.size)dashboardJourneyOpen.add(names[0]);
+  dashboardJourneyOpen.forEach(name=>{if(!grouped[name])dashboardJourneyOpen.delete(name);});
+
+  panel.innerHTML=names.map((name,groupIndex)=>{
+    const isOpen=dashboardJourneyOpen.has(name);
+    const rows=grouped[name].slice().sort((a,b)=>{
+      const tripA=Number.parseInt(String(a.trip??""),10), tripB=Number.parseInt(String(b.trip??""),10);
+      if(Number.isFinite(tripA)&&Number.isFinite(tripB)&&tripA!==tripB)return tripA-tripB;
+      const ta=parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0;
+      const tb=parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0;
+      return ta-tb;
+    });
+
+    const trips=rows.map((a,i)=>{
+      const status=a.status||"-";
+      const cls=status==="Selesai"?'done':status==="Lagi Diproses"?'process':status==="Lagi Jalan"?'road':'wait';
+      const trip=a.trip!==undefined&&a.trip!==null&&String(a.trip).trim()!==""?String(a.trip):String(i+1);
+      return `<div class="journey-item">
+        <div class="journey-marker"><span>${escapeHtml(trip)}</span></div>
+        <div class="journey-line"></div>
+        <div class="journey-content">
+          <div class="journey-top"><strong>Trip ${escapeHtml(trip)}</strong><span class="journey-status ${cls}">${escapeHtml(status)}</span></div>
+          <div class="journey-route"><span class="journey-dot start"></span><div><small>Berangkat dari</small><b>${escapeHtml(a.asal||"-")}</b></div><time>${escapeHtml(displayIndonesiaTime(a.berangkat))}</time></div>
+          <div class="journey-route"><span class="journey-dot end"></span><div><small>Menuju</small><b>${escapeHtml(a.tujuan||"-")}</b><em>${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</em></div><time>${escapeHtml(displayIndonesiaTime(a.datang))}</time></div>
+          <div class="journey-meta"><span>Durasi mengemudi <b>${escapeHtml(displayDuration(a.durasiMengemudi))}</b></span><span>Selesai <b>${escapeHtml(displayIndonesiaTime(a.selesai))}</b></span></div>
+        </div>
+      </div>`;
+    }).join("");
+
+    return `<section class="journey-group ${isOpen?'is-open':''}" data-journey-group="${escapeHtml(name)}">
+      <button type="button" class="journey-group-toggle" aria-expanded="${isOpen?'true':'false'}">
+        <span class="journey-chevron" aria-hidden="true">›</span>
+        <span class="journey-group-name">${escapeHtml(name)}</span>
+        <span class="journey-group-count">${rows.length} trip</span>
+      </button>
+      <div class="journey-group-body" ${isOpen?'':'hidden'}>${trips}</div>
+    </section>`;
+  }).join("");
 }
+
 function renderProofGallery(rows){
   const el=$("proofGallery"); if(!el)return;
   const items=[];
@@ -934,7 +965,7 @@ function renderProofGallery(rows){
 
 function renderDashboard(data){
   requestAnimationFrame(syncDashboardFreeze);
-  const allRows=data.activities||[];
+  const allRows=(data.activities||[]).filter(a=>String(a.idAktivitas||"").trim());
   populateDashboardCouriers(allRows);
   const day=$("dashboardDate").value, courier=$("dashboardCourier").value;
   const rows=allRows.filter(a=>(!courier||a.kurir===courier)&&activityMatchesDay(a,day));
@@ -1194,7 +1225,19 @@ $("activityForm").addEventListener("submit",handleCreateActivity);
 $("pendingDepartureBtn").addEventListener("click",handlePendingDeparture);
 $("applyDashboardFilterBtn").addEventListener("click",applyDashboardFilters);
 $("resetDashboardFilterBtn").addEventListener("click",resetDashboardFilters);
-$("journeyCourier").addEventListener("change",()=>renderJourneyPanel(state.dashboardActivities||[],$("dashboardDate").value));
+$("journeyPanel").addEventListener("click",e=>{
+  const toggle=e.target.closest(".journey-group-toggle");
+  if(!toggle)return;
+  const group=toggle.closest(".journey-group");
+  if(!group)return;
+  const name=group.dataset.journeyGroup;
+  if(dashboardJourneyOpen.has(name)){dashboardJourneyOpen.delete(name);}else{dashboardJourneyOpen.add(name);}
+  const open=dashboardJourneyOpen.has(name);
+  group.classList.toggle("is-open",open);
+  toggle.setAttribute("aria-expanded",open?"true":"false");
+  const body=group.querySelector(".journey-group-body");
+  if(body)body.hidden=!open;
+});
 $("refreshReportBtn").addEventListener("click",async()=>{await loadReportOptions();msg("reportMsg","");});
 $("exportReportBtn").addEventListener("click",exportReportExcel);
 $("applyReportBtn").addEventListener("click",loadReport);

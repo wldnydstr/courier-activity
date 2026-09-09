@@ -1635,3 +1635,24 @@ td{color:#4d5865}
 #dashboardView .dashboard-detail-table .dashboard-note > .dashboard-note-toggle{
   display:none !important;
 }
+
+
+/* V58 — Perjalanan Kurir: accordion per nama kurir */
+#dashboardView .journey-panel{display:grid;gap:8px;overflow:visible;max-height:none;padding:0}
+#dashboardView .journey-group{border:1px solid #e7ebf0;border-radius:12px;background:#fff;overflow:hidden}
+#dashboardView .journey-group-toggle{width:100%;min-height:48px;padding:10px 12px;display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:center;gap:8px;border:0;border-radius:0;background:#fff;color:#26313e;text-align:left;cursor:pointer}
+#dashboardView .journey-group-toggle:hover{background:#f8fafc}
+#dashboardView .journey-chevron{width:22px;height:22px;display:grid;place-items:center;border-radius:7px;background:#f3f5f7;color:#687586;font-size:20px;line-height:1;transform:rotate(0deg);transition:transform .18s ease,background .18s ease}
+#dashboardView .journey-group.is-open .journey-chevron{transform:rotate(90deg);background:#eef1f4}
+#dashboardView .journey-group-name{min-width:0;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#dashboardView .journey-group-count{font-size:9px;font-weight:600;color:#8a95a1;white-space:nowrap}
+#dashboardView .journey-group-body{padding:0 12px 10px;border-top:1px solid #f0f2f5}
+#dashboardView .journey-group-body[hidden]{display:none}
+#dashboardView .journey-group-body .journey-item{padding-top:10px}
+#dashboardView .journey-group-body .journey-item:last-child{min-height:0}
+#dashboardView .journey-group-body .journey-item:last-child .journey-content{padding-bottom:2px}
+#dashboardView .journey-group-body .journey-marker span{font-size:9px}
+@media(max-width:820px){
+  #dashboardView .journey-group-toggle{min-height:46px;padding:9px 10px}
+  #dashboardView .journey-group-body{padding-left:9px;padding-right:9px}
+}
