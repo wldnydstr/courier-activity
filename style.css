@@ -2006,3 +2006,23 @@ td{color:#4d5865}
     padding: 0 18px 18px;
   }
 }
+
+
+/* V70 — fixed breathing room around horizontally scrolling report table */
+#appView #reportView .report-data-card .report-table-frame {
+  padding: 0 28px 24px;
+}
+
+#appView #reportView .report-data-card .report-table-frame .table-wrap {
+  padding: 0;
+  margin: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-radius: 12px;
+}
+
+@media (max-width: 700px) {
+  #appView #reportView .report-data-card .report-table-frame {
+    padding: 0 18px 18px;
+  }
+}
