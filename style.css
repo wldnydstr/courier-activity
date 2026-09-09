@@ -1926,3 +1926,83 @@ td{color:#4d5865}
     max-width: 240px;
   }
 }
+
+/* V67 — Report: rapikan header dan gunakan lebar laptop secara konsisten */
+@media (min-width: 701px){
+  #appView #reportView.report-page{
+    width:100% !important;
+    max-width:none !important;
+    position:static !important;
+    left:auto !important;
+    transform:none !important;
+    box-sizing:border-box;
+  }
+}
+
+#appView #reportView .report-hero{
+  min-height:92px;
+  align-items:center;
+  margin:0 0 18px;
+  padding:0 2px;
+}
+#appView #reportView .report-eyebrow{
+  margin-bottom:6px;
+}
+#appView #reportView .report-hero-title{
+  margin:0 0 5px;
+  font-size:30px;
+  letter-spacing:-.04em;
+}
+#appView #reportView .report-hero-subtitle{
+  margin:0;
+  line-height:1.5;
+}
+#appView #reportView .report-hero-actions{
+  align-self:center;
+}
+
+/* Filter dibuat memanfaatkan seluruh baris laptop */
+@media (min-width: 1100px){
+  #appView #reportView .report-filter-card{padding:24px 26px 22px}
+  #appView #reportView .report-filters-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+  #appView #reportView .report-filter-card .filter-actions{margin-top:16px}
+}
+
+/* Data card selalu memenuhi lebar halaman */
+#appView #reportView .report-data-card{width:100%;max-width:none}
+
+/* Konsisten dengan heading Dashboard */
+#appView #reportView .report-filter-title-row{margin-bottom:16px}
+#appView #reportView .report-data-head{min-height:88px}
+
+
+/* V68 — Lebarkan app shell desktop agar header/greeting/nav sejajar dengan seluruh card laptop */
+@media (min-width: 701px){
+  #appView, #appView .app-shell{
+    width:100%;
+    max-width:none;
+  }
+  body > main.app,
+  .app{
+    width:calc(100% - 96px) !important;
+    max-width:none !important;
+    margin-left:auto !important;
+    margin-right:auto !important;
+  }
+}
+
+/* V69 — Beri breathing room pada tabel Laporan di dalam card */
+#appView #reportView .report-data-card .table-wrap {
+  margin-top: 0;
+  padding: 0 28px 24px;
+}
+
+#appView #reportView .report-data-card .table-wrap table {
+  width: 100%;
+}
+
+@media (max-width: 700px) {
+  #appView #reportView .report-data-card .table-wrap {
+    padding: 0 18px 18px;
+  }
+}
