@@ -1676,3 +1676,140 @@ td{color:#4d5865}
     margin-right:0 !important;
   }
 }
+
+/* V64 — Report diselaraskan dengan visual Dashboard terbaru */
+#appView #reportView {
+  width: 100%;
+}
+
+#appView #reportView > .report-page-heading {
+  margin-bottom: 18px;
+  align-items: flex-end;
+}
+
+#appView #reportView .report-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#appView #reportView .report-heading-actions button {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 12px;
+}
+
+#appView #reportView .report-filter-card {
+  padding: 24px 28px 22px;
+  border-radius: 22px;
+  margin-bottom: 20px;
+}
+
+#appView #reportView .report-filter-head {
+  margin-bottom: 18px;
+}
+
+#appView #reportView .report-filter-head .section-title,
+#appView #reportView .report-data-head .section-title {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+#appView #reportView .report-filters-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+#appView #reportView .report-filters-grid label {
+  gap: 8px;
+}
+
+#appView #reportView .report-filters-grid input,
+#appView #reportView .report-filters-grid select {
+  min-height: 48px;
+  border-radius: 12px;
+}
+
+#appView #reportView .report-filter-card .filter-actions {
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+#appView #reportView .report-filter-card .filter-actions button {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 12px;
+}
+
+#appView #reportView .report-data-card {
+  padding: 0;
+  overflow: hidden;
+  border-radius: 22px;
+}
+
+#appView #reportView .report-data-head {
+  padding: 24px 28px 20px;
+  align-items: center;
+  border-bottom: 1px solid #eceef1;
+}
+
+#appView #reportView .report-count-badge {
+  flex: 0 0 auto;
+  padding: 8px 13px;
+  border-radius: 999px;
+  background: #f1f4f8;
+  color: #59616d;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+#appView #reportView .report-data-card .table-wrap {
+  border-radius: 0;
+}
+
+#appView #reportView .report-data-card .empty {
+  padding: 48px 24px;
+}
+
+@media (max-width: 900px) {
+  #appView #reportView .report-filters-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  #appView #reportView > .report-page-heading {
+    align-items: flex-start;
+  }
+
+  #appView #reportView .report-heading-actions {
+    width: 100%;
+  }
+
+  #appView #reportView .report-heading-actions button {
+    flex: 1;
+  }
+
+  #appView #reportView .report-filter-card {
+    padding: 20px 18px;
+    border-radius: 18px;
+  }
+
+  #appView #reportView .report-filters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #appView #reportView .report-filter-card .filter-actions {
+    justify-content: stretch;
+  }
+
+  #appView #reportView .report-filter-card .filter-actions button {
+    flex: 1;
+  }
+
+  #appView #reportView .report-data-head {
+    padding: 20px 18px;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
