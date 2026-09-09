@@ -890,15 +890,16 @@ function renderActivityTypeSummary(rows){
   if(legend)legend.innerHTML=entries.slice(0,6).map(([label,v],i)=>`<div class="type-legend-row"><div><i class="legend-dot" style="background:${colors[i%colors.length]}"></i><span>${escapeHtml(label)}</span></div><strong>${v}</strong><small>${Math.round(v/total*100)}%</small></div>`).join('');
 }
 
-function renderJourneyPanel(rows){
+function renderJourneyPanel(allRows, day){
   const select=$("journeyCourier"), panel=$("journeyPanel");
   if(!select||!panel)return;
-  const names=[...new Set(rows.map(a=>String(a.kurir||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"id",{sensitivity:"base"}));
+  const source=Array.isArray(allRows)?allRows:[];
+  const names=[...new Set(source.map(a=>String(a.kurir||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"id",{sensitivity:"base"}));
   const current=select.value;
   select.innerHTML=names.length?names.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join(''):'<option value="">Pilih kurir</option>';
   if(names.includes(current))select.value=current; else if(names.length)select.value=names[0];
   const courier=select.value;
-  const list=rows.filter(a=>a.kurir===courier).sort((a,b)=>(parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0)-(parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0));
+  const list=source.filter(a=>a.kurir===courier&&activityMatchesDay(a,day)).sort((a,b)=>(parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0)-(parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0));
   if(!list.length){panel.innerHTML='<div class="journey-empty">Belum ada perjalanan untuk kurir ini.</div>';return;}
   panel.innerHTML=list.slice(0,8).map((a,i)=>{
     const status=a.status||"-";
@@ -933,7 +934,7 @@ function renderDashboard(data){
   const prosesEl=$("statProses"); if(prosesEl)prosesEl.textContent=stats.lagiDiproses||0;
   const pct=n=>stats.total?Math.round(n/stats.total*100):0;
   [["Menunggu",stats.menungguBerangkat],["Jalan",stats.lagiJalan],["Proses",stats.lagiDiproses],["Selesai",stats.selesai]].forEach(([key,n])=>{const p=pct(n),el=$("stat"+key+"Progress"),tx=$("stat"+key+"Percent");if(el)el.style.width=p+"%";if(tx)tx.textContent=p+"%";});
-  renderCourierChart(rows); renderStatusChart(rows); renderActivityTypeSummary(rows); renderJourneyPanel(rows); renderProofGallery(rows);
+  renderCourierChart(rows); renderStatusChart(rows); renderActivityTypeSummary(rows); renderJourneyPanel(allRows,day); renderProofGallery(rows);
   const statusClass=status=>status==="Selesai"?"done":status==="Lagi Jalan"?"jalan":status==="Lagi Diproses"?"proses":"waiting";
   const recent=[...rows].sort((a,b)=>(parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0)-(parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0)).slice(0,12);
   $("dashboardTable").innerHTML=recent.map(a=>{const bukti=a.fotoDatang||a.fotoBerangkat||a.fotoDokumen||"";return `<tr>
@@ -1156,7 +1157,7 @@ $("activityForm").addEventListener("submit",handleCreateActivity);
 $("pendingDepartureBtn").addEventListener("click",handlePendingDeparture);
 $("applyDashboardFilterBtn").addEventListener("click",applyDashboardFilters);
 $("resetDashboardFilterBtn").addEventListener("click",resetDashboardFilters);
-$("journeyCourier").addEventListener("change",()=>renderJourneyPanel((state.dashboardActivities||[]).filter(a=>(!$("dashboardCourier").value||a.kurir===$("dashboardCourier").value)&&activityMatchesDay(a,$("dashboardDate").value))));
+$("journeyCourier").addEventListener("change",()=>renderJourneyPanel(state.dashboardActivities||[],$("dashboardDate").value));
 $("refreshReportBtn").addEventListener("click",async()=>{await loadReportOptions();msg("reportMsg","");});
 $("exportReportBtn").addEventListener("click",exportReportExcel);
 $("applyReportBtn").addEventListener("click",loadReport);
