@@ -886,7 +886,7 @@ function renderDashboard(data){
   $("statJalan").textContent=stats.lagiJalan||0;
   $("statSelesai").textContent=stats.selesai||0;
   const pct=(n)=>stats.total?Math.round(n/stats.total*100):0;
-  [["Menunggu",stats.menungguBerangkat],["Jalan",stats.lagiJalan],["Selesai",stats.selesai]].forEach(([key,n])=>{
+  [["Menunggu",stats.menungguBerangkat],["Jalan",stats.lagiJalan],["Proses",stats.lagiDiproses],["Selesai",stats.selesai]].forEach(([key,n])=>{
     const p=pct(n); const el=$("stat"+key+"Progress"), tx=$("stat"+key+"Percent");
     if(el)el.style.width=p+"%"; if(tx)tx.textContent=p+"%";
   });
@@ -907,8 +907,11 @@ function renderDashboard(data){
     <td>${escapeHtml(a.asal||"-")}</td>
     <td>${escapeHtml(a.tujuan||"-")}</td>
     <td><span class="dashboard-status-pill ${statusClass(a.status)}">${escapeHtml(a.status||"-")}</span></td>
-    <td>${escapeHtml(displayIndonesiaDateTime(a.berangkat||a.datang||a.selesai))}</td>
-    <td><button class="recent-more" type="button" aria-label="Lihat detail">•••</button></td>
+    <td>${escapeHtml(displayReportTime(a.berangkat))}</td>
+    <td>${escapeHtml(displayReportTime(a.datang))}</td>
+    <td>${escapeHtml(displayReportTime(a.selesai))}</td>
+    <td>${escapeHtml(displayDuration(a.durasiMengemudi))}</td>
+    <td>${escapeHtml(displayDuration(a.durasiTugas))}</td>
   </tr>`).join('');
   $("dashboardEmpty").classList.toggle("hidden",recent.length>0);
 }

@@ -126,6 +126,7 @@
         <div class="dashboard-stat stat-total-card"><div class="dashboard-stat-icon">▣</div><div><div class="stat-label">Total Aktivitas</div><div id="statTotal" class="stat-value">0</div><div class="stat-foot"><span class="stat-trend">↗ <span id="statTotalTrend">12%</span></span><span>dari kemarin</span></div></div></div>
         <div class="dashboard-stat stat-wait-card"><div class="dashboard-stat-icon">◷</div><div><div class="stat-label">Menunggu Berangkat</div><div id="statMenunggu" class="stat-value">0</div><div class="stat-progress"><span id="statMenungguProgress"></span></div><div class="stat-percent" id="statMenungguPercent">0%</div></div></div>
         <div class="dashboard-stat stat-road-card"><div class="dashboard-stat-icon">▰</div><div><div class="stat-label">Lagi Jalan</div><div id="statJalan" class="stat-value">0</div><div class="stat-progress"><span id="statJalanProgress"></span></div><div class="stat-percent" id="statJalanPercent">0%</div></div></div>
+        <div class="dashboard-stat stat-proses-card"><div class="dashboard-stat-icon">◔</div><div><div class="stat-label">Lagi Diproses</div><div id="statProses" class="stat-value">0</div><div class="stat-progress"><span id="statProsesProgress"></span></div><div class="stat-percent" id="statProsesPercent">0%</div></div></div>
         <div class="dashboard-stat stat-done-card"><div class="dashboard-stat-icon">✓</div><div><div class="stat-label">Selesai</div><div id="statSelesai" class="stat-value">0</div><div class="stat-progress"><span id="statSelesaiProgress"></span></div><div class="stat-percent" id="statSelesaiPercent">0%</div></div></div>
       </div>
 
@@ -157,7 +158,7 @@
         <div class="section-title-row dashboard-recent-head"><div><div class="section-title">Aktivitas Terbaru</div><div class="muted small">Daftar aktivitas kurir terbaru secara real-time.</div></div><button id="dashboardSeeAllBtn" class="ghost" type="button">Lihat Semua →</button></div>
         <div class="table-wrap dashboard-recent-wrap">
           <table class="dashboard-recent-table">
-            <thead><tr><th>ID Aktivitas</th><th>Kurir</th><th>Jenis Tugas</th><th>Asal</th><th>Tujuan</th><th>Status</th><th>Waktu</th><th>Aksi</th></tr></thead>
+            <thead><tr><th>ID Aktivitas</th><th>Kurir</th><th>Jenis Tugas</th><th>Asal</th><th>Tujuan</th><th>Status</th><th>Waktu Berangkat</th><th>Waktu Tiba</th><th>Waktu Selesai</th><th>Durasi Mengemudi</th><th>Durasi Tugas</th></tr></thead>
             <tbody id="dashboardTable"></tbody>
           </table>
         </div>
