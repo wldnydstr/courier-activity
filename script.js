@@ -878,7 +878,7 @@ function displayIndonesiaDateTime(value){
     hour:"2-digit", minute:"2-digit", hour12:false
   }).formatToParts(d);
   const get=type=>parts.find(p=>p.type===type)?.value||"";
-  return `${get("day")} ${get("month")} ${get("year")} - ${get("hour")}:${get("minute")}`;
+  return `${get("day")} ${get("month")} ${get("year")} ${get("hour")}:${get("minute")}`;
 }
 
 function displayIndonesiaTime(value){
