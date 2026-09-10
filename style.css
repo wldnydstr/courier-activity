@@ -2257,3 +2257,82 @@ td{color:#4d5865}
   position:static;
   margin-top:6px;
 }
+
+
+/* V87 — Dashboard Keterangan: Load more menyatu di baris kedua. */
+#dashboardView .dashboard-detail-table .dashboard-note-text{
+  position:relative;
+  display:block;
+  max-height:2.9em;
+  overflow:hidden;
+  line-height:1.45;
+  overflow-wrap:anywhere;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-text.expanded{
+  max-height:none;
+  overflow:visible;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-text .dashboard-note-inline-toggle{
+  position:absolute;
+  right:0;
+  bottom:0;
+  display:inline-block;
+  min-height:0;
+  height:auto;
+  margin:0;
+  padding:0 0 0 8px;
+  border:0;
+  border-radius:0;
+  background:#fff;
+  color:#2563eb;
+  font:inherit;
+  font-size:11.5px;
+  font-weight:700;
+  line-height:1.45;
+  cursor:pointer;
+  white-space:nowrap;
+  vertical-align:baseline;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-text .dashboard-note-inline-toggle:hover{
+  text-decoration:underline;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-text.expanded .dashboard-note-inline-toggle{
+  position:static;
+  padding-left:6px;
+  background:transparent;
+}
+
+
+/* V88 — Dashboard Keterangan: Load more menyatu di baris kedua. */
+#dashboardView .dashboard-detail-table .dashboard-note-text{
+  display:block !important;
+  max-height:2.9em !important;
+  overflow:hidden !important;
+  line-height:1.45 !important;
+  overflow-wrap:anywhere;
+  white-space:normal;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-text.expanded{
+  max-height:none !important;
+  overflow:visible !important;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-text .dashboard-note-inline-toggle,
+#dashboardView .dashboard-detail-table .dashboard-note-inline-toggle{
+  position:static !important;
+  display:inline !important;
+  width:auto !important;
+  min-height:0 !important;
+  height:auto !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  color:#2563eb !important;
+  font:inherit !important;
+  font-size:inherit !important;
+  font-weight:700 !important;
+  line-height:inherit !important;
+  cursor:pointer;
+  white-space:nowrap;
+  vertical-align:baseline;
+}

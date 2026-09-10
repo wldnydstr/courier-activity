@@ -1079,18 +1079,41 @@ function renderDashboardDetailGroups(rows){
       return;
     }
 
-    let cut=fullText.slice(0,LIMIT);
-    const lastSpace=cut.lastIndexOf(" ");
-    if(lastSpace>35)cut=cut.slice(0,lastSpace);
-    const truncated=cut.trimEnd()+"…";
+    const buildTwoLinePreview=()=>{
+      const box=document.createElement("div");
+      box.style.cssText=`position:absolute;visibility:hidden;pointer-events:none;z-index:-1;width:${Math.max(80,note.clientWidth)}px;line-height:1.45;overflow-wrap:anywhere;`;
+      const cs=getComputedStyle(note);
+      box.style.fontFamily=cs.fontFamily;
+      box.style.fontSize=cs.fontSize;
+      box.style.fontWeight=cs.fontWeight;
+      box.style.letterSpacing=cs.letterSpacing;
+      box.style.padding=cs.padding;
+      const copy=document.createElement("span");
+      const btn=document.createElement("button");
+      btn.type="button"; btn.textContent="Load more...";
+      btn.className="dashboard-note-inline-toggle";
+      box.append(copy,btn);
+      document.body.appendChild(box);
+      const lineHeight=parseFloat(getComputedStyle(box).lineHeight)||18;
+      let words=fullText.split(/\s+/);
+      while(words.length>1){
+        copy.textContent=words.join(" ")+"… ";
+        if(box.getBoundingClientRect().height<=lineHeight*2+2)break;
+        words.pop();
+      }
+      const result=words.join(" ").trim()+"…";
+      box.remove();
+      return result;
+    };
+    const truncated=buildTwoLinePreview();
 
     const renderCollapsed=()=>{
-      note.innerHTML=`<div class="dashboard-note-text">${escapeHtml(truncated)}</div><button class="dashboard-note-inline-toggle" type="button">Load more...</button>`;
+      note.innerHTML=`<div class="dashboard-note-text">${escapeHtml(truncated)} <button class="dashboard-note-inline-toggle" type="button">Load more...</button></div>`;
       const b=note.querySelector(".dashboard-note-inline-toggle");
       if(b)b.addEventListener("click",renderExpanded);
     };
     const renderExpanded=()=>{
-      note.innerHTML=`<div class="dashboard-note-text expanded">${escapeHtml(fullText)}</div><button class="dashboard-note-inline-toggle" type="button">Show less</button>`;
+      note.innerHTML=`<div class="dashboard-note-text expanded">${escapeHtml(fullText)}<button class="dashboard-note-inline-toggle" type="button">Show less</button></div>`;
       const b=note.querySelector(".dashboard-note-inline-toggle");
       if(b)b.addEventListener("click",renderCollapsed);
     };
