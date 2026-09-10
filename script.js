@@ -213,7 +213,7 @@ function resetUiStateOnLogout(){
     if($("reportCourier"))$("reportCourier").value="";
     if($("reportOrigin"))$("reportOrigin").value="";
     if($("reportDestination"))$("reportDestination").value="";
-    if(typeof dashboardJourneyOpen!=="undefined" && dashboardJourneyOpen?.clear)dashboardJourneyOpen.clear();
+    if(typeof dashboardJourneyOpen!=="undefined" && dashboardJourneyOpen?.clear)dashboardJourneyOpen.clear(); if(window.dashboardDetailOpen?.clear)window.dashboardDetailOpen.clear();
     if($("dashboardTable"))$("dashboardTable").innerHTML="";
     if($("reportTable"))$("reportTable").innerHTML="";
   }catch(e){}
@@ -928,7 +928,7 @@ function displayDuration(value){
 function renderActivityTypeSummary(rows){
   const chart=$("activityTypeChart");
   if(!chart)return;
-  const labels=["Penagihan","Kirim PO","Ambil BA/PO","Tukar Faktur"];
+  const labels=["Ambil BA/PO","Kirim PO","Penagihan","Tukar Faktur"];
   const counts=Object.fromEntries(labels.map(label=>[label,0]));
   rows.forEach(a=>{
     String(a.jenisTugas||a.pekerjaan||"").split("|").map(v=>v.trim()).filter(Boolean).forEach(label=>{
@@ -936,11 +936,11 @@ function renderActivityTypeSummary(rows){
       else counts[label]=(counts[label]||0)+1;
     });
   });
-  const entries=Object.entries(counts);
+  const entries=Object.entries(counts).sort((a,b)=>a[0].localeCompare(b[0],"id",{sensitivity:"base"}));
   const total=entries.reduce((sum,[,v])=>sum+v,0);
   if(!total){chart.innerHTML='<div class="type-empty">Belum ada data</div>';return;}
   const max=Math.max(...entries.map(([,v])=>v),1);
-  chart.innerHTML=`<div class="type-bars">${entries.map(([label,v])=>{
+  chart.innerHTML=entries.map(([label,v])=>{
     const pct=Math.round(v/total*100);
     const h=v?Math.max(8,(v/max)*100):0;
     return `<div class="type-bar-item">
@@ -949,7 +949,7 @@ function renderActivityTypeSummary(rows){
       <div class="type-bar-label">${escapeHtml(label)}</div>
       <div class="type-bar-percent">${pct}%</div>
     </div>`;
-  }).join('')}</div>`;
+  }).join("");
 }
 
 let dashboardJourneyOpen = new Set();
@@ -973,7 +973,7 @@ function renderJourneyPanel(allRows, day){
     return;
   }
 
-  // Default: semua kurir terbuka. Setelah itu pertahankan pilihan expand/collapse user selama dashboard masih aktif.
+  // Semua kurir terbuka saat pertama kali dashboard/filter dirender.
   if(!dashboardJourneyOpen.size)names.forEach(name=>dashboardJourneyOpen.add(name));
   dashboardJourneyOpen.forEach(name=>{if(!grouped[name])dashboardJourneyOpen.delete(name);});
 
@@ -998,7 +998,7 @@ function renderJourneyPanel(allRows, day){
           <div class="journey-top"><strong>Trip ${escapeHtml(trip)}</strong><span class="journey-status ${cls}">${escapeHtml(status)}</span></div>
           <div class="journey-route"><span class="journey-dot start"></span><div><small>Berangkat dari</small><b>${escapeHtml(a.asal||"-")}</b></div><time>${escapeHtml(displayIndonesiaTime(a.berangkat))}</time></div>
           <div class="journey-route"><span class="journey-dot end"></span><div><small>Menuju</small><b>${escapeHtml(a.tujuan||"-")}</b><em>${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</em></div><time>${escapeHtml(displayIndonesiaTime(a.datang))}</time></div>
-          <div class="journey-meta"><span>Keterangan <b>${escapeHtml(a.keterangan||"-")}</b></span>${a.fotoDokumen?`<a class="journey-document" href="${escapeHtml(a.fotoDokumen)}" target="_blank" rel="noopener"><img src="${escapeHtml(a.fotoDokumen)}" alt="Foto Dokumen"><span>Foto Dokumen</span></a>`:''}</div>
+          <div class="journey-meta"><span>Durasi mengemudi <b>${escapeHtml(displayDuration(a.durasiMengemudi))}</b></span><span>Selesai <b>${escapeHtml(displayIndonesiaTime(a.selesai))}</b></span></div>
         </div>
       </div>`;
     }).join("");
@@ -1024,20 +1024,75 @@ function renderProofGallery(rows){
   el.innerHTML=items.map(item=>`<a class="proof-thumb" href="${escapeHtml(item.url)}" target="_blank" rel="noopener"><img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.label)}"><span>${escapeHtml(item.label)}</span></a>`).join('');
 }
 
+function renderDashboardDetailGroups(rows){
+  const wrap=$("dashboardDetailGroups");
+  if(!wrap)return;
+  const source=(Array.isArray(rows)?rows:[]).filter(a=>String(a.idAktivitas||"").trim());
+  const grouped={};
+  source.forEach(a=>{const name=String(a.kurir||"").trim();if(!name)return;(grouped[name]??=[]).push(a);});
+  const names=Object.keys(grouped).sort((a,b)=>a.localeCompare(b,"id",{sensitivity:"base"}));
+  if(!names.length){wrap.innerHTML="";$("dashboardEmpty")?.classList.remove("hidden");return;}
+  $("dashboardEmpty")?.classList.add("hidden");
+  if(!window.dashboardDetailOpen)window.dashboardDetailOpen=new Set();
+  if(!window.dashboardDetailOpen.size)names.forEach(n=>window.dashboardDetailOpen.add(n));
+  window.dashboardDetailOpen.forEach(n=>{if(!grouped[n])window.dashboardDetailOpen.delete(n);});
+  const statusClass=status=>status==="Selesai"?"done":status==="Lagi Jalan"?"jalan":status==="Lagi Diproses"?"proses":"waiting";
+  const table=(name,items)=>{
+    const sorted=items.slice().sort((a,b)=>{
+      const ta=Number.parseInt(String(a.trip??""),10),tb=Number.parseInt(String(b.trip??""),10);
+      if(Number.isFinite(ta)&&Number.isFinite(tb)&&ta!==tb)return ta-tb;
+      return (parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0)-(parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0);
+    });
+    return sorted.map(a=>{
+      const bukti=a.fotoDatang||a.fotoBerangkat||a.fotoDokumen||"";
+      return `<tr>
+        <td>${escapeHtml(displayIndonesiaTime(a.berangkat))}</td><td>${escapeHtml(displayIndonesiaTime(a.datang))}</td><td>${escapeHtml(displayDuration(a.durasiMengemudi))}</td>
+        <td><span class="recent-courier"><span class="recent-avatar">${escapeHtml(String(name||"?").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase())}</span>${escapeHtml(name||"-")}</span></td>
+        <td><div class="dashboard-destination"><strong>${escapeHtml(a.tujuan||"-")}</strong><span>${escapeHtml(a.asal||"-")}</span></div></td>
+        <td><span class="task-tag">${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</span></td>
+        <td class="dashboard-note"><div class="dashboard-note-text">${escapeHtml(a.keterangan||"-")}</div></td>
+        <td><span class="dashboard-status-pill ${statusClass(a.status)}">${escapeHtml(a.status||"-")}</span></td>
+        <td>${bukti?`<a class="proof-link" href="${escapeHtml(bukti)}" target="_blank" rel="noopener">Lihat Foto</a>`:"-"}</td>
+      </tr>`;
+    }).join("");
+  };
+  wrap.innerHTML=names.map(name=>{
+    const open=window.dashboardDetailOpen.has(name), items=grouped[name];
+    return `<section class="dashboard-detail-group ${open?'is-open':''}" data-detail-group="${escapeHtml(name)}">
+      <button type="button" class="dashboard-detail-group-toggle" aria-expanded="${open?'true':'false'}"><span class="dashboard-detail-chevron" aria-hidden="true">›</span><span class="dashboard-detail-group-name">${escapeHtml(name)}</span><span class="dashboard-detail-group-count">${items.length} aktivitas</span></button>
+      <div class="dashboard-detail-group-body" ${open?'':'hidden'}><div class="table-wrap dashboard-detail-wrap"><table class="dashboard-detail-table"><thead><tr><th>Jam<br>Berangkat</th><th>Jam<br>Tiba</th><th>Durasi<br>Perjalanan</th><th>Kurir</th><th>Rumah Sakit/Tujuan</th><th>Jenis Kegiatan</th><th>Keterangan</th><th>Status</th><th>Foto Bukti</th></tr></thead><tbody>${table(name,items)}</tbody></table></div></div>
+    </section>`;
+  }).join("");
+}
+
 function renderDashboard(data){
   requestAnimationFrame(syncDashboardFreeze);
   const allRows=(data.activities||[]).filter(a=>String(a.idAktivitas||"").trim());
   populateDashboardCouriers(allRows);
   const day=$("dashboardDate").value, courier=$("dashboardCourier").value;
   const rows=allRows.filter(a=>(!courier||a.kurir===courier)&&activityMatchesDay(a,day));
+  const detailDateEl=$("dashboardDetailDate");
+  if(detailDateEl){
+    let detailDateLabel="Semua tanggal";
+    if(day){
+      const d=parseActivityDate(day);
+      if(d) detailDateLabel=displayIndonesiaDateOnly(d);
+    }else{
+      const uniqueDays=[...new Set(rows.map(a=>{const d=parseActivityDate(a.berangkat||a.datang||a.selesai);return d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`:null;}).filter(Boolean))];
+      if(uniqueDays.length===1){
+        const d=parseActivityDate(uniqueDays[0]);
+        if(d) detailDateLabel=displayIndonesiaDateOnly(d);
+      }
+    }
+    detailDateEl.textContent="Data: "+detailDateLabel;
+  }
   const stats={total:rows.length,menungguBerangkat:rows.filter(a=>a.status==="Menunggu Berangkat").length,lagiJalan:rows.filter(a=>a.status==="Lagi Jalan").length,lagiDiproses:rows.filter(a=>a.status==="Lagi Diproses").length,selesai:rows.filter(a=>a.status==="Selesai").length};
   $("statTotal").textContent=stats.total||0; $("statMenunggu").textContent=stats.menungguBerangkat||0; $("statJalan").textContent=stats.lagiJalan||0; $("statSelesai").textContent=stats.selesai||0;
   const prosesEl=$("statProses"); if(prosesEl)prosesEl.textContent=stats.lagiDiproses||0;
   const pct=n=>stats.total?Math.round(n/stats.total*100):0;
   [["Menunggu",stats.menungguBerangkat],["Jalan",stats.lagiJalan],["Proses",stats.lagiDiproses],["Selesai",stats.selesai]].forEach(([key,n])=>{const p=pct(n),el=$("stat"+key+"Progress"),tx=$("stat"+key+"Percent");if(el)el.style.width=p+"%";if(tx)tx.textContent=p+"%";});
-  renderCourierChart(rows); renderStatusChart(rows); renderActivityTypeSummary(rows); renderJourneyPanel(rows,day);
+  renderCourierChart(rows); renderStatusChart(rows); renderActivityTypeSummary(rows); renderJourneyPanel(rows,day); renderDashboardDetailGroups(rows);
 }
-
 async function loadDashboard(){
   msg("dashboardMsg","Memuat data aktivitas...");
   try{setDashboardDefaultDay();const data=await api("getDashboard",{idPengguna:state.user.id});state.dashboardActivities=data.activities||[];renderDashboard(data);msg("dashboardMsg","");}
@@ -1317,6 +1372,18 @@ $("activityForm").addEventListener("submit",handleCreateActivity);
 $("pendingDepartureBtn").addEventListener("click",handlePendingDeparture);
 $("applyDashboardFilterBtn").addEventListener("click",applyDashboardFilters);
 $("resetDashboardFilterBtn").addEventListener("click",resetDashboardFilters);
+$("dashboardDetailGroups").addEventListener("click",e=>{
+  const toggle=e.target.closest(".dashboard-detail-group-toggle");
+  if(!toggle)return;
+  const group=toggle.closest(".dashboard-detail-group");
+  if(!group)return;
+  const name=group.dataset.detailGroup;
+  if(!window.dashboardDetailOpen)window.dashboardDetailOpen=new Set();
+  if(window.dashboardDetailOpen.has(name))window.dashboardDetailOpen.delete(name);else window.dashboardDetailOpen.add(name);
+  const open=window.dashboardDetailOpen.has(name);
+  group.classList.toggle("is-open",open); toggle.setAttribute("aria-expanded",open?"true":"false");
+  const body=group.querySelector(".dashboard-detail-group-body"); if(body)body.hidden=!open;
+});
 $("journeyPanel").addEventListener("click",e=>{
   const toggle=e.target.closest(".journey-group-toggle");
   if(!toggle)return;

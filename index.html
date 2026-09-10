@@ -144,15 +144,26 @@
       <div class="dashboard-type-full">
         <div class="card dashboard-type-card">
           <div class="section-title-row dashboard-section-head"><div><div class="section-title">Jenis Tugas</div><div class="muted small">Distribusi jenis tugas pada aktivitas yang tampil.</div></div></div>
-          <div id="activityTypeChart" class="type-bar-chart"></div>
+          <div class="type-bar-chart"><div id="activityTypeChart" class="type-bars"></div></div>
         </div>
       </div>
 
-      <div class="card dashboard-journey-card dashboard-activity-card">
-        <div class="section-title-row dashboard-section-head">
-          <div><div class="section-title">Aktivitas Kurir</div><div class="muted small">Lihat aktivitas tiap kurir berdasarkan Trip.</div></div>
+      <div class="dashboard-main-grid">
+        <div class="card dashboard-detail-card">
+          <div class="section-title-row dashboard-section-head dashboard-detail-head">
+            <div><div class="section-title">Detail Aktivitas Kurir</div><div class="muted small">Pantau aktivitas kurir berdasarkan filter yang dipilih.</div></div>
+            <div id="dashboardDetailDate" class="dashboard-detail-date" aria-label="Tanggal data">Semua tanggal</div>
+          </div>
+          <div id="dashboardDetailGroups" class="dashboard-detail-groups"></div>
+          <div id="dashboardEmpty" class="empty hidden">Belum ada aktivitas.</div>
         </div>
-        <div id="journeyPanel" class="journey-panel"></div>
+
+        <div class="card dashboard-journey-card">
+          <div class="section-title-row dashboard-section-head">
+            <div><div class="section-title">Aktivitas Kurir</div><div class="muted small">Lihat urutan perjalanan tiap kurir berdasarkan Trip.</div></div>
+          </div>
+          <div id="journeyPanel" class="journey-panel"></div>
+        </div>
       </div>
 
     </section>
