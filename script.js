@@ -1065,55 +1065,80 @@ function renderDashboardDetailGroups(rows){
     </section>`;
   }).join("");
 
-  // V86 — Keterangan: tombol Load more berada di dalam cell, bukan ikut terpotong oleh clamp.
+  // V88/V89 — Keterangan: preview wajib 2 baris, tombol menyatu di ujung baris kedua.
   document.querySelectorAll("#dashboardView .dashboard-detail-group .dashboard-note").forEach(note=>{
     const text=note.querySelector(".dashboard-note-text");
     if(!text)return;
     const fullText=text.textContent.trim()||"-";
     if(fullText==="-")return;
 
-    // Teks yang cukup panjang mendapat kontrol expand/collapse.
     const LIMIT=58;
     if(fullText.length<=LIMIT){
       text.textContent=fullText;
       return;
     }
 
-    const buildTwoLinePreview=()=>{
-      const box=document.createElement("div");
-      box.style.cssText=`position:absolute;visibility:hidden;pointer-events:none;z-index:-1;width:${Math.max(80,note.clientWidth)}px;line-height:1.45;overflow-wrap:anywhere;`;
-      const cs=getComputedStyle(note);
-      box.style.fontFamily=cs.fontFamily;
-      box.style.fontSize=cs.fontSize;
-      box.style.fontWeight=cs.fontWeight;
-      box.style.letterSpacing=cs.letterSpacing;
-      box.style.padding=cs.padding;
-      const copy=document.createElement("span");
-      const btn=document.createElement("button");
-      btn.type="button"; btn.textContent="Load more...";
-      btn.className="dashboard-note-inline-toggle";
-      box.append(copy,btn);
-      document.body.appendChild(box);
-      const lineHeight=parseFloat(getComputedStyle(box).lineHeight)||18;
-      let words=fullText.split(/\s+/);
-      while(words.length>1){
-        copy.textContent=words.join(" ")+"… ";
-        if(box.getBoundingClientRect().height<=lineHeight*2+2)break;
-        words.pop();
-      }
-      const result=words.join(" ").trim()+"…";
-      box.remove();
-      return result;
+    const measure=document.createElement("div");
+    measure.style.cssText="position:absolute;visibility:hidden;pointer-events:none;left:-99999px;top:0;width:"+Math.max(80,note.clientWidth)+"px;line-height:1.45;white-space:normal;overflow-wrap:anywhere;";
+    const cs=getComputedStyle(note);
+    measure.style.fontFamily=cs.fontFamily;
+    measure.style.fontSize=cs.fontSize;
+    measure.style.fontWeight=cs.fontWeight;
+    measure.style.letterSpacing=cs.letterSpacing;
+    measure.style.wordBreak=cs.wordBreak;
+    document.body.appendChild(measure);
+
+    const words=fullText.split(/\s+/);
+    const buttonProbe=document.createElement("span");
+    buttonProbe.textContent="Load more...";
+    buttonProbe.style.cssText=`font:${cs.font};font-size:${cs.fontSize};font-weight:700;white-space:nowrap;`;
+    measure.appendChild(buttonProbe);
+    const buttonWidth=buttonProbe.getBoundingClientRect().width+6;
+    buttonProbe.remove();
+    const width=note.clientWidth||measure.clientWidth;
+
+    const fits=(value, available)=>{
+      const probe=document.createElement("span");
+      probe.textContent=value;
+      probe.style.cssText="display:inline;white-space:nowrap;overflow-wrap:normal;";
+      measure.appendChild(probe);
+      const w=probe.getBoundingClientRect().width;
+      probe.remove();
+      return w<=available;
     };
-    const truncated=buildTwoLinePreview();
+
+    // Isi baris pertama sebanyak mungkin.
+    let i=0, line1="";
+    while(i<words.length){
+      const candidate=line1?line1+" "+words[i]:words[i];
+      if(!fits(candidate,width))break;
+      line1=candidate;i++;
+    }
+
+    // Baris kedua disisakan ruang khusus untuk tombol.
+    let line2="";
+    while(i<words.length){
+      const candidate=line2?line2+" "+words[i]:words[i];
+      if(!fits(candidate,width-buttonWidth))break;
+      line2=candidate;i++;
+    }
+
+    // Kalau kata pertama baris kedua terlalu panjang, potong secukupnya.
+    if(!line2 && i<words.length){
+      let word=words[i];
+      while(word.length>1 && !fits(word,width-buttonWidth-8))word=word.slice(0,-1);
+      line2=word;
+    }
+
+    measure.remove();
 
     const renderCollapsed=()=>{
-      note.innerHTML=`<div class="dashboard-note-text">${escapeHtml(truncated)} <button class="dashboard-note-inline-toggle" type="button">Load more...</button></div>`;
+      note.innerHTML=`<div class="dashboard-note-text dashboard-note-preview"><span class="dashboard-note-line">${escapeHtml(line1)}</span><span class="dashboard-note-line">${escapeHtml(line2)}${line2?' ':''}<button class="dashboard-note-inline-toggle" type="button">Load more...</button></span></div>`;
       const b=note.querySelector(".dashboard-note-inline-toggle");
       if(b)b.addEventListener("click",renderExpanded);
     };
     const renderExpanded=()=>{
-      note.innerHTML=`<div class="dashboard-note-text expanded">${escapeHtml(fullText)}<button class="dashboard-note-inline-toggle" type="button">Show less</button></div>`;
+      note.innerHTML=`<div class="dashboard-note-text expanded">${escapeHtml(fullText)} <button class="dashboard-note-inline-toggle" type="button">Show less</button></div>`;
       const b=note.querySelector(".dashboard-note-inline-toggle");
       if(b)b.addEventListener("click",renderCollapsed);
     };

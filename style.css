@@ -2336,3 +2336,24 @@ td{color:#4d5865}
   white-space:nowrap;
   vertical-align:baseline;
 }
+
+/* V89: Keterangan preview selalu tepat 2 baris; Load more menyatu di ujung baris kedua. */
+#dashboardView .dashboard-detail-table .dashboard-note-text.dashboard-note-preview{
+  display:block !important;
+  max-height:none !important;
+  overflow:visible !important;
+  white-space:normal !important;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-text.dashboard-note-preview .dashboard-note-line{
+  display:block !important;
+  height:1.45em;
+  line-height:1.45;
+  white-space:nowrap !important;
+  overflow:hidden;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-text.dashboard-note-preview .dashboard-note-inline-toggle{
+  display:inline !important;
+  white-space:nowrap !important;
+  margin:0 0 0 2px !important;
+  vertical-align:baseline !important;
+}
