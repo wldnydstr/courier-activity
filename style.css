@@ -2039,3 +2039,18 @@ td{color:#4d5865}
     margin-right: 18px;
   }
 }
+
+
+/* V77 — Dashboard detail: date-only badge + compact time columns, wider photo proof. */
+#dashboardView .dashboard-detail-table th:nth-child(1),#dashboardView .dashboard-detail-table td:nth-child(1){width:6%;}
+#dashboardView .dashboard-detail-table th:nth-child(2),#dashboardView .dashboard-detail-table td:nth-child(2){width:6%;}
+#dashboardView .dashboard-detail-table th:nth-child(3),#dashboardView .dashboard-detail-table td:nth-child(3){width:8%;}
+#dashboardView .dashboard-detail-table th:nth-child(4),#dashboardView .dashboard-detail-table td:nth-child(4){width:14%;}
+#dashboardView .dashboard-detail-table th:nth-child(5),#dashboardView .dashboard-detail-table td:nth-child(5){width:19%;}
+#dashboardView .dashboard-detail-table th:nth-child(6),#dashboardView .dashboard-detail-table td:nth-child(6){width:11%;}
+#dashboardView .dashboard-detail-table th:nth-child(7),#dashboardView .dashboard-detail-table td:nth-child(7){width:14%;}
+#dashboardView .dashboard-detail-table th:nth-child(8),#dashboardView .dashboard-detail-table td:nth-child(8){width:8%;}
+#dashboardView .dashboard-detail-table th:nth-child(9),#dashboardView .dashboard-detail-table td:nth-child(9){width:14%;}
+#dashboardView .dashboard-detail-table th{white-space:normal !important;word-break:normal !important;overflow-wrap:normal !important;line-height:1.2;}
+#dashboardView .dashboard-detail-table th br{display:block;}
+#dashboardView .dashboard-detail-table td:nth-child(1),#dashboardView .dashboard-detail-table td:nth-child(2),#dashboardView .dashboard-detail-table td:nth-child(3){white-space:nowrap !important;word-break:normal !important;overflow-wrap:normal !important;}

@@ -881,6 +881,16 @@ function displayIndonesiaDateTime(value){
   return `${get("day")} ${get("month")} ${get("year")} ${get("hour")}:${get("minute")}`;
 }
 
+function displayIndonesiaDateOnly(value){
+  const d=parseIndonesiaDateTime(value);
+  if(!d)return value?String(value).trim():"-";
+  const parts=new Intl.DateTimeFormat("id-ID",{
+    timeZone:"Asia/Jakarta", day:"2-digit", month:"short", year:"2-digit"
+  }).formatToParts(d);
+  const get=type=>parts.find(p=>p.type===type)?.value||"";
+  return `${get("day")} ${get("month")} ${get("year")}`;
+}
+
 function displayIndonesiaTime(value){
   const d=parseIndonesiaDateTime(value);
   if(!d)return value?String(value).trim():"-";
@@ -1015,12 +1025,12 @@ function renderDashboard(data){
     let detailDateLabel="Semua tanggal";
     if(day){
       const d=parseActivityDate(day);
-      if(d) detailDateLabel=displayIndonesiaDateTime(d).split(" - ")[0];
+      if(d) detailDateLabel=displayIndonesiaDateOnly(d);
     }else{
       const uniqueDays=[...new Set(rows.map(a=>{const d=parseActivityDate(a.berangkat||a.datang||a.selesai);return d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`:null;}).filter(Boolean))];
       if(uniqueDays.length===1){
         const d=parseActivityDate(uniqueDays[0]);
-        if(d) detailDateLabel=displayIndonesiaDateTime(d).split(" - ")[0];
+        if(d) detailDateLabel=displayIndonesiaDateOnly(d);
       }
     }
     detailDateEl.textContent="Data: "+detailDateLabel;
