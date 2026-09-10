@@ -1037,8 +1037,8 @@ async function loadDashboard(){
 
 function applyDashboardFilters(){renderDashboard({activities:state.dashboardActivities||[]});}
 function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
-function setDashboardDefaultDay(){$("dashboardDate").value="";}
-function resetDashboardFilters(){$("dashboardDate").value="";$("dashboardCourier").value="";applyDashboardFilters();}
+function setDashboardDefaultDay(){if(!$("dashboardDate").value)$("dashboardDate").value=todayKey();}
+function resetDashboardFilters(){$("dashboardDate").value=todayKey();$("dashboardCourier").value="";applyDashboardFilters();}
 
 
 function populateReportOptions(data){
