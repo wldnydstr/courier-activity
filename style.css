@@ -1501,31 +1501,31 @@ td{color:#4d5865}
 
 /* Lebar dibuat lebih kecil untuk waktu/durasi, dan cukup untuk Kurir */
 #dashboardView .dashboard-detail-table th:nth-child(1),
-#dashboardView .dashboard-detail-table td:nth-child(1){width:9% !important;}
+#dashboardView .dashboard-detail-table td:nth-child(1){width:12% !important;}
 
 #dashboardView .dashboard-detail-table th:nth-child(2),
-#dashboardView .dashboard-detail-table td:nth-child(2){width:7% !important;}
+#dashboardView .dashboard-detail-table td:nth-child(2){width:10% !important;}
 
 #dashboardView .dashboard-detail-table th:nth-child(3),
-#dashboardView .dashboard-detail-table td:nth-child(3){width:9% !important;}
+#dashboardView .dashboard-detail-table td:nth-child(3){width:12% !important;}
 
 #dashboardView .dashboard-detail-table th:nth-child(4),
-#dashboardView .dashboard-detail-table td:nth-child(4){width:11% !important;}
+#dashboardView .dashboard-detail-table td:nth-child(4){width:10% !important;}
 
 #dashboardView .dashboard-detail-table th:nth-child(5),
-#dashboardView .dashboard-detail-table td:nth-child(5){width:18% !important;}
+#dashboardView .dashboard-detail-table td:nth-child(5){width:17% !important;}
 
 #dashboardView .dashboard-detail-table th:nth-child(6),
-#dashboardView .dashboard-detail-table td:nth-child(6){width:12% !important;}
+#dashboardView .dashboard-detail-table td:nth-child(6){width:11% !important;}
 
 #dashboardView .dashboard-detail-table th:nth-child(7),
-#dashboardView .dashboard-detail-table td:nth-child(7){width:15% !important;}
+#dashboardView .dashboard-detail-table td:nth-child(7){width:13% !important;}
 
 #dashboardView .dashboard-detail-table th:nth-child(8),
-#dashboardView .dashboard-detail-table td:nth-child(8){width:12% !important;}
+#dashboardView .dashboard-detail-table td:nth-child(8){width:9% !important;}
 
 #dashboardView .dashboard-detail-table th:nth-child(9),
-#dashboardView .dashboard-detail-table td:nth-child(9){width:7% !important;}
+#dashboardView .dashboard-detail-table td:nth-child(9){width:6% !important;}
 
 /* Jam dan durasi tetap satu baris; Kurir tidak terpotong */
 #dashboardView .dashboard-detail-table td:nth-child(1),
