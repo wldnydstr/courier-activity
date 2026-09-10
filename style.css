@@ -2214,3 +2214,46 @@ td{color:#4d5865}
 #dashboardView .journey-route em{font-size:11px;}
 #dashboardView .journey-route time{font-size:12px;}
 #dashboardView .journey-meta{font-size:11px;}
+
+/* V86 — Dashboard Keterangan: Load more selalu terlihat di bawah teks terpotong. */
+#dashboardView .dashboard-detail-table .dashboard-note{
+  position:relative;
+  vertical-align:top;
+  padding-bottom:27px !important;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-text{
+  display:block;
+  max-height:2.9em;
+  overflow:hidden;
+  line-height:1.45;
+  overflow-wrap:anywhere;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-text.expanded{
+  max-height:none;
+  overflow:visible;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-inline-toggle{
+  position:absolute;
+  left:0;
+  bottom:8px;
+  display:inline-block;
+  min-height:0;
+  height:auto;
+  margin:0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:#2563eb;
+  font:inherit;
+  font-size:11.5px;
+  font-weight:700;
+  line-height:1.2;
+  cursor:pointer;
+  white-space:nowrap;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-inline-toggle:hover{text-decoration:underline;}
+#dashboardView .dashboard-detail-table .dashboard-note-text.expanded + .dashboard-note-inline-toggle{
+  position:static;
+  margin-top:6px;
+}

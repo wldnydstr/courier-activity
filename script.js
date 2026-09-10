@@ -1065,38 +1065,33 @@ function renderDashboardDetailGroups(rows){
     </section>`;
   }).join("");
 
-  // V85 — Keterangan: Load more dibuat konsisten dan selalu muncul untuk teks panjang.
+  // V86 — Keterangan: tombol Load more berada di dalam cell, bukan ikut terpotong oleh clamp.
   document.querySelectorAll("#dashboardView .dashboard-detail-group .dashboard-note").forEach(note=>{
     const text=note.querySelector(".dashboard-note-text");
     if(!text)return;
     const fullText=text.textContent.trim()||"-";
     if(fullText==="-")return;
 
-    // Ambang karakter menjaga tampilan tetap ringkas dan memastikan tombol terlihat
-    // meskipun browser belum menghitung overflow saat render awal.
-    const LIMIT=78;
+    // Teks yang cukup panjang mendapat kontrol expand/collapse.
+    const LIMIT=58;
     if(fullText.length<=LIMIT){
       text.textContent=fullText;
       return;
     }
 
-    const makeTruncated=()=>{
-      let cut=fullText.slice(0,LIMIT);
-      const lastSpace=cut.lastIndexOf(" ");
-      if(lastSpace>45)cut=cut.slice(0,lastSpace);
-      return cut.trimEnd()+"…";
-    };
-    const truncated=makeTruncated();
+    let cut=fullText.slice(0,LIMIT);
+    const lastSpace=cut.lastIndexOf(" ");
+    if(lastSpace>35)cut=cut.slice(0,lastSpace);
+    const truncated=cut.trimEnd()+"…";
+
     const renderCollapsed=()=>{
-      text.classList.remove("expanded");
-      text.innerHTML=escapeHtml(truncated)+" <button class=\"dashboard-note-inline-toggle\" type=\"button\">Load more...</button>";
-      const b=text.querySelector(".dashboard-note-inline-toggle");
+      note.innerHTML=`<div class="dashboard-note-text">${escapeHtml(truncated)}</div><button class="dashboard-note-inline-toggle" type="button">Load more...</button>`;
+      const b=note.querySelector(".dashboard-note-inline-toggle");
       if(b)b.addEventListener("click",renderExpanded);
     };
     const renderExpanded=()=>{
-      text.classList.add("expanded");
-      text.innerHTML=escapeHtml(fullText)+" <button class=\"dashboard-note-inline-toggle\" type=\"button\">Show less</button>";
-      const b=text.querySelector(".dashboard-note-inline-toggle");
+      note.innerHTML=`<div class="dashboard-note-text expanded">${escapeHtml(fullText)}</div><button class="dashboard-note-inline-toggle" type="button">Show less</button>`;
+      const b=note.querySelector(".dashboard-note-inline-toggle");
       if(b)b.addEventListener("click",renderCollapsed);
     };
     renderCollapsed();
