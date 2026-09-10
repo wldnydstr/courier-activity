@@ -2357,3 +2357,29 @@ td{color:#4d5865}
   margin:0 0 0 2px !important;
   vertical-align:baseline !important;
 }
+
+/* V91 — Keterangan preview: teks mengisi 2 baris, tombol inline di baris kedua. */
+#dashboardView .dashboard-detail-table .dashboard-note-text.dashboard-note-preview{
+  display:block !important;
+  max-height:2.9em !important;
+  overflow:hidden !important;
+  line-height:1.45 !important;
+  white-space:normal !important;
+  overflow-wrap:normal !important;
+  word-break:normal !important;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-text.dashboard-note-preview .dashboard-note-inline-toggle{
+  position:static !important;
+  display:inline !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  color:#2563eb !important;
+  font:inherit !important;
+  font-weight:700 !important;
+  line-height:inherit !important;
+  white-space:nowrap !important;
+  vertical-align:baseline !important;
+  cursor:pointer;
+}

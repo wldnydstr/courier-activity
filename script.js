@@ -1067,7 +1067,7 @@ function renderDashboardDetailGroups(rows){
     </section>`;
   }).join("");
 
-  // V90 — Keterangan: preview tepat 2 baris, Load more menyatu di ujung baris kedua.
+  // V91 — Keterangan: maksimal 2 baris, Load more harus berada di ujung baris kedua.
   document.querySelectorAll("#dashboardView .dashboard-detail-group .dashboard-note").forEach(note=>{
     const text=note.querySelector(".dashboard-note-text");
     if(!text)return;
@@ -1077,83 +1077,57 @@ function renderDashboardDetailGroups(rows){
     const cs=getComputedStyle(text);
     const rect=note.getBoundingClientRect();
     const width=Math.max(80, rect.width-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0));
+    const lineHeight=parseFloat(cs.lineHeight)||parseFloat(cs.fontSize)*1.45;
     const words=fullText.split(/\s+/).filter(Boolean);
-    if(words.length<2)return;
+    if(words.length<3)return;
 
-    // Hidden measuring area memakai font + lebar kolom yang sama persis.
     const measure=document.createElement("div");
-    measure.style.cssText=`position:absolute;left:-99999px;top:0;visibility:hidden;pointer-events:none;width:${width}px;font-family:${cs.fontFamily};font-size:${cs.fontSize};font-weight:${cs.fontWeight};letter-spacing:${cs.letterSpacing};line-height:${cs.lineHeight};word-break:${cs.wordBreak};overflow-wrap:normal;white-space:normal;`;
+    measure.style.cssText=`position:absolute;left:-99999px;top:0;visibility:hidden;pointer-events:none;width:${width}px;font-family:${cs.fontFamily};font-size:${cs.fontSize};font-weight:${cs.fontWeight};letter-spacing:${cs.letterSpacing};line-height:${cs.lineHeight};word-break:${cs.wordBreak};overflow-wrap:${cs.overflowWrap};white-space:normal;`;
     document.body.appendChild(measure);
 
-    const plain=document.createElement("span");
-    plain.textContent=fullText;
-    measure.appendChild(plain);
-    const fullHeight=plain.getBoundingClientRect().height;
-    const lineHeight=parseFloat(cs.lineHeight)||parseFloat(cs.fontSize)*1.45;
-    const needsMore=fullHeight>lineHeight*2.05 || fullText.length>58;
-    plain.remove();
-    if(!needsMore){measure.remove();return;}
+    const probeText=document.createElement("span");
+    const probeButton=document.createElement("button");
+    probeButton.type="button";
+    probeButton.textContent="Load more...";
+    probeButton.style.cssText=`display:inline;font-family:${cs.fontFamily};font-size:${cs.fontSize};font-weight:700;letter-spacing:${cs.letterSpacing};line-height:${cs.lineHeight};white-space:nowrap;padding:0;margin:0;border:0;background:transparent;`;
+    measure.appendChild(probeText);
+    measure.appendChild(document.createTextNode(" "));
+    measure.appendChild(probeButton);
 
-    const buttonProbe=document.createElement("span");
-    buttonProbe.textContent="Load more...";
-    buttonProbe.style.cssText=`font-family:${cs.fontFamily};font-size:${cs.fontSize};font-weight:700;letter-spacing:${cs.letterSpacing};white-space:nowrap;`;
-    measure.appendChild(buttonProbe);
-    const buttonWidth=buttonProbe.getBoundingClientRect().width+4;
-    buttonProbe.remove();
-
-    const textWidth=(value)=>{
-      const probe=document.createElement("span");
-      probe.textContent=value;
-      probe.style.cssText=`display:inline;white-space:nowrap;font-family:${cs.fontFamily};font-size:${cs.fontSize};font-weight:${cs.fontWeight};letter-spacing:${cs.letterSpacing};`;
-      measure.appendChild(probe);
-      const w=probe.getBoundingClientRect().width;
-      probe.remove();
-      return w;
+    const lineIndex=()=>Math.round((probeButton.getBoundingClientRect().top-measure.getBoundingClientRect().top)/lineHeight);
+    const fitsTwoLines=()=>{
+      const m=measure.getBoundingClientRect();
+      return m.height<=lineHeight*2.05 && lineIndex()===1;
     };
 
-    // Cari pembagian 2 baris yang paling banyak menampilkan teks, dengan tombol
-    // selalu mendapat ruang di baris kedua. Ini mencegah preview kependekan.
-    let best=null;
-    for(let split=1;split<words.length;split++){
-      const line1=words.slice(0,split).join(" ");
-      if(textWidth(line1)>width)continue;
-      let line2Words=[];
-      for(let j=split;j<words.length;j++){
-        const candidate=[...line2Words,words[j]].join(" ");
-        if(textWidth(candidate)+buttonWidth>width)break;
-        line2Words.push(words[j]);
-      }
-      if(!line2Words.length)continue;
-      const line2=line2Words.join(" ");
-      const shown=split+line2Words.length;
-      const chars=line1.length+line2.length;
-      const used=Math.max(textWidth(line1),textWidth(line2)+buttonWidth);
-      const score=[shown,chars,used];
-      if(!best || score[0]>best.score[0] || (score[0]===best.score[0] && score[1]>best.score[1]) || (score[0]===best.score[0] && score[1]===best.score[1] && score[2]>best.score[2])){
-        best={line1,line2,score};
+    // Mulai dari sebanyak mungkin teks, lalu mundur sampai tombol tepat berada
+    // di baris kedua. Ini memakai wrapping browser yang sebenarnya, bukan hitung karakter.
+    let best="";
+    for(let count=words.length-1;count>=2;count--){
+      probeText.textContent=words.slice(0,count).join(" ");
+      if(fitsTwoLines()){
+        best=probeText.textContent;
+        break;
       }
     }
 
-    // Fallback kalau kolom sangat sempit.
+    // Kalau kombinasi paling panjang tidak berhasil, cari prefix terpendek yang
+    // tetap membuat tombol berada di baris kedua.
     if(!best){
-      let line1=words[0],line2="";
-      for(let i=1;i<words.length;i++){
-        const candidate=line1+" "+words[i];
-        if(textWidth(candidate)<=width)line1=candidate;else break;
+      for(let count=2;count<words.length;count++){
+        probeText.textContent=words.slice(0,count).join(" ");
+        if(fitsTwoLines()){
+          best=probeText.textContent;
+          break;
+        }
       }
-      const startIndex=line1.split(/\s+/).length;
-      for(let i=startIndex;i<words.length;i++){
-        const candidate=line2?line2+" "+words[i]:words[i];
-        if(textWidth(candidate)+buttonWidth>width)break;
-        line2=candidate;
-      }
-      best={line1,line2,score:[0,0,0]};
     }
-
     measure.remove();
 
+    if(!best || best===fullText)return;
+
     const renderCollapsed=()=>{
-      note.innerHTML=`<div class="dashboard-note-text dashboard-note-preview"><span class="dashboard-note-line">${escapeHtml(best.line1)}</span><span class="dashboard-note-line">${escapeHtml(best.line2)} <button class="dashboard-note-inline-toggle" type="button">Load more...</button></span></div>`;
+      note.innerHTML=`<div class="dashboard-note-text dashboard-note-preview"><span>${escapeHtml(best)}</span> <button class="dashboard-note-inline-toggle" type="button">Load more...</button></div>`;
       const b=note.querySelector(".dashboard-note-inline-toggle");
       if(b)b.addEventListener("click",renderExpanded);
     };
