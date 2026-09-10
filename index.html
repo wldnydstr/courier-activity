@@ -141,40 +141,18 @@
         </div>
       </div>
 
-      <div class="dashboard-bottom-grid">
+      <div class="dashboard-type-full">
         <div class="card dashboard-type-card">
-          <div class="section-title-row dashboard-section-head"><div><div class="section-title">Rekap Jenis Tugas</div><div class="muted small">Distribusi jenis tugas pada aktivitas yang tampil.</div></div></div>
-          <div class="type-summary-layout"><div id="activityTypeChart" class="type-donut"></div><div id="activityTypeLegend" class="type-legend"></div></div>
-        </div>
-
-        <div class="card dashboard-proof-card">
-          <div class="section-title-row dashboard-section-head"><div><div class="section-title">Keterangan / Foto Bukti</div><div class="muted small">Bukti aktivitas terbaru dari data yang tampil.</div></div></div>
-          <div id="proofGallery" class="proof-gallery"></div>
-          <div class="proof-hint">ⓘ Klik foto untuk melihat bukti dalam ukuran penuh.</div>
+          <div class="section-title-row dashboard-section-head"><div><div class="section-title">Jenis Tugas</div><div class="muted small">Distribusi jenis tugas pada aktivitas yang tampil.</div></div></div>
+          <div id="activityTypeChart" class="type-bar-chart"></div>
         </div>
       </div>
 
-      <div class="dashboard-main-grid">
-        <div class="card dashboard-detail-card">
-          <div class="section-title-row dashboard-section-head dashboard-detail-head">
-            <div><div class="section-title">Detail Aktivitas Kurir</div><div class="muted small">Pantau aktivitas kurir berdasarkan filter yang dipilih.</div></div>
-            <div id="dashboardDetailDate" class="dashboard-detail-date" aria-label="Tanggal data">Semua tanggal</div>
-          </div>
-          <div class="table-wrap dashboard-detail-wrap">
-            <table class="dashboard-detail-table">
-              <thead><tr><th>Jam<br>Berangkat</th><th>Jam<br>Tiba</th><th>Durasi<br>Perjalanan</th><th>Kurir</th><th>Rumah Sakit/Tujuan</th><th>Jenis Kegiatan</th><th>Keterangan</th><th>Status</th><th>Foto Bukti</th></tr></thead>
-              <tbody id="dashboardTable"></tbody>
-            </table>
-          </div>
-          <div id="dashboardEmpty" class="empty hidden">Belum ada aktivitas.</div>
+      <div class="card dashboard-journey-card dashboard-activity-card">
+        <div class="section-title-row dashboard-section-head">
+          <div><div class="section-title">Aktivitas Kurir</div><div class="muted small">Lihat aktivitas tiap kurir berdasarkan Trip.</div></div>
         </div>
-
-        <div class="card dashboard-journey-card">
-          <div class="section-title-row dashboard-section-head">
-            <div><div class="section-title">Perjalanan Kurir</div><div class="muted small">Lihat urutan perjalanan tiap kurir berdasarkan Trip.</div></div>
-          </div>
-          <div id="journeyPanel" class="journey-panel"></div>
-        </div>
+        <div id="journeyPanel" class="journey-panel"></div>
       </div>
 
     </section>

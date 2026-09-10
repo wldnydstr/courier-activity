@@ -926,19 +926,30 @@ function displayDuration(value){
 }
 
 function renderActivityTypeSummary(rows){
-  const chart=$("activityTypeChart"), legend=$("activityTypeLegend");
+  const chart=$("activityTypeChart");
   if(!chart)return;
-  const counts={};
+  const labels=["Penagihan","Kirim PO","Ambil BA/PO","Tukar Faktur"];
+  const counts=Object.fromEntries(labels.map(label=>[label,0]));
   rows.forEach(a=>{
-    String(a.jenisTugas||a.pekerjaan||"Tidak diketahui").split("|").map(v=>v.trim()).filter(Boolean).forEach(label=>counts[label]=(counts[label]||0)+1);
+    String(a.jenisTugas||a.pekerjaan||"").split("|").map(v=>v.trim()).filter(Boolean).forEach(label=>{
+      if(counts[label]!==undefined)counts[label]++;
+      else counts[label]=(counts[label]||0)+1;
+    });
   });
-  const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"id"));
-  if(!entries.length){chart.innerHTML='<div class="type-empty">Belum ada data</div>';if(legend)legend.innerHTML='';return;}
-  const colors=["#2563EB","#54B978","#8B5CF6","#22A6B3","#F59E0B","#94A3B8"];
-  const total=entries.reduce((sum,[,v])=>sum+v,0); let cursor=0;
-  const stops=entries.map(([label,v],i)=>{const end=cursor+(v/total)*360;const stop=`${colors[i%colors.length]} ${cursor}deg ${end}deg`;cursor=end;return stop;});
-  chart.innerHTML=`<div class="type-donut-ring" style="background:conic-gradient(${stops.join(',')})"><div class="type-donut-hole"><strong>${total}</strong><span>Total<br>Aktivitas</span></div></div>`;
-  if(legend)legend.innerHTML=entries.slice(0,6).map(([label,v],i)=>`<div class="type-legend-row"><div><i class="legend-dot" style="background:${colors[i%colors.length]}"></i><span>${escapeHtml(label)}</span></div><strong>${v}</strong><small>${Math.round(v/total*100)}%</small></div>`).join('');
+  const entries=Object.entries(counts);
+  const total=entries.reduce((sum,[,v])=>sum+v,0);
+  if(!total){chart.innerHTML='<div class="type-empty">Belum ada data</div>';return;}
+  const max=Math.max(...entries.map(([,v])=>v),1);
+  chart.innerHTML=`<div class="type-bars">${entries.map(([label,v])=>{
+    const pct=Math.round(v/total*100);
+    const h=v?Math.max(8,(v/max)*100):0;
+    return `<div class="type-bar-item">
+      <div class="type-bar-value">${v}</div>
+      <div class="type-bar-track"><div class="type-bar-fill" style="height:${h}%"></div></div>
+      <div class="type-bar-label">${escapeHtml(label)}</div>
+      <div class="type-bar-percent">${pct}%</div>
+    </div>`;
+  }).join('')}</div>`;
 }
 
 let dashboardJourneyOpen = new Set();
@@ -962,9 +973,8 @@ function renderJourneyPanel(allRows, day){
     return;
   }
 
-  // Saat pertama kali dibuka, buka kurir pertama. Setelah itu pertahankan
-  // pilihan expand/collapse user selama dashboard masih aktif.
-  if(!dashboardJourneyOpen.size)dashboardJourneyOpen.add(names[0]);
+  // Default: semua kurir terbuka. Setelah itu pertahankan pilihan expand/collapse user selama dashboard masih aktif.
+  if(!dashboardJourneyOpen.size)names.forEach(name=>dashboardJourneyOpen.add(name));
   dashboardJourneyOpen.forEach(name=>{if(!grouped[name])dashboardJourneyOpen.delete(name);});
 
   panel.innerHTML=names.map((name,groupIndex)=>{
@@ -988,7 +998,7 @@ function renderJourneyPanel(allRows, day){
           <div class="journey-top"><strong>Trip ${escapeHtml(trip)}</strong><span class="journey-status ${cls}">${escapeHtml(status)}</span></div>
           <div class="journey-route"><span class="journey-dot start"></span><div><small>Berangkat dari</small><b>${escapeHtml(a.asal||"-")}</b></div><time>${escapeHtml(displayIndonesiaTime(a.berangkat))}</time></div>
           <div class="journey-route"><span class="journey-dot end"></span><div><small>Menuju</small><b>${escapeHtml(a.tujuan||"-")}</b><em>${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</em></div><time>${escapeHtml(displayIndonesiaTime(a.datang))}</time></div>
-          <div class="journey-meta"><span>Durasi mengemudi <b>${escapeHtml(displayDuration(a.durasiMengemudi))}</b></span><span>Selesai <b>${escapeHtml(displayIndonesiaTime(a.selesai))}</b></span></div>
+          <div class="journey-meta"><span>Keterangan <b>${escapeHtml(a.keterangan||"-")}</b></span>${a.fotoDokumen?`<a class="journey-document" href="${escapeHtml(a.fotoDokumen)}" target="_blank" rel="noopener"><img src="${escapeHtml(a.fotoDokumen)}" alt="Foto Dokumen"><span>Foto Dokumen</span></a>`:''}</div>
         </div>
       </div>`;
     }).join("");
@@ -1020,66 +1030,14 @@ function renderDashboard(data){
   populateDashboardCouriers(allRows);
   const day=$("dashboardDate").value, courier=$("dashboardCourier").value;
   const rows=allRows.filter(a=>(!courier||a.kurir===courier)&&activityMatchesDay(a,day));
-  const detailDateEl=$("dashboardDetailDate");
-  if(detailDateEl){
-    let detailDateLabel="Semua tanggal";
-    if(day){
-      const d=parseActivityDate(day);
-      if(d) detailDateLabel=displayIndonesiaDateOnly(d);
-    }else{
-      const uniqueDays=[...new Set(rows.map(a=>{const d=parseActivityDate(a.berangkat||a.datang||a.selesai);return d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`:null;}).filter(Boolean))];
-      if(uniqueDays.length===1){
-        const d=parseActivityDate(uniqueDays[0]);
-        if(d) detailDateLabel=displayIndonesiaDateOnly(d);
-      }
-    }
-    detailDateEl.textContent="Data: "+detailDateLabel;
-  }
   const stats={total:rows.length,menungguBerangkat:rows.filter(a=>a.status==="Menunggu Berangkat").length,lagiJalan:rows.filter(a=>a.status==="Lagi Jalan").length,lagiDiproses:rows.filter(a=>a.status==="Lagi Diproses").length,selesai:rows.filter(a=>a.status==="Selesai").length};
   $("statTotal").textContent=stats.total||0; $("statMenunggu").textContent=stats.menungguBerangkat||0; $("statJalan").textContent=stats.lagiJalan||0; $("statSelesai").textContent=stats.selesai||0;
   const prosesEl=$("statProses"); if(prosesEl)prosesEl.textContent=stats.lagiDiproses||0;
   const pct=n=>stats.total?Math.round(n/stats.total*100):0;
   [["Menunggu",stats.menungguBerangkat],["Jalan",stats.lagiJalan],["Proses",stats.lagiDiproses],["Selesai",stats.selesai]].forEach(([key,n])=>{const p=pct(n),el=$("stat"+key+"Progress"),tx=$("stat"+key+"Percent");if(el)el.style.width=p+"%";if(tx)tx.textContent=p+"%";});
-  renderCourierChart(rows); renderStatusChart(rows); renderActivityTypeSummary(rows); renderJourneyPanel(rows,day); renderProofGallery(rows);
-  const statusClass=status=>status==="Selesai"?"done":status==="Lagi Jalan"?"jalan":status==="Lagi Diproses"?"proses":"waiting";
-  const recent=[...rows].sort((a,b)=>(parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0)-(parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0)).slice(0,12);
-  $("dashboardTable").innerHTML=recent.map(a=>{const bukti=a.fotoDatang||a.fotoBerangkat||a.fotoDokumen||"";return `<tr>
-    <td>${escapeHtml(displayIndonesiaTime(a.berangkat))}</td><td>${escapeHtml(displayIndonesiaTime(a.datang))}</td><td>${escapeHtml(displayDuration(a.durasiMengemudi))}</td>
-    <td><span class="recent-courier"><span class="recent-avatar">${escapeHtml(String(a.kurir||"?").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase())}</span>${escapeHtml(a.kurir||"-")}</span></td>
-    <td><div class="dashboard-destination"><strong>${escapeHtml(a.tujuan||"-")}</strong><span>${escapeHtml(a.asal||"-")}</span></div></td>
-    <td><span class="task-tag">${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</span></td><td class="dashboard-note"><div class="dashboard-note-text">${escapeHtml(a.keterangan||"-")}</div><button class="dashboard-note-toggle" type="button" aria-expanded="false" hidden>Load more...</button></td>
-    <td><span class="dashboard-status-pill ${statusClass(a.status)}">${escapeHtml(a.status||"-")}</span></td><td>${bukti?`<a class="proof-link" href="${escapeHtml(bukti)}" target="_blank" rel="noopener">Lihat Foto</a>`:'-'}</td>
-  </tr>`;}).join('');
-  $("dashboardEmpty").classList.toggle("hidden",recent.length>0);
-  document.querySelectorAll("#dashboardView .dashboard-note").forEach(note=>{
-    const text=note.querySelector(".dashboard-note-text");
-    if(!text)return;
-    const fullText=text.textContent.trim()||"-";
-    let truncated=fullText;
-    const renderCollapsed=()=>{
-      text.classList.remove("expanded");
-      text.innerHTML=escapeHtml(truncated)+' <button class="dashboard-note-inline-toggle" type="button">Load more...</button>';
-      const b=text.querySelector(".dashboard-note-inline-toggle");
-      b.addEventListener("click",renderExpanded);
-    };
-    const renderExpanded=()=>{
-      text.classList.add("expanded");
-      text.innerHTML=escapeHtml(fullText)+' <button class="dashboard-note-inline-toggle" type="button">Show less</button>';
-      text.querySelector(".dashboard-note-inline-toggle").addEventListener("click",renderCollapsed);
-    };
-    text.classList.remove("expanded");
-    text.textContent=fullText;
-    if(text.scrollHeight<=text.clientHeight+1)return;
-    let lo=1,hi=fullText.length,best=1;
-    while(lo<=hi){
-      const mid=Math.floor((lo+hi)/2);
-      text.innerHTML=escapeHtml(fullText.slice(0,mid).trimEnd())+' <button class="dashboard-note-inline-toggle" type="button">Load more...</button>';
-      if(text.scrollHeight<=text.clientHeight+1){best=mid;lo=mid+1;}else{hi=mid-1;}
-    }
-    truncated=fullText.slice(0,best).trimEnd();
-    renderCollapsed();
-  });;
+  renderCourierChart(rows); renderStatusChart(rows); renderActivityTypeSummary(rows); renderJourneyPanel(rows,day);
 }
+
 async function loadDashboard(){
   msg("dashboardMsg","Memuat data aktivitas...");
   try{setDashboardDefaultDay();const data=await api("getDashboard",{idPengguna:state.user.id});state.dashboardActivities=data.activities||[];renderDashboard(data);msg("dashboardMsg","");}

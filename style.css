@@ -2081,17 +2081,52 @@ td{color:#4d5865}
   overflow-wrap:break-word;
   word-break:normal;
 }
-#dashboardView .dashboard-detail-table th:nth-child(1),#dashboardView .dashboard-detail-table td:nth-child(1){width:10% !important;}
+#dashboardView .dashboard-detail-table th:nth-child(1),#dashboardView .dashboard-detail-table td:nth-child(1){width:9% !important;}
 #dashboardView .dashboard-detail-table th:nth-child(2),#dashboardView .dashboard-detail-table td:nth-child(2){width:7% !important;}
-#dashboardView .dashboard-detail-table th:nth-child(3),#dashboardView .dashboard-detail-table td:nth-child(3){width:10% !important;}
+#dashboardView .dashboard-detail-table th:nth-child(3),#dashboardView .dashboard-detail-table td:nth-child(3){width:9% !important;}
 #dashboardView .dashboard-detail-table th:nth-child(4),#dashboardView .dashboard-detail-table td:nth-child(4){width:11% !important;}
 #dashboardView .dashboard-detail-table th:nth-child(5),#dashboardView .dashboard-detail-table td:nth-child(5){width:18% !important;}
 #dashboardView .dashboard-detail-table th:nth-child(6),#dashboardView .dashboard-detail-table td:nth-child(6){width:12% !important;}
 #dashboardView .dashboard-detail-table th:nth-child(7),#dashboardView .dashboard-detail-table td:nth-child(7){width:15% !important;}
-#dashboardView .dashboard-detail-table th:nth-child(8),#dashboardView .dashboard-detail-table td:nth-child(8){width:9% !important;}
-#dashboardView .dashboard-detail-table th:nth-child(9),#dashboardView .dashboard-detail-table td:nth-child(9){width:8% !important;}
+#dashboardView .dashboard-detail-table th:nth-child(8),#dashboardView .dashboard-detail-table td:nth-child(8){width:12% !important;}
+#dashboardView .dashboard-detail-table th:nth-child(9),#dashboardView .dashboard-detail-table td:nth-child(9){width:7% !important;}
 #dashboardView .dashboard-detail-table td:nth-child(1),#dashboardView .dashboard-detail-table td:nth-child(2),#dashboardView .dashboard-detail-table td:nth-child(3){white-space:nowrap !important;}
 
 
-# Dashboard detail: keep Foto Bukti on one line.
-#dashboardView .dashboard-detail-table th:nth-child(9){white-space:nowrap !important;word-break:normal !important;overflow-wrap:normal !important;}
+
+/* V80 — Dashboard redesign: Jenis Tugas full-width + Aktivitas Kurir horizontal accordion cards. */
+#dashboardView .dashboard-type-full{width:100%;margin-bottom:16px;}
+#dashboardView .dashboard-type-card{padding:18px;}
+#dashboardView .type-bar-chart{width:100%;min-height:250px;display:flex;align-items:stretch;}
+#dashboardView .type-bars{width:100%;height:250px;display:grid;grid-template-columns:repeat(4,minmax(110px,1fr));gap:34px;align-items:end;padding:12px 24px 0;box-sizing:border-box;}
+#dashboardView .type-bar-item{height:100%;display:grid;grid-template-rows:22px minmax(120px,1fr) 30px 22px;align-items:end;justify-items:center;min-width:0;}
+#dashboardView .type-bar-value{font-size:12px;font-weight:700;color:#273240;line-height:22px;}
+#dashboardView .type-bar-track{height:100%;width:min(76px,70%);min-height:110px;display:flex;align-items:flex-end;justify-content:center;background:#f3f5f7;border-radius:9px 9px 4px 4px;overflow:hidden;}
+#dashboardView .type-bar-fill{width:100%;min-height:0;border-radius:9px 9px 4px 4px;background:linear-gradient(180deg,#5b8def 0%,#2563eb 100%);transition:height .25s ease;}
+#dashboardView .type-bar-label{width:100%;font-size:10px;font-weight:600;color:#4f5b69;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;align-self:center;}
+#dashboardView .type-bar-percent{font-size:10px;font-weight:600;color:#8a95a1;line-height:22px;}
+
+#dashboardView .dashboard-activity-card{padding:18px;overflow:visible;}
+#dashboardView .dashboard-activity-card .dashboard-section-head{margin-bottom:12px;}
+#dashboardView .dashboard-activity-card .journey-panel{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px;align-items:start;max-height:none;overflow:visible;padding:0;}
+#dashboardView .dashboard-activity-card .journey-group{min-width:0;align-self:start;border:1px solid #e7ebf0;border-radius:12px;background:#fff;overflow:hidden;box-shadow:none;}
+#dashboardView .dashboard-activity-card .journey-group-toggle{min-height:48px;padding:10px 12px;}
+#dashboardView .dashboard-activity-card .journey-group-body{padding:0 12px 10px;}
+#dashboardView .dashboard-activity-card .journey-group-body .journey-item{padding-top:10px;}
+#dashboardView .dashboard-activity-card .journey-group-body .journey-item:last-child .journey-content{padding-bottom:2px;}
+#dashboardView .journey-meta{align-items:flex-start;}
+#dashboardView .journey-meta>span{min-width:0;flex:1 1 130px;line-height:1.35;}
+#dashboardView .journey-document{display:flex;align-items:center;gap:6px;flex:0 0 auto;padding:4px 6px;background:#f7f8fa;border-radius:7px;text-decoration:none;color:#3c4856;font-size:8px;font-weight:600;}
+#dashboardView .journey-document img{width:30px;height:30px;object-fit:cover;border-radius:5px;display:block;}
+#dashboardView .journey-document span{white-space:nowrap;}
+
+@media(max-width:1050px){
+  #dashboardView .dashboard-activity-card .journey-panel{grid-template-columns:repeat(2,minmax(260px,1fr));}
+  #dashboardView .type-bars{gap:20px;padding-left:12px;padding-right:12px;}
+}
+@media(max-width:700px){
+  #dashboardView .type-bars{grid-template-columns:repeat(4,minmax(85px,1fr));gap:10px;padding:10px 4px 0;overflow-x:auto;}
+  #dashboardView .type-bar-track{width:min(62px,70%);}
+  #dashboardView .type-bar-label{font-size:9px;}
+  #dashboardView .dashboard-activity-card .journey-panel{grid-template-columns:1fr;}
+}
