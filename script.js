@@ -1123,6 +1123,9 @@ function renderDashboard(data){
   const prosesEl=$("statProses"); if(prosesEl)prosesEl.textContent=stats.lagiDiproses||0;
   const pct=n=>stats.total?Math.round(n/stats.total*100):0;
   [["Menunggu",stats.menungguBerangkat],["Jalan",stats.lagiJalan],["Proses",stats.lagiDiproses],["Selesai",stats.selesai]].forEach(([key,n])=>{const p=pct(n),el=$("stat"+key+"Progress"),tx=$("stat"+key+"Percent");if(el)el.style.width=p+"%";if(tx)tx.textContent=p+"%";});
+  // Dashboard accordion selalu kembali ke kondisi default collapse saat data/filter dirender ulang.
+  dashboardJourneyOpen.clear();
+  window.dashboardDetailOpen=new Set();
   renderCourierChart(rows); renderStatusChart(rows); renderActivityTypeSummary(rows); renderJourneyPanel(rows,day); renderDashboardDetailGroups(rows);
 }
 async function loadDashboard(){

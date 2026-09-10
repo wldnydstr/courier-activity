@@ -2145,26 +2145,46 @@ td{color:#4d5865}
 }
 
 
-/* V83 — Dashboard typography: sedikit diperbesar agar proporsional dengan card/kolom. */
-#dashboardView .dashboard-detail-group-name{font-size:13px;}
-#dashboardView .dashboard-detail-group-count{font-size:10px;}
-#dashboardView .dashboard-detail-group-toggle{min-height:50px;}
-#dashboardView .dashboard-detail-group-body .dashboard-detail-table th{font-size:9px;padding:10px 6px;}
-#dashboardView .dashboard-detail-group-body .dashboard-detail-table td{font-size:10px;padding:10px 6px;}
-#dashboardView .dashboard-detail-table .task-tag{font-size:9px;}
-#dashboardView .dashboard-detail-table .dashboard-status-pill{font-size:9px;}
-#dashboardView .dashboard-detail-table .dashboard-note-inline-toggle{font-size:10px;}
-#dashboardView .journey-group-name{font-size:13px;}
-#dashboardView .journey-group-count{font-size:10px;}
-#dashboardView .journey-group-toggle{min-height:50px;}
-#dashboardView .journey-marker span{font-size:10px;}
-#dashboardView .journey-top strong{font-size:13px;}
-#dashboardView .journey-status{font-size:9px;}
-#dashboardView .journey-route small{font-size:9px;}
-#dashboardView .journey-route b{font-size:11px;}
-#dashboardView .journey-route em{font-size:9px;}
-#dashboardView .journey-route time{font-size:10px;}
-#dashboardView .journey-meta{font-size:9px;}
-#dashboardView .type-bar-value{font-size:13px;}
-#dashboardView .type-bar-label{font-size:11px;}
-#dashboardView .type-bar-percent{font-size:11px;}
+/* V84 — Dashboard readability + thicker differentiated task bars. */
+#dashboardView .dashboard-detail-group-name{font-size:14px;}
+#dashboardView .dashboard-detail-group-count{font-size:11px;}
+#dashboardView .dashboard-detail-group-toggle{min-height:52px;}
+#dashboardView .dashboard-detail-group-body .dashboard-detail-table th{font-size:10px;padding:11px 7px;}
+#dashboardView .dashboard-detail-group-body .dashboard-detail-table td{font-size:11px;padding:11px 7px;}
+#dashboardView .dashboard-detail-table .task-tag{font-size:10px;}
+#dashboardView .dashboard-detail-table .dashboard-status-pill{font-size:10px;}
+#dashboardView .dashboard-detail-table .dashboard-note-inline-toggle{font-size:11px;}
+#dashboardView .journey-group-name{font-size:14px;}
+#dashboardView .journey-group-count{font-size:11px;}
+#dashboardView .journey-group-toggle{min-height:52px;}
+#dashboardView .journey-marker span{font-size:11px;}
+#dashboardView .journey-top strong{font-size:14px;}
+#dashboardView .journey-status{font-size:10px;}
+#dashboardView .journey-route small{font-size:10px;}
+#dashboardView .journey-route b{font-size:12px;}
+#dashboardView .journey-route em{font-size:10px;}
+#dashboardView .journey-route time{font-size:11px;}
+#dashboardView .journey-meta{font-size:10px;}
+#dashboardView .type-bar-chart{min-height:235px;}
+#dashboardView .type-bars{height:235px;grid-template-columns:repeat(4,minmax(130px,1fr));gap:28px;padding:8px 18px 0;}
+#dashboardView .type-bar-item{grid-template-rows:24px minmax(140px,1fr) 34px 24px;}
+#dashboardView .type-bar-value{font-size:14px;}
+#dashboardView .type-bar-track{width:min(112px,82%);min-height:140px;border-radius:10px 10px 5px 5px;}
+#dashboardView .type-bar-fill{border-radius:10px 10px 5px 5px;}
+#dashboardView .type-bar-item:nth-child(1) .type-bar-fill{background:linear-gradient(180deg,#7c9ff5 0%,#4f7fe8 100%);}
+#dashboardView .type-bar-item:nth-child(2) .type-bar-fill{background:linear-gradient(180deg,#68c9a4 0%,#35a979 100%);}
+#dashboardView .type-bar-item:nth-child(3) .type-bar-fill{background:linear-gradient(180deg,#f5b56b 0%,#e89238 100%);}
+#dashboardView .type-bar-item:nth-child(4) .type-bar-fill{background:linear-gradient(180deg,#a98be8 0%,#825bc8 100%);}
+#dashboardView .type-bar-label{font-size:12px;}
+#dashboardView .type-bar-percent{font-size:12px;}
+
+@media(max-width:1050px){
+  #dashboardView .type-bars{grid-template-columns:repeat(4,minmax(115px,1fr));gap:20px;padding-left:10px;padding-right:10px;}
+  #dashboardView .type-bar-track{width:min(96px,78%);}
+}
+@media(max-width:700px){
+  #dashboardView .type-bars{grid-template-columns:repeat(4,minmax(100px,1fr));gap:10px;padding:8px 4px 0;overflow-x:auto;}
+  #dashboardView .type-bar-track{width:min(82px,76%);}
+  #dashboardView .type-bar-label{font-size:10px;}
+  #dashboardView .type-bar-percent{font-size:10px;}
+}
