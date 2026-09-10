@@ -2383,3 +2383,45 @@ td{color:#4d5865}
   vertical-align:baseline !important;
   cursor:pointer;
 }
+
+
+/* V92 — referensi V56/V57: Load more inline di baris kedua. */
+#dashboardView .dashboard-detail-table .dashboard-note{
+  max-width:none !important;
+  vertical-align:top;
+  line-height:1.45;
+  overflow-wrap:anywhere;
+  position:relative;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-text{
+  display:block !important;
+  max-height:2.9em !important;
+  overflow:hidden !important;
+  line-height:1.45 !important;
+  overflow-wrap:anywhere !important;
+  white-space:normal !important;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-text.expanded{
+  display:block !important;
+  max-height:none !important;
+  overflow:visible !important;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-inline-toggle{
+  display:inline !important;
+  min-height:0 !important;
+  height:auto !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  color:#2563eb !important;
+  font:inherit !important;
+  font-size:11.5px !important;
+  font-weight:700 !important;
+  line-height:inherit !important;
+  cursor:pointer !important;
+  vertical-align:baseline !important;
+  white-space:nowrap !important;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-inline-toggle:hover{text-decoration:underline;}

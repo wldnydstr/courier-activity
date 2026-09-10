@@ -1067,75 +1067,51 @@ function renderDashboardDetailGroups(rows){
     </section>`;
   }).join("");
 
-  // V91 — Keterangan: maksimal 2 baris, Load more harus berada di ujung baris kedua.
+  // Referensi V56/V57 — Keterangan maksimal 2 baris, Load more menyatu di baris kedua.
   document.querySelectorAll("#dashboardView .dashboard-detail-group .dashboard-note").forEach(note=>{
     const text=note.querySelector(".dashboard-note-text");
     if(!text)return;
     const fullText=text.textContent.trim()||"-";
-    if(fullText==="-")return;
-
-    const cs=getComputedStyle(text);
-    const rect=note.getBoundingClientRect();
-    const width=Math.max(80, rect.width-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0));
-    const lineHeight=parseFloat(cs.lineHeight)||parseFloat(cs.fontSize)*1.45;
-    const words=fullText.split(/\s+/).filter(Boolean);
-    if(words.length<3)return;
-
-    const measure=document.createElement("div");
-    measure.style.cssText=`position:absolute;left:-99999px;top:0;visibility:hidden;pointer-events:none;width:${width}px;font-family:${cs.fontFamily};font-size:${cs.fontSize};font-weight:${cs.fontWeight};letter-spacing:${cs.letterSpacing};line-height:${cs.lineHeight};word-break:${cs.wordBreak};overflow-wrap:${cs.overflowWrap};white-space:normal;`;
-    document.body.appendChild(measure);
-
-    const probeText=document.createElement("span");
-    const probeButton=document.createElement("button");
-    probeButton.type="button";
-    probeButton.textContent="Load more...";
-    probeButton.style.cssText=`display:inline;font-family:${cs.fontFamily};font-size:${cs.fontSize};font-weight:700;letter-spacing:${cs.letterSpacing};line-height:${cs.lineHeight};white-space:nowrap;padding:0;margin:0;border:0;background:transparent;`;
-    measure.appendChild(probeText);
-    measure.appendChild(document.createTextNode(" "));
-    measure.appendChild(probeButton);
-
-    const lineIndex=()=>Math.round((probeButton.getBoundingClientRect().top-measure.getBoundingClientRect().top)/lineHeight);
-    const fitsTwoLines=()=>{
-      const m=measure.getBoundingClientRect();
-      return m.height<=lineHeight*2.05 && lineIndex()===1;
-    };
-
-    // Mulai dari sebanyak mungkin teks, lalu mundur sampai tombol tepat berada
-    // di baris kedua. Ini memakai wrapping browser yang sebenarnya, bukan hitung karakter.
-    let best="";
-    for(let count=words.length-1;count>=2;count--){
-      probeText.textContent=words.slice(0,count).join(" ");
-      if(fitsTwoLines()){
-        best=probeText.textContent;
-        break;
-      }
-    }
-
-    // Kalau kombinasi paling panjang tidak berhasil, cari prefix terpendek yang
-    // tetap membuat tombol berada di baris kedua.
-    if(!best){
-      for(let count=2;count<words.length;count++){
-        probeText.textContent=words.slice(0,count).join(" ");
-        if(fitsTwoLines()){
-          best=probeText.textContent;
-          break;
-        }
-      }
-    }
-    measure.remove();
-
-    if(!best || best===fullText)return;
+    let truncated=fullText;
 
     const renderCollapsed=()=>{
-      note.innerHTML=`<div class="dashboard-note-text dashboard-note-preview"><span>${escapeHtml(best)}</span> <button class="dashboard-note-inline-toggle" type="button">Load more...</button></div>`;
-      const b=note.querySelector(".dashboard-note-inline-toggle");
+      text.classList.remove("expanded");
+      text.innerHTML=escapeHtml(truncated)+' <button class="dashboard-note-inline-toggle" type="button">Load more...</button>';
+      const b=text.querySelector(".dashboard-note-inline-toggle");
       if(b)b.addEventListener("click",renderExpanded);
     };
     const renderExpanded=()=>{
-      note.innerHTML=`<div class="dashboard-note-text expanded">${escapeHtml(fullText)} <button class="dashboard-note-inline-toggle" type="button">Show less</button></div>`;
-      const b=note.querySelector(".dashboard-note-inline-toggle");
+      text.classList.add("expanded");
+      text.innerHTML=escapeHtml(fullText)+' <button class="dashboard-note-inline-toggle" type="button">Show less</button>';
+      const b=text.querySelector(".dashboard-note-inline-toggle");
       if(b)b.addEventListener("click",renderCollapsed);
     };
+
+    text.classList.remove("expanded");
+    text.textContent=fullText;
+    // Ukur overflow dengan style preview 2 baris. Kalau seluruh keterangan muat,
+    // tidak perlu tombol. Kalau tidak muat, cari potongan terpanjang yang tetap
+    // membuat tombol berada di baris kedua.
+    if(text.scrollHeight<=text.clientHeight+1)return;
+
+    let lo=1,hi=fullText.length,best=1;
+    while(lo<=hi){
+      const mid=Math.floor((lo+hi)/2);
+      text.innerHTML=escapeHtml(fullText.slice(0,mid).trimEnd())+' <button class="dashboard-note-inline-toggle" type="button">Load more...</button>';
+      const btn=text.querySelector(".dashboard-note-inline-toggle");
+      const lineHeight=parseFloat(getComputedStyle(text).lineHeight)||18;
+      const top=btn?.offsetTop||0;
+      const textTop=text.offsetTop;
+      const buttonIsSecondLine=top>=lineHeight*0.65;
+      if(text.scrollHeight<=text.clientHeight+1 && buttonIsSecondLine){
+        best=mid;
+        lo=mid+1;
+      }else{
+        hi=mid-1;
+      }
+    }
+    truncated=fullText.slice(0,best).trimEnd();
+    if(!truncated || truncated===fullText)return;
     renderCollapsed();
   });
 
