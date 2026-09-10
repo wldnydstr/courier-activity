@@ -651,14 +651,27 @@ function formatDateKey(date){
 
 function parseActivityDate(value){
   if(!value)return null;
-  const m=String(value).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
-  if(m)return new Date(Number(m[3]),Number(m[2])-1,Number(m[1]),Number(m[4]||0),Number(m[5]||0),Number(m[6]||0));
-  const d=new Date(value);return isNaN(d.getTime())?null:d;
+  if(value instanceof Date && !isNaN(value.getTime()))return value;
+  const text=String(value).trim();
+  const m=text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  if(m){
+    // Format Spreadsheet/backend: MM/dd/yyyy HH:mm.
+    const month=Number(m[1]);
+    const day=Number(m[2]);
+    const year=Number(m[3]);
+    const hour=Number(m[4]||0);
+    const minute=Number(m[5]||0);
+    const second=Number(m[6]||0);
+    const d=new Date(year,month-1,day,hour,minute,second);
+    return isNaN(d.getTime())?null:d;
+  }
+  const d=new Date(text);return isNaN(d.getTime())?null:d;
 }
 
 function activityMatchesDay(a, day){
   if(!day)return true;
-  return [a.berangkat,a.datang,a.selesai].some(v=>{const d=parseActivityDate(v);return d&&formatDateKey(d)===day;});
+  const d=parseActivityDate(a.berangkat);
+  return !!d && formatDateKey(d)===day;
 }
 
 function populateDashboardCouriers(rows){
@@ -1169,7 +1182,7 @@ function exportReportExcel(){
     "Foto Saat Datang":a.fotoDatang||"",
     "Hasil":a.hasil||"",
     "Keterangan":a.keterangan||"",
-    "Waktu Selesai":displayReportTime(a.selesai),
+    "Waktu Selsai":displayReportTime(a.selesai),
     "Durasi Mengemudi":displayDuration(a.durasiMengemudi),
     "Durasi Tugas":displayDuration(a.durasiTugas)
   }));
@@ -1177,7 +1190,7 @@ function exportReportExcel(){
   const ws=XLSX.utils.json_to_sheet(exportRows);
 
   // Semua kolom memakai lebar default Excel yang diminta: 8.11.
-  ws["!cols"]=Array.from({length:17},()=>({wch:8.11}));
+  ws["!cols"]=Array.from({length:18},()=>({wch:8.11}));
 
   // Foto dibuat sebagai hyperlink yang bisa diklik langsung dari Excel.
   const photoColumns=["Foto Dokumen","Foto Saat Berangkat","Foto Saat Datang"];
