@@ -201,8 +201,27 @@ function clearSession(){
   state={user:null,activity:null,locations:[],dashboardActivities:[],courierTasks:{pendingDeparture:null,confirmations:[],history:[]}};
 }
 
+function resetUiStateOnLogout(){
+  // Logout benar-benar mengembalikan UI ke kondisi awal. Selama belum logout,
+  // session dan lastView tetap mengikuti aturan persistence yang sekarang.
+  try{
+    if($("dashboardDate"))$("dashboardDate").value="";
+    if($("dashboardCourier"))$("dashboardCourier").value="";
+    if($("reportDateFrom"))$("reportDateFrom").value="";
+    if($("reportDateTo"))$("reportDateTo").value="";
+    if($("reportStatus"))$("reportStatus").value="";
+    if($("reportCourier"))$("reportCourier").value="";
+    if($("reportOrigin"))$("reportOrigin").value="";
+    if($("reportDestination"))$("reportDestination").value="";
+    if(typeof dashboardJourneyOpen!=="undefined" && dashboardJourneyOpen?.clear)dashboardJourneyOpen.clear();
+    if($("dashboardTable"))$("dashboardTable").innerHTML="";
+    if($("reportTable"))$("reportTable").innerHTML="";
+  }catch(e){}
+}
+
 function logoutToLogin(message=""){
   if(state.user)clearActivityDraft();
+  resetUiStateOnLogout();
   clearSession();
   $("appView").classList.add("hidden");
   $("loginView").classList.remove("hidden");
@@ -650,27 +669,36 @@ function formatDateKey(date){
 }
 
 function parseActivityDate(value){
-  if(!value)return null;
+  if(value===null || value===undefined || value==="")return null;
   if(value instanceof Date && !isNaN(value.getTime()))return value;
   const text=String(value).trim();
-  const m=text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+
+  // Spreadsheet/backend utama: MM/dd/yyyy HH:mm. Parse manual supaya tidak
+  // terkena perbedaan locale browser atau pergeseran timezone.
+  let m=text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
   if(m){
-    // Format Spreadsheet/backend: MM/dd/yyyy HH:mm.
-    const month=Number(m[1]);
-    const day=Number(m[2]);
-    const year=Number(m[3]);
-    const hour=Number(m[4]||0);
-    const minute=Number(m[5]||0);
-    const second=Number(m[6]||0);
-    const d=new Date(year,month-1,day,hour,minute,second);
-    return isNaN(d.getTime())?null:d;
+    const month=Number(m[1]), day=Number(m[2]), year=Number(m[3]);
+    const hour=Number(m[4]||0), minute=Number(m[5]||0), second=Number(m[6]||0);
+    if(month<1||month>12||day<1||day>31)return null;
+    return new Date(year,month-1,day,hour,minute,second);
   }
+
+  // HTML date / ISO date. Ambil komponen kalendernya langsung sehingga filter
+  // tetap memakai tanggal lokal Indonesia, bukan UTC.
+  m=text.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?$/);
+  if(m){
+    return new Date(Number(m[1]),Number(m[2])-1,Number(m[3]),Number(m[4]||0),Number(m[5]||0),Number(m[6]||0));
+  }
+
   const d=new Date(text);return isNaN(d.getTime())?null:d;
 }
 
 function activityMatchesDay(a, day){
   if(!day)return true;
-  const d=parseActivityDate(a.berangkat);
+  // Filter Dashboard selalu berdasarkan Waktu Berangkat saja.
+  const raw=a && a.berangkat;
+  if(!raw)return false;
+  const d=parseActivityDate(raw);
   return !!d && formatDateKey(d)===day;
 }
 
