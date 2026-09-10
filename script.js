@@ -1065,13 +1065,28 @@ function renderDashboardDetailGroups(rows){
     </section>`;
   }).join("");
 
-  // V83 — Keterangan memakai kembali aturan Load more dari V79.
+  // V85 — Keterangan: Load more dibuat konsisten dan selalu muncul untuk teks panjang.
   document.querySelectorAll("#dashboardView .dashboard-detail-group .dashboard-note").forEach(note=>{
     const text=note.querySelector(".dashboard-note-text");
     if(!text)return;
     const fullText=text.textContent.trim()||"-";
     if(fullText==="-")return;
-    let truncated=fullText;
+
+    // Ambang karakter menjaga tampilan tetap ringkas dan memastikan tombol terlihat
+    // meskipun browser belum menghitung overflow saat render awal.
+    const LIMIT=78;
+    if(fullText.length<=LIMIT){
+      text.textContent=fullText;
+      return;
+    }
+
+    const makeTruncated=()=>{
+      let cut=fullText.slice(0,LIMIT);
+      const lastSpace=cut.lastIndexOf(" ");
+      if(lastSpace>45)cut=cut.slice(0,lastSpace);
+      return cut.trimEnd()+"…";
+    };
+    const truncated=makeTruncated();
     const renderCollapsed=()=>{
       text.classList.remove("expanded");
       text.innerHTML=escapeHtml(truncated)+" <button class=\"dashboard-note-inline-toggle\" type=\"button\">Load more...</button>";
@@ -1084,17 +1099,9 @@ function renderDashboardDetailGroups(rows){
       const b=text.querySelector(".dashboard-note-inline-toggle");
       if(b)b.addEventListener("click",renderCollapsed);
     };
-    text.textContent=fullText;
-    if(text.scrollHeight<=text.clientHeight+1)return;
-    let lo=1,hi=fullText.length,best=1;
-    while(lo<=hi){
-      const mid=Math.floor((lo+hi)/2);
-      text.innerHTML=escapeHtml(fullText.slice(0,mid).trimEnd())+" <button class=\"dashboard-note-inline-toggle\" type=\"button\">Load more...</button>";
-      if(text.scrollHeight<=text.clientHeight+1){best=mid;lo=mid+1;}else{hi=mid-1;}
-    }
-    truncated=fullText.slice(0,best).trimEnd();
     renderCollapsed();
   });
+
 }
 
 function renderDashboard(data){
