@@ -939,10 +939,12 @@ function renderActivityTypeSummary(rows){
   const entries=Object.entries(counts).sort((a,b)=>a[0].localeCompare(b[0],"id",{sensitivity:"base"}));
   const total=entries.reduce((sum,[,v])=>sum+v,0);
   if(!total){chart.innerHTML='<div class="type-empty">Belum ada data</div>';return;}
-  const max=Math.max(...entries.map(([,v])=>v),1);
+  // Skala diberi headroom supaya angka terbesar tidak otomatis terlihat 100% penuh.
+  const maxCount=Math.max(...entries.map(([,v])=>v),1);
+  const scaleMax=Math.max(maxCount+1, Math.ceil(maxCount*1.25));
   chart.innerHTML=entries.map(([label,v])=>{
     const pct=Math.round(v/total*100);
-    const h=v?Math.max(8,(v/max)*100):0;
+    const h=v?Math.max(8,(v/scaleMax)*100):0;
     return `<div class="type-bar-item">
       <div class="type-bar-value">${v}</div>
       <div class="type-bar-track"><div class="type-bar-fill" style="height:${h}%"></div></div>
@@ -1065,75 +1067,93 @@ function renderDashboardDetailGroups(rows){
     </section>`;
   }).join("");
 
-  // V88/V89 — Keterangan: preview wajib 2 baris, tombol menyatu di ujung baris kedua.
+  // V90 — Keterangan: preview tepat 2 baris, Load more menyatu di ujung baris kedua.
   document.querySelectorAll("#dashboardView .dashboard-detail-group .dashboard-note").forEach(note=>{
     const text=note.querySelector(".dashboard-note-text");
     if(!text)return;
     const fullText=text.textContent.trim()||"-";
     if(fullText==="-")return;
 
-    const LIMIT=58;
-    if(fullText.length<=LIMIT){
-      text.textContent=fullText;
-      return;
-    }
+    const cs=getComputedStyle(text);
+    const rect=note.getBoundingClientRect();
+    const width=Math.max(80, rect.width-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0));
+    const words=fullText.split(/\s+/).filter(Boolean);
+    if(words.length<2)return;
 
+    // Hidden measuring area memakai font + lebar kolom yang sama persis.
     const measure=document.createElement("div");
-    measure.style.cssText="position:absolute;visibility:hidden;pointer-events:none;left:-99999px;top:0;width:"+Math.max(80,note.clientWidth)+"px;line-height:1.45;white-space:normal;overflow-wrap:anywhere;";
-    const cs=getComputedStyle(note);
-    measure.style.fontFamily=cs.fontFamily;
-    measure.style.fontSize=cs.fontSize;
-    measure.style.fontWeight=cs.fontWeight;
-    measure.style.letterSpacing=cs.letterSpacing;
-    measure.style.wordBreak=cs.wordBreak;
+    measure.style.cssText=`position:absolute;left:-99999px;top:0;visibility:hidden;pointer-events:none;width:${width}px;font-family:${cs.fontFamily};font-size:${cs.fontSize};font-weight:${cs.fontWeight};letter-spacing:${cs.letterSpacing};line-height:${cs.lineHeight};word-break:${cs.wordBreak};overflow-wrap:normal;white-space:normal;`;
     document.body.appendChild(measure);
 
-    const words=fullText.split(/\s+/);
+    const plain=document.createElement("span");
+    plain.textContent=fullText;
+    measure.appendChild(plain);
+    const fullHeight=plain.getBoundingClientRect().height;
+    const lineHeight=parseFloat(cs.lineHeight)||parseFloat(cs.fontSize)*1.45;
+    const needsMore=fullHeight>lineHeight*2.05 || fullText.length>58;
+    plain.remove();
+    if(!needsMore){measure.remove();return;}
+
     const buttonProbe=document.createElement("span");
     buttonProbe.textContent="Load more...";
-    buttonProbe.style.cssText=`font:${cs.font};font-size:${cs.fontSize};font-weight:700;white-space:nowrap;`;
+    buttonProbe.style.cssText=`font-family:${cs.fontFamily};font-size:${cs.fontSize};font-weight:700;letter-spacing:${cs.letterSpacing};white-space:nowrap;`;
     measure.appendChild(buttonProbe);
-    const buttonWidth=buttonProbe.getBoundingClientRect().width+6;
+    const buttonWidth=buttonProbe.getBoundingClientRect().width+4;
     buttonProbe.remove();
-    const width=note.clientWidth||measure.clientWidth;
 
-    const fits=(value, available)=>{
+    const textWidth=(value)=>{
       const probe=document.createElement("span");
       probe.textContent=value;
-      probe.style.cssText="display:inline;white-space:nowrap;overflow-wrap:normal;";
+      probe.style.cssText=`display:inline;white-space:nowrap;font-family:${cs.fontFamily};font-size:${cs.fontSize};font-weight:${cs.fontWeight};letter-spacing:${cs.letterSpacing};`;
       measure.appendChild(probe);
       const w=probe.getBoundingClientRect().width;
       probe.remove();
-      return w<=available;
+      return w;
     };
 
-    // Isi baris pertama sebanyak mungkin.
-    let i=0, line1="";
-    while(i<words.length){
-      const candidate=line1?line1+" "+words[i]:words[i];
-      if(!fits(candidate,width))break;
-      line1=candidate;i++;
+    // Cari pembagian 2 baris yang paling banyak menampilkan teks, dengan tombol
+    // selalu mendapat ruang di baris kedua. Ini mencegah preview kependekan.
+    let best=null;
+    for(let split=1;split<words.length;split++){
+      const line1=words.slice(0,split).join(" ");
+      if(textWidth(line1)>width)continue;
+      let line2Words=[];
+      for(let j=split;j<words.length;j++){
+        const candidate=[...line2Words,words[j]].join(" ");
+        if(textWidth(candidate)+buttonWidth>width)break;
+        line2Words.push(words[j]);
+      }
+      if(!line2Words.length)continue;
+      const line2=line2Words.join(" ");
+      const shown=split+line2Words.length;
+      const chars=line1.length+line2.length;
+      const used=Math.max(textWidth(line1),textWidth(line2)+buttonWidth);
+      const score=[shown,chars,used];
+      if(!best || score[0]>best.score[0] || (score[0]===best.score[0] && score[1]>best.score[1]) || (score[0]===best.score[0] && score[1]===best.score[1] && score[2]>best.score[2])){
+        best={line1,line2,score};
+      }
     }
 
-    // Baris kedua disisakan ruang khusus untuk tombol.
-    let line2="";
-    while(i<words.length){
-      const candidate=line2?line2+" "+words[i]:words[i];
-      if(!fits(candidate,width-buttonWidth))break;
-      line2=candidate;i++;
-    }
-
-    // Kalau kata pertama baris kedua terlalu panjang, potong secukupnya.
-    if(!line2 && i<words.length){
-      let word=words[i];
-      while(word.length>1 && !fits(word,width-buttonWidth-8))word=word.slice(0,-1);
-      line2=word;
+    // Fallback kalau kolom sangat sempit.
+    if(!best){
+      let line1=words[0],line2="";
+      for(let i=1;i<words.length;i++){
+        const candidate=line1+" "+words[i];
+        if(textWidth(candidate)<=width)line1=candidate;else break;
+      }
+      const startIndex=line1.split(/\s+/).length;
+      for(let i=startIndex;i<words.length;i++){
+        const candidate=line2?line2+" "+words[i]:words[i];
+        if(textWidth(candidate)+buttonWidth>width)break;
+        line2=candidate;
+      }
+      best={line1,line2,score:[0,0,0]};
     }
 
     measure.remove();
 
     const renderCollapsed=()=>{
-      note.innerHTML=`<div class="dashboard-note-text dashboard-note-preview"><span class="dashboard-note-line">${escapeHtml(line1)}</span><span class="dashboard-note-line">${escapeHtml(line2)}${line2?' ':''}<button class="dashboard-note-inline-toggle" type="button">Load more...</button></span></div>`;
+      note.innerHTML=`<div class="dashboard-note-text dashboard-note-preview"><span class="dashboard-note-line">${escapeHtml(best.line1)}</span><span class="dashboard-note-line">${escapeHtml(best.line2)} <button class="dashboard-note-inline-toggle" type="button">Load more...</button></span></div>`;
       const b=note.querySelector(".dashboard-note-inline-toggle");
       if(b)b.addEventListener("click",renderExpanded);
     };
