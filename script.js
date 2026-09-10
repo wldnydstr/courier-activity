@@ -973,8 +973,8 @@ function renderJourneyPanel(allRows, day){
     return;
   }
 
-  // Semua kurir terbuka saat pertama kali dashboard/filter dirender.
-  if(!dashboardJourneyOpen.size)names.forEach(name=>dashboardJourneyOpen.add(name));
+  // Semua accordion default collapse. State hanya mengikuti interaksi manual pengguna.
+  if(dashboardJourneyOpen.size===0) dashboardJourneyOpen.clear();
   dashboardJourneyOpen.forEach(name=>{if(!grouped[name])dashboardJourneyOpen.delete(name);});
 
   panel.innerHTML=names.map((name,groupIndex)=>{
@@ -1034,7 +1034,8 @@ function renderDashboardDetailGroups(rows){
   if(!names.length){wrap.innerHTML="";$("dashboardEmpty")?.classList.remove("hidden");return;}
   $("dashboardEmpty")?.classList.add("hidden");
   if(!window.dashboardDetailOpen)window.dashboardDetailOpen=new Set();
-  if(!window.dashboardDetailOpen.size)names.forEach(n=>window.dashboardDetailOpen.add(n));
+  // Semua accordion default collapse.
+  if(window.dashboardDetailOpen.size===0) window.dashboardDetailOpen.clear();
   window.dashboardDetailOpen.forEach(n=>{if(!grouped[n])window.dashboardDetailOpen.delete(n);});
   const statusClass=status=>status==="Selesai"?"done":status==="Lagi Jalan"?"jalan":status==="Lagi Diproses"?"proses":"waiting";
   const table=(name,items)=>{
@@ -1063,6 +1064,37 @@ function renderDashboardDetailGroups(rows){
       <div class="dashboard-detail-group-body" ${open?'':'hidden'}><div class="table-wrap dashboard-detail-wrap"><table class="dashboard-detail-table"><thead><tr><th>Jam<br>Berangkat</th><th>Jam<br>Tiba</th><th>Durasi<br>Perjalanan</th><th>Kurir</th><th>Rumah Sakit/Tujuan</th><th>Jenis Kegiatan</th><th>Keterangan</th><th>Status</th><th>Foto Bukti</th></tr></thead><tbody>${table(name,items)}</tbody></table></div></div>
     </section>`;
   }).join("");
+
+  // V83 — Keterangan memakai kembali aturan Load more dari V79.
+  document.querySelectorAll("#dashboardView .dashboard-detail-group .dashboard-note").forEach(note=>{
+    const text=note.querySelector(".dashboard-note-text");
+    if(!text)return;
+    const fullText=text.textContent.trim()||"-";
+    if(fullText==="-")return;
+    let truncated=fullText;
+    const renderCollapsed=()=>{
+      text.classList.remove("expanded");
+      text.innerHTML=escapeHtml(truncated)+" <button class=\"dashboard-note-inline-toggle\" type=\"button\">Load more...</button>";
+      const b=text.querySelector(".dashboard-note-inline-toggle");
+      if(b)b.addEventListener("click",renderExpanded);
+    };
+    const renderExpanded=()=>{
+      text.classList.add("expanded");
+      text.innerHTML=escapeHtml(fullText)+" <button class=\"dashboard-note-inline-toggle\" type=\"button\">Show less</button>";
+      const b=text.querySelector(".dashboard-note-inline-toggle");
+      if(b)b.addEventListener("click",renderCollapsed);
+    };
+    text.textContent=fullText;
+    if(text.scrollHeight<=text.clientHeight+1)return;
+    let lo=1,hi=fullText.length,best=1;
+    while(lo<=hi){
+      const mid=Math.floor((lo+hi)/2);
+      text.innerHTML=escapeHtml(fullText.slice(0,mid).trimEnd())+" <button class=\"dashboard-note-inline-toggle\" type=\"button\">Load more...</button>";
+      if(text.scrollHeight<=text.clientHeight+1){best=mid;lo=mid+1;}else{hi=mid-1;}
+    }
+    truncated=fullText.slice(0,best).trimEnd();
+    renderCollapsed();
+  });
 }
 
 function renderDashboard(data){

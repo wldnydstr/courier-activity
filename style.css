@@ -2143,3 +2143,28 @@ td{color:#4d5865}
   #dashboardView .type-bar-label{font-size:9px;}
   #dashboardView .dashboard-detail-group-body .dashboard-detail-table{min-width:1020px;}
 }
+
+
+/* V83 — Dashboard typography: sedikit diperbesar agar proporsional dengan card/kolom. */
+#dashboardView .dashboard-detail-group-name{font-size:13px;}
+#dashboardView .dashboard-detail-group-count{font-size:10px;}
+#dashboardView .dashboard-detail-group-toggle{min-height:50px;}
+#dashboardView .dashboard-detail-group-body .dashboard-detail-table th{font-size:9px;padding:10px 6px;}
+#dashboardView .dashboard-detail-group-body .dashboard-detail-table td{font-size:10px;padding:10px 6px;}
+#dashboardView .dashboard-detail-table .task-tag{font-size:9px;}
+#dashboardView .dashboard-detail-table .dashboard-status-pill{font-size:9px;}
+#dashboardView .dashboard-detail-table .dashboard-note-inline-toggle{font-size:10px;}
+#dashboardView .journey-group-name{font-size:13px;}
+#dashboardView .journey-group-count{font-size:10px;}
+#dashboardView .journey-group-toggle{min-height:50px;}
+#dashboardView .journey-marker span{font-size:10px;}
+#dashboardView .journey-top strong{font-size:13px;}
+#dashboardView .journey-status{font-size:9px;}
+#dashboardView .journey-route small{font-size:9px;}
+#dashboardView .journey-route b{font-size:11px;}
+#dashboardView .journey-route em{font-size:9px;}
+#dashboardView .journey-route time{font-size:10px;}
+#dashboardView .journey-meta{font-size:9px;}
+#dashboardView .type-bar-value{font-size:13px;}
+#dashboardView .type-bar-label{font-size:11px;}
+#dashboardView .type-bar-percent{font-size:11px;}
