@@ -2425,3 +2425,27 @@ td{color:#4d5865}
   white-space:nowrap !important;
 }
 #dashboardView .dashboard-detail-table .dashboard-note-inline-toggle:hover{text-decoration:underline;}
+
+/* V93 — final Load more: inline dan tetap berada di baris kedua. */
+#dashboardView .dashboard-detail-table .dashboard-note-text .dashboard-note-inline-toggle{
+  display:inline !important;
+  position:static !important;
+  width:auto !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  height:auto !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  color:#2563eb !important;
+  font:inherit !important;
+  font-weight:700 !important;
+  line-height:inherit !important;
+  white-space:nowrap !important;
+  vertical-align:baseline !important;
+  cursor:pointer !important;
+}
+#dashboardView .dashboard-detail-table .dashboard-note-text.expanded .dashboard-note-inline-toggle{
+  display:inline !important;
+}

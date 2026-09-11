@@ -1072,49 +1072,60 @@ function renderDashboardDetailGroups(rows){
     const text=note.querySelector(".dashboard-note-text");
     if(!text)return;
     const fullText=text.textContent.trim()||"-";
-    let truncated=fullText;
+    const cs=getComputedStyle(text);
+    const lineHeight=parseFloat(cs.lineHeight)||Math.max(16,parseFloat(cs.fontSize)||16)*1.45;
+    const width=text.clientWidth||note.clientWidth;
+
+    const measure=(value,withButton=false)=>{
+      const probe=document.createElement("div");
+      probe.style.cssText=`position:absolute;left:-99999px;top:0;visibility:hidden;pointer-events:none;width:${width}px;display:block;white-space:normal;overflow-wrap:anywhere;word-break:normal;font-family:${cs.fontFamily};font-size:${cs.fontSize};font-weight:${cs.fontWeight};line-height:${lineHeight}px;letter-spacing:${cs.letterSpacing};padding:0;margin:0;border:0;`;
+      probe.textContent=value;
+      let btn=null;
+      if(withButton){
+        probe.appendChild(document.createTextNode(" "));
+        btn=document.createElement("button");
+        btn.type="button";
+        btn.textContent="Load more...";
+        btn.style.cssText=`display:inline;margin:0;padding:0;border:0;background:transparent;font-family:${cs.fontFamily};font-size:11.5px;font-weight:700;line-height:${lineHeight}px;white-space:nowrap;vertical-align:baseline;`;
+        probe.appendChild(btn);
+      }
+      document.body.appendChild(probe);
+      const result={height:probe.scrollHeight,buttonTop:btn?btn.offsetTop:-1};
+      probe.remove();
+      return result;
+    };
+
+    // Tombol ikut memakan ruang baris kedua. Ukur teks + tombol agar tidak
+    // salah menganggap teks "muat" padahal setelah Load more ditempel justru meluber.
+    const fullWithButton=measure(fullText,true);
+    if(fullWithButton.height<=lineHeight*2+1 && fullWithButton.buttonTop>=lineHeight*0.7)return;
+
+    // Cari potongan terpanjang yang masih membuat Load more berada di baris kedua.
+    let lo=1,hi=fullText.length,best=1;
+    while(lo<=hi){
+      const mid=Math.floor((lo+hi)/2);
+      const candidate=fullText.slice(0,mid).trimEnd();
+      const m=measure(candidate,true);
+      if(m.height<=lineHeight*2+1 && m.buttonTop>=lineHeight*0.7){
+        best=mid;lo=mid+1;
+      }else hi=mid-1;
+    }
+
+    let truncated=fullText.slice(0,best).trimEnd();
+    if(!truncated || truncated===fullText)return;
 
     const renderCollapsed=()=>{
       text.classList.remove("expanded");
       text.innerHTML=escapeHtml(truncated)+' <button class="dashboard-note-inline-toggle" type="button">Load more...</button>';
-      const b=text.querySelector(".dashboard-note-inline-toggle");
-      if(b)b.addEventListener("click",renderExpanded);
+      text.querySelector(".dashboard-note-inline-toggle")?.addEventListener("click",renderExpanded);
     };
     const renderExpanded=()=>{
       text.classList.add("expanded");
       text.innerHTML=escapeHtml(fullText)+' <button class="dashboard-note-inline-toggle" type="button">Show less</button>';
-      const b=text.querySelector(".dashboard-note-inline-toggle");
-      if(b)b.addEventListener("click",renderCollapsed);
+      text.querySelector(".dashboard-note-inline-toggle")?.addEventListener("click",renderCollapsed);
     };
-
-    text.classList.remove("expanded");
-    text.textContent=fullText;
-    // Ukur overflow dengan style preview 2 baris. Kalau seluruh keterangan muat,
-    // tidak perlu tombol. Kalau tidak muat, cari potongan terpanjang yang tetap
-    // membuat tombol berada di baris kedua.
-    if(text.scrollHeight<=text.clientHeight+1)return;
-
-    let lo=1,hi=fullText.length,best=1;
-    while(lo<=hi){
-      const mid=Math.floor((lo+hi)/2);
-      text.innerHTML=escapeHtml(fullText.slice(0,mid).trimEnd())+' <button class="dashboard-note-inline-toggle" type="button">Load more...</button>';
-      const btn=text.querySelector(".dashboard-note-inline-toggle");
-      const lineHeight=parseFloat(getComputedStyle(text).lineHeight)||18;
-      const top=btn?.offsetTop||0;
-      const textTop=text.offsetTop;
-      const buttonIsSecondLine=top>=lineHeight*0.65;
-      if(text.scrollHeight<=text.clientHeight+1 && buttonIsSecondLine){
-        best=mid;
-        lo=mid+1;
-      }else{
-        hi=mid-1;
-      }
-    }
-    truncated=fullText.slice(0,best).trimEnd();
-    if(!truncated || truncated===fullText)return;
     renderCollapsed();
   });
-
 }
 
 function renderDashboard(data){
