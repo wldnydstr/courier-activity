@@ -936,7 +936,6 @@ function renderActivityTypeSummary(rows){
       .forEach(label=>counts[label]=(counts[label]||0)+1);
   });
 
-  // A-Z sesuai permintaan.
   const entries=Object.entries(counts)
     .sort((a,b)=>a[0].localeCompare(b[0],"id",{sensitivity:"base"}));
 
@@ -952,27 +951,30 @@ function renderActivityTypeSummary(rows){
 
   chart.innerHTML=`
     <div class="type-vertical-chart">
-      ${entries.map(([label,value],i)=>{
-        const color=colors[i%colors.length];
-        const height=Math.max(8,Math.round(value/max*100));
-        return `<div class="type-column">
-          <div class="type-column-value">${value}</div>
-          <div class="type-column-track">
-            <div class="type-column-bar" style="height:${height}%;background:${color}"></div>
-          </div>
-          <div class="type-column-label" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
-        </div>`;
-      }).join("")}
+      <div class="type-chart-axis">
+        ${entries.map(([label,value],i)=>{
+          const color=colors[i%colors.length];
+          const height=Math.max(6,Math.round(value/max*100));
+          const pct=Math.round(value/total*100);
+          return `<div class="type-column">
+            <div class="type-column-value">${value}</div>
+            <div class="type-column-track"><div class="type-column-bar" style="height:${height}%;background:${color}"></div></div>
+            <div class="type-column-label" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
+            <div class="type-column-percent">${pct}%</div>
+          </div>`;
+        }).join("")}
+      </div>
     </div>`;
 
   if(legend){
-    legend.innerHTML=entries.map(([label,value],i)=>
-      `<span><i class="legend-line" style="background:${colors[i%colors.length]}"></i>${escapeHtml(label)} (${value})</span>`
-    ).join("");
+    legend.innerHTML=`<div class="type-summary-legend">${entries.map(([label,value],i)=>
+      `<span><i class="legend-line" style="background:${colors[i%colors.length]}"></i>${escapeHtml(label)} <b>${Math.round(value/total*100)}%</b></span>`
+    ).join("")}</div>`;
   }
 }
 
 let dashboardJourneyOpen = new Set();
+let dashboardDetailOpen = new Set();
 
 function renderJourneyPanel(allRows, day){
   const panel=$("journeyPanel");
@@ -1084,6 +1086,7 @@ function renderDashboard(data){
 
   const courierNames=Object.keys(groupedByCourier)
     .sort((a,b)=>a.localeCompare(b,"id",{sensitivity:"base"}));
+  dashboardDetailOpen.forEach(name=>{if(!groupedByCourier[name])dashboardDetailOpen.delete(name);});
 
   const compareTrip=(a,b)=>{
     const ta=String(a.trip??"").trim();
@@ -1099,17 +1102,19 @@ function renderDashboard(data){
     const courierRows=groupedByCourier[name].slice().sort(compareTrip);
     const initials=name.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase();
 
-    const groupHeader=`<tr class="dashboard-courier-group">
+    const isOpen=dashboardDetailOpen.has(name);
+    const groupHeader=`<tr class="dashboard-courier-group ${isOpen?'is-open':''}" data-courier-group="${escapeHtml(name)}">
       <td colspan="9">
-        <div class="dashboard-courier-group-head">
+        <button type="button" class="dashboard-courier-group-toggle" aria-expanded="${isOpen?'true':'false'}">
+          <span class="dashboard-courier-chevron" aria-hidden="true">›</span>
           <span class="recent-avatar">${escapeHtml(initials||"?")}</span>
           <strong>${escapeHtml(name)}</strong>
-          <span>${courierRows.length} aktivitas</span>
-        </div>
+          <span class="dashboard-courier-count">${courierRows.length} aktivitas</span>
+        </button>
       </td>
     </tr>`;
 
-    const detailRows=courierRows.map(a=>`<tr>
+    const detailRows=courierRows.map(a=>`<tr class="dashboard-courier-detail-row" data-courier-owner="${escapeHtml(name)}" ${isOpen?'':'hidden'}>
       <td>${escapeHtml(displayIndonesiaTime(a.berangkat))}</td>
       <td>${escapeHtml(displayIndonesiaTime(a.datang))}</td>
       <td>${escapeHtml(displayDuration(a.durasiMengemudi))}</td>
@@ -1125,6 +1130,22 @@ function renderDashboard(data){
   }).join("");
 
   $("dashboardTable").innerHTML=rowsHtml;
+  document.querySelectorAll("#dashboardView .dashboard-courier-group-toggle").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const group=btn.closest("tr[data-courier-group]");
+      if(!group)return;
+      const name=group.getAttribute("data-courier-group");
+      const isOpen=dashboardDetailOpen.has(name);
+      if(isOpen)dashboardDetailOpen.delete(name); else dashboardDetailOpen.add(name);
+      const nextOpen=!isOpen;
+      group.classList.toggle("is-open",nextOpen);
+      btn.setAttribute("aria-expanded",String(nextOpen));
+      const chevron=btn.querySelector(".dashboard-courier-chevron");
+      if(chevron)chevron.textContent=nextOpen?"⌄":"›";
+      document.querySelectorAll(`#dashboardView .dashboard-courier-detail-row[data-courier-owner="${CSS.escape(name)}"]`).forEach(row=>{row.hidden=!nextOpen;});
+    });
+  });
+  document.querySelectorAll("#dashboardView .dashboard-courier-chevron").forEach(el=>{el.textContent=el.closest("tr")?.classList.contains("is-open")?"⌄":"›";});
   $("dashboardEmpty").classList.toggle("hidden",recent.length>0);
   document.querySelectorAll("#dashboardView .dashboard-note").forEach(note=>{
     const text=note.querySelector(".dashboard-note-text");
