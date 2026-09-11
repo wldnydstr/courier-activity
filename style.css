@@ -2449,3 +2449,10 @@ td{color:#4d5865}
 #dashboardView .dashboard-detail-table .dashboard-note-text.expanded .dashboard-note-inline-toggle{
   display:inline !important;
 }
+
+/* V95 — Dashboard Detail: cegah header Durasi Perjalanan pecah jadi 3 baris. */
+#dashboardView .dashboard-detail-table th:nth-child(3){
+  white-space:nowrap !important;
+  word-break:normal !important;
+  overflow-wrap:normal !important;
+}
