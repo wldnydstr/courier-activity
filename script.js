@@ -213,7 +213,7 @@ function resetUiStateOnLogout(){
     if($("reportCourier"))$("reportCourier").value="";
     if($("reportOrigin"))$("reportOrigin").value="";
     if($("reportDestination"))$("reportDestination").value="";
-    if(typeof dashboardJourneyOpen!=="undefined" && dashboardJourneyOpen?.clear)dashboardJourneyOpen.clear(); if(window.dashboardDetailOpen?.clear)window.dashboardDetailOpen.clear();
+    if(typeof dashboardJourneyOpen!=="undefined" && dashboardJourneyOpen?.clear)dashboardJourneyOpen.clear();
     if($("dashboardTable"))$("dashboardTable").innerHTML="";
     if($("reportTable"))$("reportTable").innerHTML="";
   }catch(e){}
@@ -926,32 +926,19 @@ function displayDuration(value){
 }
 
 function renderActivityTypeSummary(rows){
-  const chart=$("activityTypeChart");
+  const chart=$("activityTypeChart"), legend=$("activityTypeLegend");
   if(!chart)return;
-  const labels=["Ambil BA/PO","Kirim PO","Penagihan","Tukar Faktur"];
-  const counts=Object.fromEntries(labels.map(label=>[label,0]));
+  const counts={};
   rows.forEach(a=>{
-    String(a.jenisTugas||a.pekerjaan||"").split("|").map(v=>v.trim()).filter(Boolean).forEach(label=>{
-      if(counts[label]!==undefined)counts[label]++;
-      else counts[label]=(counts[label]||0)+1;
-    });
+    String(a.jenisTugas||a.pekerjaan||"Tidak diketahui").split("|").map(v=>v.trim()).filter(Boolean).forEach(label=>counts[label]=(counts[label]||0)+1);
   });
-  const entries=Object.entries(counts).sort((a,b)=>a[0].localeCompare(b[0],"id",{sensitivity:"base"}));
-  const total=entries.reduce((sum,[,v])=>sum+v,0);
-  if(!total){chart.innerHTML='<div class="type-empty">Belum ada data</div>';return;}
-  // Skala diberi headroom supaya angka terbesar tidak otomatis terlihat 100% penuh.
-  const maxCount=Math.max(...entries.map(([,v])=>v),1);
-  const scaleMax=Math.max(maxCount+1, Math.ceil(maxCount*1.25));
-  chart.innerHTML=entries.map(([label,v])=>{
-    const pct=Math.round(v/total*100);
-    const h=v?Math.max(8,(v/scaleMax)*100):0;
-    return `<div class="type-bar-item">
-      <div class="type-bar-value">${v}</div>
-      <div class="type-bar-track"><div class="type-bar-fill" style="height:${h}%"></div></div>
-      <div class="type-bar-label">${escapeHtml(label)}</div>
-      <div class="type-bar-percent">${pct}%</div>
-    </div>`;
-  }).join("");
+  const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"id"));
+  if(!entries.length){chart.innerHTML='<div class="type-empty">Belum ada data</div>';if(legend)legend.innerHTML='';return;}
+  const colors=["#2563EB","#54B978","#8B5CF6","#22A6B3","#F59E0B","#94A3B8"];
+  const total=entries.reduce((sum,[,v])=>sum+v,0); let cursor=0;
+  const stops=entries.map(([label,v],i)=>{const end=cursor+(v/total)*360;const stop=`${colors[i%colors.length]} ${cursor}deg ${end}deg`;cursor=end;return stop;});
+  chart.innerHTML=`<div class="type-donut-ring" style="background:conic-gradient(${stops.join(',')})"><div class="type-donut-hole"><strong>${total}</strong><span>Total<br>Aktivitas</span></div></div>`;
+  if(legend)legend.innerHTML=entries.slice(0,6).map(([label,v],i)=>`<div class="type-legend-row"><div><i class="legend-dot" style="background:${colors[i%colors.length]}"></i><span>${escapeHtml(label)}</span></div><strong>${v}</strong><small>${Math.round(v/total*100)}%</small></div>`).join('');
 }
 
 let dashboardJourneyOpen = new Set();
@@ -975,8 +962,9 @@ function renderJourneyPanel(allRows, day){
     return;
   }
 
-  // Semua accordion default collapse. State hanya mengikuti interaksi manual pengguna.
-  if(dashboardJourneyOpen.size===0) dashboardJourneyOpen.clear();
+  // Saat pertama kali dibuka, buka kurir pertama. Setelah itu pertahankan
+  // pilihan expand/collapse user selama dashboard masih aktif.
+  if(!dashboardJourneyOpen.size)dashboardJourneyOpen.add(names[0]);
   dashboardJourneyOpen.forEach(name=>{if(!grouped[name])dashboardJourneyOpen.delete(name);});
 
   panel.innerHTML=names.map((name,groupIndex)=>{
@@ -1026,139 +1014,6 @@ function renderProofGallery(rows){
   el.innerHTML=items.map(item=>`<a class="proof-thumb" href="${escapeHtml(item.url)}" target="_blank" rel="noopener"><img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.label)}"><span>${escapeHtml(item.label)}</span></a>`).join('');
 }
 
-function renderDashboardDetailGroups(rows){
-  const wrap=$("dashboardDetailGroups");
-  if(!wrap)return;
-  const source=(Array.isArray(rows)?rows:[]).filter(a=>String(a.idAktivitas||"").trim());
-  const grouped={};
-  source.forEach(a=>{const name=String(a.kurir||"").trim();if(!name)return;(grouped[name]??=[]).push(a);});
-  const names=Object.keys(grouped).sort((a,b)=>a.localeCompare(b,"id",{sensitivity:"base"}));
-  if(!names.length){wrap.innerHTML="";$("dashboardEmpty")?.classList.remove("hidden");return;}
-  $("dashboardEmpty")?.classList.add("hidden");
-  if(!window.dashboardDetailOpen)window.dashboardDetailOpen=new Set();
-  // Semua accordion default collapse.
-  if(window.dashboardDetailOpen.size===0) window.dashboardDetailOpen.clear();
-  window.dashboardDetailOpen.forEach(n=>{if(!grouped[n])window.dashboardDetailOpen.delete(n);});
-  const statusClass=status=>status==="Selesai"?"done":status==="Lagi Jalan"?"jalan":status==="Lagi Diproses"?"proses":"waiting";
-  const table=(name,items)=>{
-    const sorted=items.slice().sort((a,b)=>{
-      const ta=Number.parseInt(String(a.trip??""),10),tb=Number.parseInt(String(b.trip??""),10);
-      if(Number.isFinite(ta)&&Number.isFinite(tb)&&ta!==tb)return ta-tb;
-      return (parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0)-(parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0);
-    });
-    return sorted.map(a=>{
-      const bukti=a.fotoDatang||a.fotoBerangkat||a.fotoDokumen||"";
-      return `<tr>
-        <td>${escapeHtml(displayIndonesiaTime(a.berangkat))}</td><td>${escapeHtml(displayIndonesiaTime(a.datang))}</td><td>${escapeHtml(displayDuration(a.durasiMengemudi))}</td>
-        <td><span class="recent-courier"><span class="recent-avatar">${escapeHtml(String(name||"?").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase())}</span>${escapeHtml(name||"-")}</span></td>
-        <td><div class="dashboard-destination"><strong>${escapeHtml(a.tujuan||"-")}</strong><span>${escapeHtml(a.asal||"-")}</span></div></td>
-        <td><span class="task-tag">${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</span></td>
-        <td class="dashboard-note"><div class="dashboard-note-text">${escapeHtml(a.keterangan||"-")}</div></td>
-        <td><span class="dashboard-status-pill ${statusClass(a.status)}">${escapeHtml(a.status||"-")}</span></td>
-        <td>${bukti?`<a class="proof-link" href="${escapeHtml(bukti)}" target="_blank" rel="noopener">Lihat Foto</a>`:"-"}</td>
-      </tr>`;
-    }).join("");
-  };
-  wrap.innerHTML=names.map(name=>{
-    const open=window.dashboardDetailOpen.has(name), items=grouped[name];
-    return `<section class="dashboard-detail-group ${open?'is-open':''}" data-detail-group="${escapeHtml(name)}">
-      <button type="button" class="dashboard-detail-group-toggle" aria-expanded="${open?'true':'false'}"><span class="dashboard-detail-chevron" aria-hidden="true">›</span><span class="dashboard-detail-group-name">${escapeHtml(name)}</span><span class="dashboard-detail-group-count">${items.length} aktivitas</span></button>
-      <div class="dashboard-detail-group-body" ${open?'':'hidden'}><div class="table-wrap dashboard-detail-wrap"><table class="dashboard-detail-table"><thead><tr><th>Jam<br>Berangkat</th><th>Jam<br>Tiba</th><th>Durasi<br>Perjalanan</th><th>Kurir</th><th>Rumah Sakit/Tujuan</th><th>Jenis Kegiatan</th><th>Keterangan</th><th>Status</th><th>Foto Bukti</th></tr></thead><tbody>${table(name,items)}</tbody></table></div></div>
-    </section>`;
-  }).join("");
-
-  // Load more: preview maksimal 2 baris, dengan tombol benar-benar menyatu di baris kedua.
-  document.querySelectorAll("#dashboardView .dashboard-detail-group .dashboard-note").forEach(note=>{
-    const text=note.querySelector(".dashboard-note-text");
-    if(!text)return;
-    const fullText=text.textContent.trim()||"-";
-    if(!fullText || fullText === "-")return;
-
-    const cs=getComputedStyle(text);
-    const lineHeight=parseFloat(cs.lineHeight)||Math.max(16,parseFloat(cs.fontSize)||16)*1.45;
-    const width=Math.max(1,text.clientWidth||note.clientWidth||240);
-    const buttonLabel="Load more...";
-
-    const measureCandidate=(candidate)=>{
-      const probe=document.createElement("div");
-      probe.style.cssText=`position:absolute;left:-100000px;top:0;visibility:hidden;pointer-events:none;width:${width}px;display:block;white-space:normal;overflow-wrap:normal;word-break:normal;font-family:${cs.fontFamily};font-size:${cs.fontSize};font-weight:${cs.fontWeight};line-height:${lineHeight}px;letter-spacing:${cs.letterSpacing};padding:0;margin:0;border:0;`;
-      const span=document.createElement("span");
-      span.textContent=candidate;
-      probe.appendChild(span);
-      document.body.appendChild(probe);
-      const range=document.createRange();
-      range.selectNodeContents(span);
-      const rects=Array.from(range.getClientRects());
-      const tops=[];
-      rects.forEach(r=>{
-        const t=Math.round(r.top*10)/10;
-        if(!tops.some(x=>Math.abs(x-t)<1))tops.push(t);
-      });
-      const lineCount=tops.length;
-      let lastLineWidth=0;
-      if(rects.length){
-        const lastTop=tops[tops.length-1];
-        const last=rects.filter(r=>Math.abs(r.top-lastTop)<1);
-        if(last.length){
-          const minLeft=Math.min(...last.map(r=>r.left));
-          const maxRight=Math.max(...last.map(r=>r.right));
-          lastLineWidth=Math.max(0,maxRight-minLeft);
-        }
-      }
-      const button=document.createElement("button");
-      button.type="button";button.textContent=buttonLabel;
-      button.style.cssText=`display:inline;min-height:0;height:auto;margin:0;padding:0;border:0;background:transparent;font-family:${cs.fontFamily};font-size:${cs.fontSize};font-weight:700;line-height:${lineHeight}px;white-space:nowrap;`;
-      probe.appendChild(document.createTextNode(" "));
-      probe.appendChild(button);
-      const buttonRect=button.getBoundingClientRect();
-      const probeRect=probe.getBoundingClientRect();
-      const buttonLine=Math.round((buttonRect.top-probeRect.top)/lineHeight)+1;
-      const buttonWidth=buttonRect.width;
-      probe.remove();
-      return {lineCount,lastLineWidth,buttonLine,buttonWidth};
-    };
-
-    const full=measureCandidate(fullText);
-    // Kalau teks penuh + tombol sudah muat 2 baris, tidak perlu dipotong.
-    if(full.lineCount<=2 && full.buttonLine===2)return;
-
-    // Cari prefix terpanjang yang: teksnya maksimal 2 baris, dan masih menyisakan
-    // ruang untuk Load more pada baris kedua. Prioritas tetap batas kata.
-    let best="";
-    const words=fullText.split(/\s+/);
-    for(let i=words.length;i>=1;i--){
-      const candidate=words.slice(0,i).join(" ").trim();
-      if(!candidate)continue;
-      const m=measureCandidate(candidate);
-      // Tombol harus berada di baris kedua, bukan baris pertama/ketiga.
-      if(m.lineCount<=2 && m.buttonLine===2){best=candidate;break;}
-    }
-
-    // Jika batas kata terlalu kasar, cari karakter terakhir yang masih memenuhi
-    // kondisi. Ini membuat teks tetap bisa mengisi ruang sampai mendekati tombol.
-    if(!best){
-      for(let i=fullText.length-1;i>=1;i--){
-        const candidate=fullText.slice(0,i).trimEnd();
-        const m=measureCandidate(candidate);
-        if(m.lineCount<=2 && m.buttonLine===2){best=candidate;break;}
-      }
-    }
-    if(!best)return;
-
-    const renderCollapsed=()=>{
-      text.classList.remove("expanded");
-      text.innerHTML=escapeHtml(best)+' <button class="dashboard-note-inline-toggle" type="button">Load more...</button>';
-      text.querySelector(".dashboard-note-inline-toggle")?.addEventListener("click",renderExpanded);
-    };
-    const renderExpanded=()=>{
-      text.classList.add("expanded");
-      text.innerHTML=escapeHtml(fullText)+' <button class="dashboard-note-inline-toggle" type="button">Show less</button>';
-      text.querySelector(".dashboard-note-inline-toggle")?.addEventListener("click",renderCollapsed);
-    };
-    renderCollapsed();
-  });
-}
-
 function renderDashboard(data){
   requestAnimationFrame(syncDashboardFreeze);
   const allRows=(data.activities||[]).filter(a=>String(a.idAktivitas||"").trim());
@@ -1185,10 +1040,45 @@ function renderDashboard(data){
   const prosesEl=$("statProses"); if(prosesEl)prosesEl.textContent=stats.lagiDiproses||0;
   const pct=n=>stats.total?Math.round(n/stats.total*100):0;
   [["Menunggu",stats.menungguBerangkat],["Jalan",stats.lagiJalan],["Proses",stats.lagiDiproses],["Selesai",stats.selesai]].forEach(([key,n])=>{const p=pct(n),el=$("stat"+key+"Progress"),tx=$("stat"+key+"Percent");if(el)el.style.width=p+"%";if(tx)tx.textContent=p+"%";});
-  // Dashboard accordion selalu kembali ke kondisi default collapse saat data/filter dirender ulang.
-  dashboardJourneyOpen.clear();
-  window.dashboardDetailOpen=new Set();
-  renderCourierChart(rows); renderStatusChart(rows); renderActivityTypeSummary(rows); renderJourneyPanel(rows,day); renderDashboardDetailGroups(rows);
+  renderCourierChart(rows); renderStatusChart(rows); renderActivityTypeSummary(rows); renderJourneyPanel(rows,day); renderProofGallery(rows);
+  const statusClass=status=>status==="Selesai"?"done":status==="Lagi Jalan"?"jalan":status==="Lagi Diproses"?"proses":"waiting";
+  const recent=[...rows].sort((a,b)=>(parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0)-(parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0)).slice(0,12);
+  $("dashboardTable").innerHTML=recent.map(a=>{const bukti=a.fotoDatang||a.fotoBerangkat||a.fotoDokumen||"";return `<tr>
+    <td>${escapeHtml(displayIndonesiaTime(a.berangkat))}</td><td>${escapeHtml(displayIndonesiaTime(a.datang))}</td><td>${escapeHtml(displayDuration(a.durasiMengemudi))}</td>
+    <td><span class="recent-courier"><span class="recent-avatar">${escapeHtml(String(a.kurir||"?").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase())}</span>${escapeHtml(a.kurir||"-")}</span></td>
+    <td><div class="dashboard-destination"><strong>${escapeHtml(a.tujuan||"-")}</strong><span>${escapeHtml(a.asal||"-")}</span></div></td>
+    <td><span class="task-tag">${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</span></td><td class="dashboard-note"><div class="dashboard-note-text">${escapeHtml(a.keterangan||"-")}</div><button class="dashboard-note-toggle" type="button" aria-expanded="false" hidden>Load more...</button></td>
+    <td><span class="dashboard-status-pill ${statusClass(a.status)}">${escapeHtml(a.status||"-")}</span></td><td>${bukti?`<a class="proof-link" href="${escapeHtml(bukti)}" target="_blank" rel="noopener">Lihat Foto</a>`:'-'}</td>
+  </tr>`;}).join('');
+  $("dashboardEmpty").classList.toggle("hidden",recent.length>0);
+  document.querySelectorAll("#dashboardView .dashboard-note").forEach(note=>{
+    const text=note.querySelector(".dashboard-note-text");
+    if(!text)return;
+    const fullText=text.textContent.trim()||"-";
+    let truncated=fullText;
+    const renderCollapsed=()=>{
+      text.classList.remove("expanded");
+      text.innerHTML=escapeHtml(truncated)+' <button class="dashboard-note-inline-toggle" type="button">Load more...</button>';
+      const b=text.querySelector(".dashboard-note-inline-toggle");
+      b.addEventListener("click",renderExpanded);
+    };
+    const renderExpanded=()=>{
+      text.classList.add("expanded");
+      text.innerHTML=escapeHtml(fullText)+' <button class="dashboard-note-inline-toggle" type="button">Show less</button>';
+      text.querySelector(".dashboard-note-inline-toggle").addEventListener("click",renderCollapsed);
+    };
+    text.classList.remove("expanded");
+    text.textContent=fullText;
+    if(text.scrollHeight<=text.clientHeight+1)return;
+    let lo=1,hi=fullText.length,best=1;
+    while(lo<=hi){
+      const mid=Math.floor((lo+hi)/2);
+      text.innerHTML=escapeHtml(fullText.slice(0,mid).trimEnd())+' <button class="dashboard-note-inline-toggle" type="button">Load more...</button>';
+      if(text.scrollHeight<=text.clientHeight+1){best=mid;lo=mid+1;}else{hi=mid-1;}
+    }
+    truncated=fullText.slice(0,best).trimEnd();
+    renderCollapsed();
+  });;
 }
 async function loadDashboard(){
   msg("dashboardMsg","Memuat data aktivitas...");
@@ -1469,18 +1359,6 @@ $("activityForm").addEventListener("submit",handleCreateActivity);
 $("pendingDepartureBtn").addEventListener("click",handlePendingDeparture);
 $("applyDashboardFilterBtn").addEventListener("click",applyDashboardFilters);
 $("resetDashboardFilterBtn").addEventListener("click",resetDashboardFilters);
-$("dashboardDetailGroups").addEventListener("click",e=>{
-  const toggle=e.target.closest(".dashboard-detail-group-toggle");
-  if(!toggle)return;
-  const group=toggle.closest(".dashboard-detail-group");
-  if(!group)return;
-  const name=group.dataset.detailGroup;
-  if(!window.dashboardDetailOpen)window.dashboardDetailOpen=new Set();
-  if(window.dashboardDetailOpen.has(name))window.dashboardDetailOpen.delete(name);else window.dashboardDetailOpen.add(name);
-  const open=window.dashboardDetailOpen.has(name);
-  group.classList.toggle("is-open",open); toggle.setAttribute("aria-expanded",open?"true":"false");
-  const body=group.querySelector(".dashboard-detail-group-body"); if(body)body.hidden=!open;
-});
 $("journeyPanel").addEventListener("click",e=>{
   const toggle=e.target.closest(".journey-group-toggle");
   if(!toggle)return;
