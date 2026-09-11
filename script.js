@@ -926,19 +926,47 @@ function displayDuration(value){
 }
 
 function renderActivityTypeSummary(rows){
-  const chart=$("activityTypeChart"), legend=$("activityTypeLegend");
+  const chart=$("activityTypeChart");
   if(!chart)return;
+
   const counts={};
   rows.forEach(a=>{
-    String(a.jenisTugas||a.pekerjaan||"Tidak diketahui").split("|").map(v=>v.trim()).filter(Boolean).forEach(label=>counts[label]=(counts[label]||0)+1);
+    String(a.jenisTugas||a.pekerjaan||"Tidak diketahui")
+      .split("|")
+      .map(v=>v.trim())
+      .filter(Boolean)
+      .forEach(label=>counts[label]=(counts[label]||0)+1);
   });
-  const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"id"));
-  if(!entries.length){chart.innerHTML='<div class="type-empty">Belum ada data</div>';if(legend)legend.innerHTML='';return;}
-  const colors=["#2563EB","#54B978","#8B5CF6","#22A6B3","#F59E0B","#94A3B8"];
-  const total=entries.reduce((sum,[,v])=>sum+v,0); let cursor=0;
-  const stops=entries.map(([label,v],i)=>{const end=cursor+(v/total)*360;const stop=`${colors[i%colors.length]} ${cursor}deg ${end}deg`;cursor=end;return stop;});
-  chart.innerHTML=`<div class="type-donut-ring" style="background:conic-gradient(${stops.join(',')})"><div class="type-donut-hole"><strong>${total}</strong><span>Total<br>Aktivitas</span></div></div>`;
-  if(legend)legend.innerHTML=entries.slice(0,6).map(([label,v],i)=>`<div class="type-legend-row"><div><i class="legend-dot" style="background:${colors[i%colors.length]}"></i><span>${escapeHtml(label)}</span></div><strong>${v}</strong><small>${Math.round(v/total*100)}%</small></div>`).join('');
+
+  const entries=Object.entries(counts)
+    .sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"id"));
+
+  if(!entries.length){
+    chart.innerHTML='<div class="type-empty">Belum ada data</div>';
+    return;
+  }
+
+  const total=entries.reduce((sum,[,v])=>sum+v,0);
+
+  chart.innerHTML=`
+    <div class="type-total-row">
+      <span>Total Aktivitas</span>
+      <strong>${total}</strong>
+    </div>
+    <div class="type-bar-list">
+      ${entries.map(([label,v])=>{
+        const pct=total?Math.round(v/total*100):0;
+        return `<div class="type-bar-row">
+          <div class="type-bar-head">
+            <span class="type-bar-label">${escapeHtml(label)}</span>
+            <span class="type-bar-values"><strong>${v}</strong><small>${pct}%</small></span>
+          </div>
+          <div class="type-bar-track" aria-label="${escapeHtml(label)} ${v} aktivitas, ${pct}%">
+            <span class="type-bar-fill" style="width:${pct}%"></span>
+          </div>
+        </div>`;
+      }).join("")}
+    </div>`;
 }
 
 let dashboardJourneyOpen = new Set();
@@ -1040,7 +1068,7 @@ function renderDashboard(data){
   const prosesEl=$("statProses"); if(prosesEl)prosesEl.textContent=stats.lagiDiproses||0;
   const pct=n=>stats.total?Math.round(n/stats.total*100):0;
   [["Menunggu",stats.menungguBerangkat],["Jalan",stats.lagiJalan],["Proses",stats.lagiDiproses],["Selesai",stats.selesai]].forEach(([key,n])=>{const p=pct(n),el=$("stat"+key+"Progress"),tx=$("stat"+key+"Percent");if(el)el.style.width=p+"%";if(tx)tx.textContent=p+"%";});
-  renderCourierChart(rows); renderStatusChart(rows); renderActivityTypeSummary(rows); renderJourneyPanel(rows,day); renderProofGallery(rows);
+  renderCourierChart(rows); renderStatusChart(rows); renderActivityTypeSummary(rows); renderJourneyPanel(rows,day);
   const statusClass=status=>status==="Selesai"?"done":status==="Lagi Jalan"?"jalan":status==="Lagi Diproses"?"proses":"waiting";
   const recent=[...rows].sort((a,b)=>(parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0)-(parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0)).slice(0,12);
   $("dashboardTable").innerHTML=recent.map(a=>{const bukti=a.fotoDatang||a.fotoBerangkat||a.fotoDokumen||"";return `<tr>
