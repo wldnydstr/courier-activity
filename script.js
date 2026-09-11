@@ -928,17 +928,48 @@ function displayDuration(value){
 function renderActivityTypeSummary(rows){
   const chart=$("activityTypeChart"), legend=$("activityTypeLegend");
   if(!chart)return;
+
   const counts={};
   rows.forEach(a=>{
-    String(a.jenisTugas||a.pekerjaan||"Tidak diketahui").split("|").map(v=>v.trim()).filter(Boolean).forEach(label=>counts[label]=(counts[label]||0)+1);
+    String(a.jenisTugas||a.pekerjaan||"Tidak diketahui")
+      .split("|").map(v=>v.trim()).filter(Boolean)
+      .forEach(label=>counts[label]=(counts[label]||0)+1);
   });
-  const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"id"));
-  if(!entries.length){chart.innerHTML='<div class="type-empty">Belum ada data</div>';if(legend)legend.innerHTML='';return;}
-  const colors=["#2563EB","#54B978","#8B5CF6","#22A6B3","#F59E0B","#94A3B8"];
-  const total=entries.reduce((sum,[,v])=>sum+v,0); let cursor=0;
-  const stops=entries.map(([label,v],i)=>{const end=cursor+(v/total)*360;const stop=`${colors[i%colors.length]} ${cursor}deg ${end}deg`;cursor=end;return stop;});
-  chart.innerHTML=`<div class="type-donut-ring" style="background:conic-gradient(${stops.join(',')})"><div class="type-donut-hole"><strong>${total}</strong><span>Total<br>Aktivitas</span></div></div>`;
-  if(legend)legend.innerHTML=entries.slice(0,6).map(([label,v],i)=>`<div class="type-legend-row"><div><i class="legend-dot" style="background:${colors[i%colors.length]}"></i><span>${escapeHtml(label)}</span></div><strong>${v}</strong><small>${Math.round(v/total*100)}%</small></div>`).join('');
+
+  // A-Z sesuai permintaan.
+  const entries=Object.entries(counts)
+    .sort((a,b)=>a[0].localeCompare(b[0],"id",{sensitivity:"base"}));
+
+  if(!entries.length){
+    chart.innerHTML='<div class="type-empty">Belum ada data</div>';
+    if(legend)legend.innerHTML='';
+    return;
+  }
+
+  const colors=["#2563EB","#16A34A","#9333EA","#EA580C","#0891B2","#DC2626","#CA8A04","#DB2777","#4F46E5","#059669"];
+  const max=Math.max(...entries.map(([,v])=>v),1);
+  const total=entries.reduce((sum,[,v])=>sum+v,0);
+
+  chart.innerHTML=`
+    <div class="type-vertical-chart">
+      ${entries.map(([label,value],i)=>{
+        const color=colors[i%colors.length];
+        const height=Math.max(8,Math.round(value/max*100));
+        return `<div class="type-column">
+          <div class="type-column-value">${value}</div>
+          <div class="type-column-track">
+            <div class="type-column-bar" style="height:${height}%;background:${color}"></div>
+          </div>
+          <div class="type-column-label" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
+        </div>`;
+      }).join("")}
+    </div>`;
+
+  if(legend){
+    legend.innerHTML=entries.map(([label,value],i)=>
+      `<span><i class="legend-line" style="background:${colors[i%colors.length]}"></i>${escapeHtml(label)} (${value})</span>`
+    ).join("");
+  }
 }
 
 let dashboardJourneyOpen = new Set();
@@ -1043,13 +1074,57 @@ function renderDashboard(data){
   renderCourierChart(rows); renderStatusChart(rows); renderActivityTypeSummary(rows); renderJourneyPanel(rows,day); renderProofGallery(rows);
   const statusClass=status=>status==="Selesai"?"done":status==="Lagi Jalan"?"jalan":status==="Lagi Diproses"?"proses":"waiting";
   const recent=[...rows].sort((a,b)=>(parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0)-(parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0)).slice(0,12);
-  $("dashboardTable").innerHTML=recent.map(a=>{const bukti=a.fotoDatang||a.fotoBerangkat||a.fotoDokumen||"";return `<tr>
-    <td>${escapeHtml(displayIndonesiaTime(a.berangkat))}</td><td>${escapeHtml(displayIndonesiaTime(a.datang))}</td><td>${escapeHtml(displayDuration(a.durasiMengemudi))}</td>
-    <td><span class="recent-courier"><span class="recent-avatar">${escapeHtml(String(a.kurir||"?").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase())}</span>${escapeHtml(a.kurir||"-")}</span></td>
-    <td><div class="dashboard-destination"><strong>${escapeHtml(a.tujuan||"-")}</strong><span>${escapeHtml(a.asal||"-")}</span></div></td>
-    <td><span class="task-tag">${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</span></td><td class="dashboard-note"><div class="dashboard-note-text">${escapeHtml(a.keterangan||"-")}</div><button class="dashboard-note-toggle" type="button" aria-expanded="false" hidden>Load more...</button></td>
-    <td><span class="dashboard-status-pill ${statusClass(a.status)}">${escapeHtml(a.status||"-")}</span></td><td>${bukti?`<a class="proof-link" href="${escapeHtml(bukti)}" target="_blank" rel="noopener">Lihat Foto</a>`:'-'}</td>
-  </tr>`;}).join('');
+  // Group per kurir; kurir A-Z, then Trip A-Z within each kurir.
+  const groupedByCourier={};
+  recent.forEach(a=>{
+    const name=String(a.kurir||"").trim()||"Tidak diketahui";
+    if(!groupedByCourier[name])groupedByCourier[name]=[];
+    groupedByCourier[name].push(a);
+  });
+
+  const courierNames=Object.keys(groupedByCourier)
+    .sort((a,b)=>a.localeCompare(b,"id",{sensitivity:"base"}));
+
+  const compareTrip=(a,b)=>{
+    const ta=String(a.trip??"").trim();
+    const tb=String(b.trip??"").trim();
+    const tripCmp=ta.localeCompare(tb,"id",{numeric:true,sensitivity:"base"});
+    if(tripCmp!==0)return tripCmp;
+    const da=parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0;
+    const db=parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0;
+    return da-db;
+  };
+
+  const rowsHtml=courierNames.map(name=>{
+    const courierRows=groupedByCourier[name].slice().sort(compareTrip);
+    const initials=name.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase();
+
+    const groupHeader=`<tr class="dashboard-courier-group">
+      <td colspan="9">
+        <div class="dashboard-courier-group-head">
+          <span class="recent-avatar">${escapeHtml(initials||"?")}</span>
+          <strong>${escapeHtml(name)}</strong>
+          <span>${courierRows.length} aktivitas</span>
+        </div>
+      </td>
+    </tr>`;
+
+    const detailRows=courierRows.map(a=>`<tr>
+      <td>${escapeHtml(displayIndonesiaTime(a.berangkat))}</td>
+      <td>${escapeHtml(displayIndonesiaTime(a.datang))}</td>
+      <td>${escapeHtml(displayDuration(a.durasiMengemudi))}</td>
+      <td><span class="recent-courier"><span class="recent-avatar">${escapeHtml(String(a.kurir||"?").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase())}</span><span>${escapeHtml(a.kurir||"-")}</span></span></td>
+      <td>${escapeHtml(a.tujuan||"-")}</td>
+      <td>${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</td>
+      <td class="dashboard-note"><div class="dashboard-note-text">${escapeHtml(a.keterangan||"-")}</div></td>
+      <td>${statusClass(a.status||"-")}</td>
+      <td>${a.fotoDatang||a.fotoBerangkat||a.fotoDokumen?`<a class="proof-link" href="${escapeHtml(a.fotoDatang||a.fotoBerangkat||a.fotoDokumen)}" target="_blank" rel="noopener">Lihat Foto</a>`:"-"}</td>
+    </tr>`).join("");
+
+    return groupHeader+detailRows;
+  }).join("");
+
+  $("dashboardTable").innerHTML=rowsHtml;
   $("dashboardEmpty").classList.toggle("hidden",recent.length>0);
   document.querySelectorAll("#dashboardView .dashboard-note").forEach(note=>{
     const text=note.querySelector(".dashboard-note-text");
