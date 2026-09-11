@@ -2215,3 +2215,20 @@ td{color:#4d5865}
   #dashboardView .type-chart-axis{min-width:620px;gap:8px;}
   #dashboardView .type-column-track{width:min(48px,65%);}
 }
+
+
+/* V81 — requested only: detail header distinction, spreadsheet status styling, softer/wider task bars. */
+#dashboardView .dashboard-detail-table th{background:#eaf0f7;color:#617087;border-bottom-color:#dbe3ec;}
+#dashboardView .dashboard-courier-group td{background:#f7f9fb;}
+#dashboardView .dashboard-courier-group-toggle:hover{background:#f1f4f7;}
+#dashboardView .dashboard-status-pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:5px 9px;font-size:9px;font-weight:600;white-space:nowrap;}
+#dashboardView .dashboard-status-pill:before{content:'';width:8px;height:8px;border-radius:50%;background:currentColor;flex:0 0 8px;}
+#dashboardView .dashboard-status-pill.waiting{background:#fff4d8;color:#ad7600;}
+#dashboardView .dashboard-status-pill.jalan{background:#e8f0fb;color:#4f78ad;}
+#dashboardView .dashboard-status-pill.proses{background:#f0eafb;color:#8068a8;}
+#dashboardView .dashboard-status-pill.done{background:#e4f4ea;color:#2b865d;}
+#dashboardView .dashboard-status-pill.unknown{background:#f1f3f5;color:#687482;}
+#dashboardView .type-column{grid-template-rows:34px minmax(0,1fr) 30px 24px;}
+#dashboardView .type-column-value{padding-bottom:7px;}
+#dashboardView .type-column-track{width:min(84px,82%);}
+#dashboardView .type-column-bar{min-height:0;}

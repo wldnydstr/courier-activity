@@ -945,8 +945,7 @@ function renderActivityTypeSummary(rows){
     return;
   }
 
-  const colors=["#2563EB","#16A34A","#9333EA","#EA580C","#0891B2","#DC2626","#CA8A04","#DB2777","#4F46E5","#059669"];
-  const max=Math.max(...entries.map(([,v])=>v),1);
+  const colors=["#B7D5F2","#B9E2CC","#F2C8B8","#CFC1EA","#B9D9D7","#E8C2C8","#E6D4A8","#D9C2DD","#C5CBEA","#BFDCCF"];
   const total=entries.reduce((sum,[,v])=>sum+v,0);
 
   chart.innerHTML=`
@@ -954,7 +953,7 @@ function renderActivityTypeSummary(rows){
       <div class="type-chart-axis">
         ${entries.map(([label,value],i)=>{
           const color=colors[i%colors.length];
-          const height=Math.max(6,Math.round(value/max*100));
+          const height=Math.round(value/total*100);
           const pct=Math.round(value/total*100);
           return `<div class="type-column">
             <div class="type-column-value">${value}</div>
@@ -1074,7 +1073,11 @@ function renderDashboard(data){
   const pct=n=>stats.total?Math.round(n/stats.total*100):0;
   [["Menunggu",stats.menungguBerangkat],["Jalan",stats.lagiJalan],["Proses",stats.lagiDiproses],["Selesai",stats.selesai]].forEach(([key,n])=>{const p=pct(n),el=$("stat"+key+"Progress"),tx=$("stat"+key+"Percent");if(el)el.style.width=p+"%";if(tx)tx.textContent=p+"%";});
   renderCourierChart(rows); renderStatusChart(rows); renderActivityTypeSummary(rows); renderJourneyPanel(rows,day); renderProofGallery(rows);
-  const statusClass=status=>status==="Selesai"?"done":status==="Lagi Jalan"?"jalan":status==="Lagi Diproses"?"proses":"waiting";
+  const statusClass=status=>{
+    const value=String(status??"").trim();
+    const cls=value==="Selesai"?"done":value==="Lagi Jalan"?"jalan":value==="Lagi Diproses"?"proses":value==="Menunggu Berangkat"?"waiting":"unknown";
+    return `<span class="dashboard-status-pill ${cls}">${escapeHtml(value||"-")}</span>`;
+  };
   const recent=[...rows].sort((a,b)=>(parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0)-(parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0)).slice(0,12);
   // Group per kurir; kurir A-Z, then Trip A-Z within each kurir.
   const groupedByCourier={};
