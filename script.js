@@ -2,6 +2,8 @@ const API_URL = "https://script.google.com/macros/s/AKfycbzsVUudEB169aaXav19C7tN
 
 let state = { user:null, activity:null, locations:[], dashboardActivities:[], courierTasks:{pendingDeparture:null,confirmations:[],history:[]} };
 let sessionExpiryTimer = null;
+let dashboardDetailRows = [];
+let dashboardDetailVisibleCount = 10;
 // Sesi tidak memiliki batas waktu. Session tetap aktif sampai user logout manual.
 const SESSION_LIMIT = null;
 const SESSION_KEY = "aktivitasKurirSession";
@@ -249,7 +251,6 @@ function setView(view){
   ["navActivity","navConfirm","navHistory","navDashboard","navReport","navUsers"].forEach(id=>$(id).classList.remove("active"));
   const nav={courierView:"navActivity",confirmationView:"navConfirm",historyView:"navHistory",dashboardView:"navDashboard",reportView:"navReport",usersView:"navUsers"}[view];
   if(nav)$(nav).classList.add("active");
-  document.body.dataset.activeView=view;
   if(state.user){
     try{
       const saved=readSession();
@@ -264,14 +265,31 @@ function setupNav(role){
   $("navActivity").classList.toggle("hidden",!isCourier);
   $("navConfirm").classList.toggle("hidden",!isCourier);
   $("navHistory").classList.toggle("hidden",!isCourier);
-  $("navDashboard").classList.toggle("hidden",role!=="Admin"&&role!=="Super User");
+  $("navDashboard").classList.toggle("hidden",role!=="Super User");
   $("navReport").classList.toggle("hidden",role!=="Admin"&&role!=="Super User");
   $("navUsers").classList.toggle("hidden",role!=="Super User");
+
+  const isAdmin=role==="Admin";
+  $("navActivity").classList.toggle("hidden",true);
+  $("navConfirm").classList.toggle("hidden",true);
+  $("navHistory").classList.toggle("hidden",true);
+
+  document.body.classList.toggle("admin-report-only",isAdmin);
   $("navActivity").onclick=async()=>{setView("courierView");await loadCourierTasks();await restoreActivityDraft();};
   $("navConfirm").onclick=async()=>{setView("confirmationView");await loadCourierTasks();};
   $("navHistory").onclick=async()=>{setView("historyView");await loadCourierTasks();};
   $("navDashboard").onclick=async()=>{setView("dashboardView");setDashboardDefaultDay();await loadDashboard();requestAnimationFrame(syncDashboardFreeze);};
-  $("navReport").onclick=async()=>{setView("reportView");renderReport([]);await loadReportOptions();await loadReport();};
+  $("navReport").onclick=async()=>{
+    setView("reportView");
+    renderReport([]);
+    if(state.user?.peran==="Admin"){
+      applyAdminReportUI();
+      await loadAdminTodayReport();
+    }else{
+      await loadReportOptions();
+      await loadReport();
+    }
+  };
   $("navUsers").onclick=async()=>{setView("usersView");await loadUsers();};
 }
 
@@ -516,7 +534,12 @@ async function restoreSession(){
   setWelcome(state.user.nama);
   setupNav(state.user.peran);
 
-  const lastView=saved.lastView || (state.user.peran==="Kurir"?"courierView":"dashboardView");
+  const lastView=saved.lastView ||
+    (state.user.peran==="Kurir"
+      ? "courierView"
+      : state.user.peran==="Admin"
+        ? "reportView"
+        : "dashboardView");
 
   // Error API tidak menghapus sesi. User tetap masuk dan bisa lanjut lagi.
   try{
@@ -528,7 +551,12 @@ async function restoreSession(){
     }else if(lastView==="reportView"){
       setView("reportView");
       renderReport([]);
-      await loadReportOptions();
+      if(state.user.peran==="Admin"){
+        applyAdminReportUI();
+        await loadAdminTodayReport();
+      }else{
+        await loadReportOptions();
+      }
     }else if(lastView==="usersView" && state.user.peran==="Super User"){
       setView("usersView");
       await loadUsers();
@@ -564,11 +592,24 @@ async function handleLogin(e){
     }
 
     state.user=user;
-    const loginAt=Date.now(); writeSession({user,loginAt,lastView:user.peran==="Kurir"?"courierView":"dashboardView"}); scheduleSessionExpiry(loginAt);
+    const initialView=user.peran==="Kurir"?"courierView":user.peran==="Admin"?"reportView":"dashboardView";
+    const loginAt=Date.now(); writeSession({user,loginAt,lastView:initialView}); scheduleSessionExpiry(loginAt);
     $("loginView").classList.add("hidden");$("appView").classList.remove("hidden");
     setWelcome(user.nama);setupNav(user.peran);
-    if(user.peran==="Kurir"){await loadLocations();setView("courierView");await loadCourierTasks();await restoreActivityDraft();}
-    else{setView("dashboardView");await loadDashboard();}
+    if(user.peran==="Kurir"){
+      await loadLocations();
+      setView("courierView");
+      await loadCourierTasks();
+      await restoreActivityDraft();
+    }else if(user.peran==="Admin"){
+      setView("reportView");
+      applyAdminReportUI();
+      renderReport([]);
+      await loadAdminTodayReport();
+    }else{
+      setView("dashboardView");
+      await loadDashboard();
+    }
   }catch(err){msg("loginMsg",err.message)}
 }
 
@@ -1070,143 +1111,89 @@ function renderDashboard(data){
     }
     detailDateEl.textContent="Data: "+detailDateLabel;
   }
+
   const stats={total:rows.length,menungguBerangkat:rows.filter(a=>a.status==="Menunggu Berangkat").length,lagiJalan:rows.filter(a=>a.status==="Lagi Jalan").length,lagiDiproses:rows.filter(a=>a.status==="Lagi Diproses").length,selesai:rows.filter(a=>a.status==="Selesai").length};
-  $("statTotal").textContent=stats.total||0; $("statMenunggu").textContent=stats.menungguBerangkat||0; $("statJalan").textContent=stats.lagiJalan||0; $("statSelesai").textContent=stats.selesai||0;
-  // KPI tambahan untuk dashboard baru — dihitung dari data aktivitas yang sudah dimuat, tanpa mengubah API.
-  const uniqueCouriers=new Set(rows.map(a=>String(a.kurir||"").trim()).filter(Boolean));
-  const uniqueDestinations=new Set(rows.map(a=>String(a.tujuan||"").trim()).filter(Boolean));
-  const durationToMinutes=value=>{
-    const text=String(value??"").trim();
-    if(!text)return 0;
-    const hm=text.match(/(\d+)\s*jam\s*(?:([0-9]+)\s*menit)?/i);
-    if(hm)return Number(hm[1])*60+Number(hm[2]||0);
-    const colon=text.match(/^(\d+):(\d{1,2})$/);
-    if(colon)return Number(colon[1])*60+Number(colon[2]);
-    const num=Number(text.replace(",","."));
-    return Number.isFinite(num)?Math.round(num):0;
-  };
-  const totalMinutes=rows.reduce((sum,a)=>sum+durationToMinutes(a.durasiMengemudi),0);
-  const durationLabel=`${Math.floor(totalMinutes/60)} jam ${String(totalMinutes%60).padStart(2,"0")} menit`;
-  const setText=(id,value)=>{const el=$(id);if(el)el.textContent=value;};
-  setText("statKunjungan",uniqueDestinations.size||0);
-  setText("statKurir",uniqueCouriers.size||0);
-  setText("statOtw",durationLabel);
-  setText("statAtRs","—");
-  setText("statJarak","—");
-  setText("sideDoneTotal",stats.selesai||0);
-  setText("sideActivityTotal",stats.total||0);
-  setText("sideDurationTotal",durationLabel);
-  setText("sideDistanceTotal","—");
+  $("statTotal").textContent=stats.total||0;
+  $("statMenunggu").textContent=stats.menungguBerangkat||0;
+  $("statJalan").textContent=stats.lagiJalan||0;
+  $("statSelesai").textContent=stats.selesai||0;
   const prosesEl=$("statProses"); if(prosesEl)prosesEl.textContent=stats.lagiDiproses||0;
   const pct=n=>stats.total?Math.round(n/stats.total*100):0;
-  [["Menunggu",stats.menungguBerangkat],["Jalan",stats.lagiJalan],["Proses",stats.lagiDiproses],["Selesai",stats.selesai]].forEach(([key,n])=>{const p=pct(n),el=$("stat"+key+"Progress"),tx=$("stat"+key+"Percent");if(el)el.style.width=p+"%";if(tx)tx.textContent=p+"%";});
-  renderCourierChart(rows); renderStatusChart(rows); renderActivityTypeSummary(rows); renderJourneyPanel(rows,day); renderProofGallery(rows);
+  [["Menunggu",stats.menungguBerangkat],["Jalan",stats.lagiJalan],["Proses",stats.lagiDiproses],["Selesai",stats.selesai]].forEach(([key,n])=>{
+    const p=pct(n),el=$("stat"+key+"Progress"),tx=$("stat"+key+"Percent");
+    if(el)el.style.width=p+"%";
+    if(tx)tx.textContent=p+"%";
+  });
+
+  renderCourierChart(rows);
+  renderStatusChart(rows);
+  renderActivityTypeSummary(rows);
+  renderJourneyPanel(rows,day);
+  renderProofGallery(rows);
+
   const statusClass=status=>{
     const value=String(status??"").trim();
     const cls=value==="Selesai"?"done":value==="Lagi Jalan"?"jalan":value==="Lagi Diproses"?"proses":value==="Menunggu Berangkat"?"waiting":"unknown";
     return `<span class="dashboard-status-pill ${cls}">${escapeHtml(value||"-")}</span>`;
   };
-  const recent=[...rows].sort((a,b)=>(parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0)-(parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0)).slice(0,12);
-  // Group per kurir; kurir A-Z, then Trip A-Z within each kurir.
-  const groupedByCourier={};
-  recent.forEach(a=>{
-    const name=String(a.kurir||"").trim()||"Tidak diketahui";
-    if(!groupedByCourier[name])groupedByCourier[name]=[];
-    groupedByCourier[name].push(a);
-  });
 
-  const courierNames=Object.keys(groupedByCourier)
-    .sort((a,b)=>a.localeCompare(b,"id",{sensitivity:"base"}));
-  dashboardDetailOpen.forEach(name=>{if(!groupedByCourier[name])dashboardDetailOpen.delete(name);});
-
-  const compareTrip=(a,b)=>{
-    const ta=String(a.trip??"").trim();
-    const tb=String(b.trip??"").trim();
-    const tripCmp=ta.localeCompare(tb,"id",{numeric:true,sensitivity:"base"});
-    if(tripCmp!==0)return tripCmp;
+  dashboardDetailRows=[...rows].sort((a,b)=>{
     const da=parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0;
     const db=parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0;
-    return da-db;
+    return db-da;
+  });
+  dashboardDetailVisibleCount=dashboardDetailRows.length;
+
+  const formatTableDate=a=>{
+    const d=parseActivityDate(a.berangkat||a.datang||a.selesai);
+    return d?displayIndonesiaDateOnly(d):"-";
+  };
+  const diRsValue=a=>a.durasiDiRS ?? a.durasiDiRs ?? a.durasiRS ?? a.durasiDiRumahSakit ?? "-";
+
+  const renderDashboardDetailTable=()=>{
+    const visible=dashboardDetailRows.slice(0,dashboardDetailVisibleCount);
+    $("dashboardTable").innerHTML=visible.map((a,index)=>{
+      const courier=String(a.kurir||"-");
+      const initials=courier.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase();
+      const photo=a.fotoDatang||a.fotoBerangkat||a.fotoDokumen;
+      return `<tr>
+        <td class="dashboard-no">${index+1}</td>
+        <td class="dashboard-date">${escapeHtml(formatTableDate(a))}</td>
+        <td><span class="recent-courier"><span class="recent-avatar">${escapeHtml(initials||"?")}</span><span>${escapeHtml(courier)}</span></span></td>
+        <td><div class="dashboard-destination"><strong>${escapeHtml(a.tujuan||"-")}</strong></div></td>
+        <td><span class="task-tag">${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</span></td>
+        <td class="dashboard-note">${(()=>{
+          const note=String(a.keterangan??"").trim()||"-";
+          const needsToggle=note.length>110;
+          return `<div class="dashboard-note-text${needsToggle?" is-collapsed":""}">${escapeHtml(note)}</div>${needsToggle?`<button type="button" class="dashboard-note-toggle" data-note-row="${index}" aria-expanded="false">Muat lebih</button>`:""}`;
+        })()}</td>
+        <td class="dashboard-time">${escapeHtml(displayIndonesiaTime(a.berangkat))}</td>
+        <td class="dashboard-time">${escapeHtml(displayIndonesiaTime(a.datang))}</td>
+        <td class="dashboard-duration">${escapeHtml(displayDuration(a.durasiMengemudi))}</td>
+        <td class="dashboard-duration">${escapeHtml(displayDuration(diRsValue(a)))}</td>
+        <td>${statusClass(a.status||"-")}</td>
+        <td class="dashboard-photo">${photo?`<a class="proof-link dashboard-photo-btn" href="${escapeHtml(photo)}" target="_blank" rel="noopener" aria-label="Lihat foto">▧</a>`:"-"}</td>
+      </tr>`;
+    }).join("");
+
+    document.querySelectorAll("#dashboardView .dashboard-note-toggle").forEach(btn=>{
+      btn.onclick=()=>{
+        const cell=btn.closest(".dashboard-note");
+        const text=cell?.querySelector(".dashboard-note-text");
+        if(!text)return;
+        const expanded=btn.getAttribute("aria-expanded")==="true";
+        text.classList.toggle("is-collapsed",expanded);
+        btn.setAttribute("aria-expanded",String(!expanded));
+        btn.textContent=expanded?"Muat lebih":"Tutup";
+      };
+    });
   };
 
-  const rowsHtml=courierNames.map(name=>{
-    const courierRows=groupedByCourier[name].slice().sort(compareTrip);
-    const initials=name.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase();
+  renderDashboardDetailTable();
 
-    const isOpen=dashboardDetailOpen.has(name);
-    const groupHeader=`<tr class="dashboard-courier-group ${isOpen?'is-open':''}" data-courier-group="${escapeHtml(name)}">
-      <td colspan="9">
-        <button type="button" class="dashboard-courier-group-toggle" aria-expanded="${isOpen?'true':'false'}">
-          <span class="dashboard-courier-chevron" aria-hidden="true">›</span>
-          <span class="recent-avatar">${escapeHtml(initials||"?")}</span>
-          <strong>${escapeHtml(name)}</strong>
-          <span class="dashboard-courier-count">${courierRows.length} aktivitas</span>
-        </button>
-      </td>
-    </tr>`;
-
-    const detailRows=courierRows.map(a=>`<tr class="dashboard-courier-detail-row" data-courier-owner="${escapeHtml(name)}" ${isOpen?'':'hidden'}>
-      <td>${escapeHtml(displayIndonesiaTime(a.berangkat))}</td>
-      <td>${escapeHtml(displayIndonesiaTime(a.datang))}</td>
-      <td>${escapeHtml(displayDuration(a.durasiMengemudi))}</td>
-      <td><span class="recent-courier"><span class="recent-avatar">${escapeHtml(String(a.kurir||"?").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase())}</span><span>${escapeHtml(a.kurir||"-")}</span></span></td>
-      <td>${escapeHtml(a.tujuan||"-")}</td>
-      <td>${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</td>
-      <td class="dashboard-note"><div class="dashboard-note-text">${escapeHtml(a.keterangan||"-")}</div></td>
-      <td>${statusClass(a.status||"-")}</td>
-      <td>${a.fotoDatang||a.fotoBerangkat||a.fotoDokumen?`<a class="proof-link" href="${escapeHtml(a.fotoDatang||a.fotoBerangkat||a.fotoDokumen)}" target="_blank" rel="noopener">Lihat Foto</a>`:"-"}</td>
-    </tr>`).join("");
-
-    return groupHeader+detailRows;
-  }).join("");
-
-  $("dashboardTable").innerHTML=rowsHtml;
-  document.querySelectorAll("#dashboardView .dashboard-courier-group-toggle").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      const group=btn.closest("tr[data-courier-group]");
-      if(!group)return;
-      const name=group.getAttribute("data-courier-group");
-      const isOpen=dashboardDetailOpen.has(name);
-      if(isOpen)dashboardDetailOpen.delete(name); else dashboardDetailOpen.add(name);
-      const nextOpen=!isOpen;
-      group.classList.toggle("is-open",nextOpen);
-      btn.setAttribute("aria-expanded",String(nextOpen));
-      const chevron=btn.querySelector(".dashboard-courier-chevron");
-      if(chevron)chevron.textContent=nextOpen?"⌄":"›";
-      document.querySelectorAll(`#dashboardView .dashboard-courier-detail-row[data-courier-owner="${CSS.escape(name)}"]`).forEach(row=>{row.hidden=!nextOpen;});
-    });
-  });
-  document.querySelectorAll("#dashboardView .dashboard-courier-chevron").forEach(el=>{el.textContent=el.closest("tr")?.classList.contains("is-open")?"⌄":"›";});
-  $("dashboardEmpty").classList.toggle("hidden",recent.length>0);
-  document.querySelectorAll("#dashboardView .dashboard-note").forEach(note=>{
-    const text=note.querySelector(".dashboard-note-text");
-    if(!text)return;
-    const fullText=text.textContent.trim()||"-";
-    let truncated=fullText;
-    const renderCollapsed=()=>{
-      text.classList.remove("expanded");
-      text.innerHTML=escapeHtml(truncated)+' <button class="dashboard-note-inline-toggle" type="button">Load more...</button>';
-      const b=text.querySelector(".dashboard-note-inline-toggle");
-      b.addEventListener("click",renderExpanded);
-    };
-    const renderExpanded=()=>{
-      text.classList.add("expanded");
-      text.innerHTML=escapeHtml(fullText)+' <button class="dashboard-note-inline-toggle" type="button">Show less</button>';
-      text.querySelector(".dashboard-note-inline-toggle").addEventListener("click",renderCollapsed);
-    };
-    text.classList.remove("expanded");
-    text.textContent=fullText;
-    if(text.scrollHeight<=text.clientHeight+1)return;
-    let lo=1,hi=fullText.length,best=1;
-    while(lo<=hi){
-      const mid=Math.floor((lo+hi)/2);
-      text.innerHTML=escapeHtml(fullText.slice(0,mid).trimEnd())+' <button class="dashboard-note-inline-toggle" type="button">Load more...</button>';
-      if(text.scrollHeight<=text.clientHeight+1){best=mid;lo=mid+1;}else{hi=mid-1;}
-    }
-    truncated=fullText.slice(0,best).trimEnd();
-    renderCollapsed();
-  });;
+  $("dashboardEmpty").classList.toggle("hidden",dashboardDetailRows.length>0);
 }
+
 async function loadDashboard(){
   msg("dashboardMsg","Memuat data aktivitas...");
   try{setDashboardDefaultDay();const data=await api("getDashboard",{idPengguna:state.user.id});state.dashboardActivities=data.activities||[];renderDashboard(data);msg("dashboardMsg","");}
@@ -1383,6 +1370,43 @@ function exportReportExcel(){
   msg("reportMsg","File Excel siap.");
 }
 
+function getTodayISO(){
+  const now=new Date();
+  const y=now.getFullYear();
+  const m=String(now.getMonth()+1).padStart(2,"0");
+  const d=String(now.getDate()).padStart(2,"0");
+  return `${y}-${m}-${d}`;
+}
+
+function applyAdminReportUI(){
+  if(state.user?.peran!=="Admin")return;
+  document.body.classList.add("admin-report-only");
+  const subtitle=document.querySelector("#reportView .report-data-head .muted.small");
+  if(subtitle)subtitle.textContent="Data aktivitas hari ini.";
+}
+
+async function loadAdminTodayReport(){
+  if(state.user?.peran!=="Admin")return;
+
+  const today=getTodayISO();
+  try{
+    const data=await api("getReport",{
+      idPengguna:state.user.id,
+      tanggalDari:today,
+      tanggalSampai:today,
+      status:"",
+      kurir:"",
+      asal:"",
+      tujuan:""
+    });
+    renderReport(data.activities||[]);
+    msg("reportMsg","");
+  }catch(err){
+    msg("reportMsg",err.message);
+    renderReport([]);
+  }
+}
+
 function getReportFilterValues(){
   return {
     from: $("reportDateFrom")?.value || "",
@@ -1468,158 +1492,6 @@ async function handleCreateUser(e){
   catch(err){msg("userMsg",err.message)}
 }
 
-
-/* DASHBOARD V100 — rebuilt from the reference layout. Backend/API is unchanged. */
-let dashboardTableVisible = 10;
-const DASH_PAGE_SIZE = 10;
-
-function dashboardMonthKey(value){
-  if(!value)return "";
-  const m=String(value).match(/^(\d{4})-(\d{2})/);
-  return m?`${m[1]}-${m[2]}`:"";
-}
-function dashboardMonthLabel(value){
-  const key=dashboardMonthKey(value);
-  if(!key)return "Semua periode";
-  const [y,m]=key.split("-").map(Number);
-  return new Intl.DateTimeFormat("id-ID",{month:"long",year:"numeric"}).format(new Date(y,m-1,1));
-}
-function dashboardRowMonth(a){
-  const d=parseActivityDate(a?.berangkat||a?.datang||a?.selesai);
-  return d?formatDateKey(d).slice(0,7):"";
-}
-function dashboardHospital(a){return String(a?.tujuan||a?.rumahSakit||a?.rs||"").trim();}
-function dashboardTypes(a){return String(a?.jenisTugas||a?.pekerjaan||"Tidak diketahui").split("|").map(x=>x.trim()).filter(Boolean);}
-function dashboardDurationMinutes(v){
-  if(v===null||v===undefined||v==="")return 0;
-  const s=String(v).trim();
-  let m=s.match(/T(\d+):(\d{2})(?::(\d{2}))?/); if(m)return Number(m[1])*60+Number(m[2]);
-  m=s.match(/^(\d+):(\d{2})(?::(\d{2}))?$/); if(m)return Number(m[1])*60+Number(m[2]);
-  if(typeof v==='number'&&isFinite(v))return Math.round(v*24*60);
-  return 0;
-}
-function dashboardDurationText(minutes){
-  if(!minutes)return "—";
-  const h=Math.floor(minutes/60), m=minutes%60;
-  return h?`${h} jam ${String(m).padStart(2,'0')} menit`:`${m} menit`;
-}
-function dashboardSetLabel(id,text){const el=$(id);if(el)el.textContent=text;}
-function dashboardPopulateFilters(rows){
-  const currentCourier=$("dashboardCourier")?.value||"", currentHospital=$("dashboardHospital")?.value||"", currentType=$("dashboardActivityType")?.value||"";
-  const couriers=[...new Set(rows.map(a=>String(a.kurir||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"id",{sensitivity:"base"}));
-  const hospitals=[...new Set(rows.map(dashboardHospital).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"id",{sensitivity:"base"}));
-  const types=[...new Set(rows.flatMap(dashboardTypes))].sort((a,b)=>a.localeCompare(b,"id",{sensitivity:"base"}));
-  $("dashboardCourier").innerHTML='<option value="">Semua kurir</option>'+couriers.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
-  $("dashboardHospital").innerHTML='<option value="">Semua Rumah Sakit</option>'+hospitals.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
-  $("dashboardActivityType").innerHTML='<option value="">Semua Jenis Kegiatan</option>'+types.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
-  if(couriers.includes(currentCourier))$("dashboardCourier").value=currentCourier;
-  if(hospitals.includes(currentHospital))$("dashboardHospital").value=currentHospital;
-  if(types.includes(currentType))$("dashboardActivityType").value=currentType;
-}
-function dashboardApplyClientFilters(allRows){
-  const month=dashboardMonthKey($("dashboardDate")?.value);
-  const courier=$("dashboardCourier")?.value||"";
-  const hospital=$("dashboardHospital")?.value||"";
-  const type=$("dashboardActivityType")?.value||"";
-  return allRows.filter(a=>{
-    if(month && dashboardRowMonth(a)!==month)return false;
-    if(courier && String(a.kurir||"").trim()!==courier)return false;
-    if(hospital && dashboardHospital(a)!==hospital)return false;
-    if(type && !dashboardTypes(a).includes(type))return false;
-    return true;
-  });
-}
-function renderDashboardBarReference(rows){
-  const chart=$("activityTypeChart"); if(!chart)return;
-  const counts={}; rows.forEach(a=>dashboardTypes(a).forEach(t=>counts[t]=(counts[t]||0)+1));
-  const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"id"));
-  if(!entries.length){chart.innerHTML='<div class="dash-chart-empty">Belum ada data</div>';return;}
-  const colors=["#4b8df8","#4fc28b","#8e62dc","#ff9a3d","#45b8cf","#9ba7b5"];
-  const max=Math.max(...entries.map(x=>x[1]),1);
-  const ticks=[0,Math.ceil(max*.33),Math.ceil(max*.66),max].filter((v,i,a)=>a.indexOf(v)===i);
-  chart.innerHTML=`<div class="dash-bar-area"><div class="dash-y-axis">${ticks.slice().reverse().map(v=>`<span>${v}</span>`).join('')}</div><div class="dash-bars">${entries.slice(0,7).map(([label,value],i)=>`<div class="dash-bar-col"><strong>${value}</strong><div class="dash-bar-track"><i style="height:${Math.max(8,value/max*100)}%;background:${colors[i%colors.length]}"></i></div><span>${escapeHtml(label)}</span></div>`).join('')}</div></div>`;
-}
-function renderDashboardStatusReference(rows){
-  const chart=$("statusChart"), legend=$("statusLegend"); if(!chart)return;
-  const counts={}; rows.forEach(a=>{const s=String(a.status||"Tidak diketahui").trim()||"Tidak diketahui";counts[s]=(counts[s]||0)+1;});
-  const total=rows.length;
-  if(!total){chart.innerHTML='<div class="dash-chart-empty">Belum ada data</div>';if(legend)legend.innerHTML='';return;}
-  const colors={"Selesai":"#52bd7c","Lagi Diproses":"#9a69e2","Lagi Jalan":"#4f8ef7","Menunggu Berangkat":"#ff9d45","Tidak diketahui":"#b8c0ca"};
-  const ordered=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-  let cursor=0;const parts=ordered.map(([s,v])=>{const start=cursor;cursor+=v/total*360;return `${colors[s]||'#b8c0ca'} ${start}deg ${cursor}deg`;});
-  chart.innerHTML=`<div class="dash-donut-ring" style="background:conic-gradient(${parts.join(',')})"><div><strong>${total}</strong><span>Total<br>Aktivitas</span></div></div>`;
-  if(legend)legend.innerHTML=ordered.map(([s,v])=>`<div class="dash-status-row"><span><i style="background:${colors[s]||'#b8c0ca'}"></i>${escapeHtml(s)}</span><b>${v}</b><small>${Math.round(v/total*100)}%</small></div>`).join('');
-}
-function renderDashboardCourierReference(rows){
-  const el=$("courierChart"); if(!el)return;
-  const map={}; rows.forEach(a=>{const n=String(a.kurir||"Tidak diketahui").trim()||"Tidak diketahui";map[n]=(map[n]||0)+1;});
-  const entries=Object.entries(map).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"id"));
-  const max=Math.max(...entries.map(x=>x[1]),1);
-  el.innerHTML=entries.slice(0,7).map(([name,total])=>{const initials=name.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase();return `<div class="dash-courier-row"><div class="dash-courier-person"><span>${escapeHtml(initials||'?')}</span><div><b>${escapeHtml(name)}</b><small>${total} aktivitas</small></div></div><div class="dash-courier-track"><i style="width:${Math.max(10,total/max*100)}%"></i></div><strong>${total}</strong></div>`}).join('')||'<div class="dash-chart-empty">Belum ada aktivitas.</div>';
-}
-function renderDashboardTableReference(rows){
-  const tbody=$("dashboardTable"), info=$("dashboardTableInfo"), loadMore=$("dashboardLoadMore"); if(!tbody)return;
-  const sorted=[...rows].sort((a,b)=>(parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0)-(parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0));
-  dashboardTableVisible=Math.min(Math.max(DASH_PAGE_SIZE,dashboardTableVisible),Math.max(DASH_PAGE_SIZE,sorted.length));
-  const visibleRows=sorted.slice(0,dashboardTableVisible);
-  const statusClass=s=>String(s)==='Selesai'?'done':String(s)==='Lagi Jalan'?'jalan':String(s)==='Lagi Diproses'?'proses':'waiting';
-  tbody.innerHTML=visibleRows.map((a,i)=>{
-    const d=parseActivityDate(a.berangkat||a.datang||a.selesai);
-    const date=d?displayIndonesiaDateOnly(d):'-';
-    const foto=a.fotoDatang||a.fotoBerangkat||a.fotoDokumen;
-    const types=dashboardTypes(a).join(', ');
-    const otw=displayDuration(a.durasiMengemudi);
-    const rsTime=String(a.durasiDiRs||a.durasiRS||a.waktuDiRs||'').trim()||'—';
-    return `<tr><td>${i+1}</td><td>${escapeHtml(date)}</td><td><span class="dash-table-courier"><i>${escapeHtml((a.kurir||'?').split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase())}</i>${escapeHtml(a.kurir||'-')}</span></td><td>${escapeHtml(dashboardHospital(a)||'-')}</td><td><span class="dash-type-pill">${escapeHtml(types||'-')}</span></td><td class="dash-result-cell" title="${escapeHtml(a.keterangan||a.hasilKunjungan||'-')}">${escapeHtml(a.keterangan||a.hasilKunjungan||'-')}</td><td>${escapeHtml(displayIndonesiaTime(a.berangkat))}</td><td>${escapeHtml(displayIndonesiaTime(a.datang))}</td><td>${escapeHtml(otw)}</td><td>${escapeHtml(rsTime)}</td><td><span class="dash-status ${statusClass(a.status)}">${escapeHtml(a.status||'-')}</span></td><td>${foto?`<a href="${escapeHtml(foto)}" target="_blank" rel="noopener" class="dash-photo">▣</a>`:'—'}</td></tr>`;
-  }).join('');
-  $("dashboardEmpty")?.classList.toggle('hidden',sorted.length>0);
-  if(info)info.textContent=sorted.length?`Menampilkan 1–${Math.min(dashboardTableVisible,sorted.length)} dari ${sorted.length} data`:'Menampilkan 0 data';
-  if(loadMore){
-    const remaining=sorted.length-dashboardTableVisible;
-    loadMore.textContent=remaining>0?`Muat ${Math.min(DASH_PAGE_SIZE,remaining)} lagi`:'Semua data sudah ditampilkan';
-    loadMore.disabled=remaining<=0;
-    loadMore.classList.toggle('hidden',sorted.length<=DASH_PAGE_SIZE);
-  }
-}
-
-function renderDashboard(data){
-  const allRows=(data.activities||[]).filter(a=>String(a.idAktivitas||'').trim());
-  dashboardPopulateFilters(allRows);
-  const month=$("dashboardDate").value||todayKey().slice(0,7);
-  const filtered=dashboardApplyClientFilters(allRows);
-  dashboardSetLabel('dashboardPeriodLabel',dashboardMonthLabel(month));
-  dashboardSetLabel('dashboardPeriodFilterLabel',dashboardMonthLabel(month));
-  dashboardSetLabel('dashboardCourierLabel',$('dashboardCourier').value||'Semua Kurir');
-  dashboardSetLabel('dashboardHospitalLabel',$('dashboardHospital').value||'Semua Rumah Sakit');
-  dashboardSetLabel('dashboardActivityTypeLabel',$('dashboardActivityType').value||'Semua Jenis Kegiatan');
-  const total=filtered.length, done=filtered.filter(a=>String(a.status||'')==='Selesai').length;
-  const couriers=new Set(filtered.map(a=>String(a.kurir||'').trim()).filter(Boolean));
-  const visits=new Set(filtered.map(dashboardHospital).filter(Boolean));
-  const otwMinutes=filtered.reduce((s,a)=>s+dashboardDurationMinutes(a.durasiMengemudi),0);
-  const atRsMinutes=filtered.reduce((s,a)=>s+dashboardDurationMinutes(a.durasiDiRs||a.durasiRS||a.waktuDiRs),0);
-  const distanceValues=filtered.map(a=>Number(a.jarak||a.distance||a.km)).filter(v=>Number.isFinite(v));
-  const distance=distanceValues.reduce((s,v)=>s+v,0);
-  $('statTotal').textContent=total;$('statKunjungan').textContent=visits.size||0;$('statOtw').textContent=dashboardDurationText(otwMinutes);$('statAtRs').textContent=atRsMinutes?dashboardDurationText(atRsMinutes):'—';$('statJarak').textContent=distance?`${distance.toLocaleString('id-ID',{maximumFractionDigits:1})} km`:'—';$('statKurir').textContent=couriers.size;
-  const statuses=['Menunggu Berangkat','Lagi Jalan','Lagi Diproses','Selesai'];
-  statuses.forEach(s=>{const id=s==='Menunggu Berangkat'?'statMenunggu':s==='Lagi Jalan'?'statJalan':s==='Lagi Diproses'?'statProses':'statSelesai';if($(id))$(id).textContent=filtered.filter(a=>String(a.status||'')===s).length;});
-  $('sideDoneTotal').textContent=done;$('sideActivityTotal').textContent=total;$('sideDurationTotal').textContent=dashboardDurationText(otwMinutes);$('sideDistanceTotal').textContent=distance?`${distance.toLocaleString('id-ID',{maximumFractionDigits:1})} km`:'—';
-  const detailDate=month?dashboardMonthLabel(month):'Semua periode';$('dashboardDetailDate').textContent=detailDate;$('dashboardDetailCount').textContent=`Data: ${total}`;
-  renderDashboardBarReference(filtered);renderDashboardStatusReference(filtered);renderDashboardCourierReference(filtered);renderDashboardTableReference(filtered);
-  const topType=Object.entries(filtered.flatMap(dashboardTypes).reduce((m,t)=>(m[t]=(m[t]||0)+1,m),{})).sort((a,b)=>b[1]-a[1])[0];
-  $('dashboardInsight').textContent=topType?`Aktivitas terbanyak adalah ${topType[0]} dengan ${topType[1]} aktivitas pada periode ${dashboardMonthLabel(month)}.`:'Belum ada aktivitas pada periode yang dipilih.';
-  msg('dashboardMsg','');
-}
-function setDashboardDefaultDay(){if(!$('dashboardDate').value)$('dashboardDate').value=todayKey().slice(0,7);}
-function applyDashboardFilters(){dashboardTableVisible=DASH_PAGE_SIZE;renderDashboard({activities:state.dashboardActivities||[]});}
-function resetDashboardFilters(){$('dashboardDate').value=todayKey().slice(0,7);$('dashboardCourier').value='';$('dashboardHospital').value='';$('dashboardActivityType').value='';dashboardTableVisible=DASH_PAGE_SIZE;renderDashboard({activities:state.dashboardActivities||[]});}
-function dashboardExportExcel(){
-  const rows=dashboardApplyClientFilters(state.dashboardActivities||[]); if(!rows.length){msg('dashboardMsg','Tidak ada data untuk diekspor.');return;}
-  if(typeof XLSX==='undefined'){msg('dashboardMsg','Export Excel tidak tersedia.');return;}
-  const data=rows.map(a=>({Tanggal:displayIndonesiaDateOnly(a.berangkat||a.datang||a.selesai),Kurir:a.kurir||'',Rumah_Sakit_Tujuan:dashboardHospital(a),Jenis_Kegiatan:dashboardTypes(a).join(', '),Keterangan:a.keterangan||'',Berangkat:displayIndonesiaTime(a.berangkat),Tiba:displayIndonesiaTime(a.datang),OTW:displayDuration(a.durasiMengemudi),Status:a.status||''}));
-  const ws=XLSX.utils.json_to_sheet(data), wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Dashboard');XLSX.writeFile(wb,`dashboard-aktivitas-kurir-${dashboardMonthKey($('dashboardDate').value)||'data'}.xlsx`);
-}
-function dashboardExportPdf(){window.print();}
-
 $("loginForm").addEventListener("submit",handleLogin);
 $("logoutBtn").addEventListener("click",()=>logoutToLogin(""));
 setupCombo("asalSearch","asalList");setupCombo("tujuanSearch","tujuanList");
@@ -1638,14 +1510,6 @@ $("activityForm").addEventListener("submit",handleCreateActivity);
 $("pendingDepartureBtn").addEventListener("click",handlePendingDeparture);
 $("applyDashboardFilterBtn").addEventListener("click",applyDashboardFilters);
 $("resetDashboardFilterBtn").addEventListener("click",resetDashboardFilters);
-$("dashboardExportExcelBtn")?.addEventListener("click",dashboardExportExcel);
-$("dashboardExportPdfBtn")?.addEventListener("click",dashboardExportPdf);
-$("dashboardDateMirror")?.addEventListener("change",e=>{ $("dashboardDate").value=e.target.value; setDashboardDefaultDay(); applyDashboardFilters(); });
-$("dashboardDate")?.addEventListener("change",e=>{ if($("dashboardDateMirror"))$("dashboardDateMirror").value=e.target.value; applyDashboardFilters(); });
-$("dashboardCourier")?.addEventListener("change",()=>dashboardSetLabel("dashboardCourierLabel",$("dashboardCourier").value||"Semua Kurir"));
-$("dashboardHospital")?.addEventListener("change",()=>dashboardSetLabel("dashboardHospitalLabel",$("dashboardHospital").value||"Semua Rumah Sakit"));
-$("dashboardActivityType")?.addEventListener("change",()=>dashboardSetLabel("dashboardActivityTypeLabel",$("dashboardActivityType").value||"Semua Jenis Kegiatan"));
-$("dashboardLoadMore")?.addEventListener("click",()=>{dashboardTableVisible+=DASH_PAGE_SIZE;renderDashboardTableReference(dashboardApplyClientFilters(state.dashboardActivities||[]));});
 $("journeyPanel").addEventListener("click",e=>{
   const toggle=e.target.closest(".journey-group-toggle");
   if(!toggle)return;
@@ -1659,7 +1523,12 @@ $("journeyPanel").addEventListener("click",e=>{
   const body=group.querySelector(".journey-group-body");
   if(body)body.hidden=!open;
 });
-$("refreshReportBtn").addEventListener("click",async()=>{await loadReportOptions();msg("reportMsg","");updateReportApplyState();});
+$("refreshReportBtn").addEventListener("click",async()=>{
+  if(state.user?.peran==="Admin")return;
+  await loadReportOptions();
+  msg("reportMsg","");
+  updateReportApplyState();
+});
 $("exportReportBtn").addEventListener("click",exportReportExcel);
 $("applyReportBtn").addEventListener("click",loadReport);
 $("resetReportBtn").addEventListener("click",resetReportFilters);
