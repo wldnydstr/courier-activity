@@ -2624,3 +2624,52 @@ body{font-family:"Poppins",ui-sans-serif,system-ui,-apple-system,BlinkMacSystemF
   #appView #dashboardView,#appView #reportView,#appView #courierView,#appView #confirmationView,#appView #historyView,#appView #usersView{padding-left:14px !important;padding-right:14px !important;}
   #appView .dashboard-sticky-top .topbar-actions{position:absolute !important;right:16px !important;top:16px !important;left:auto !important;bottom:auto !important;width:110px !important;}
 }
+
+/* V12 — dashboard analytics row and full-width detail table */
+#dashboardView .dashboard-insight-grid-three{
+  grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) minmax(280px,.9fr) !important;
+  align-items:stretch !important;
+}
+#dashboardView .dashboard-insight-grid-three .dashboard-insight-card{
+  min-width:0;
+}
+#dashboardView .time-distance-inline-card #timeDistanceSummary{
+  display:grid;
+  gap:0;
+}
+#dashboardView .time-distance-inline-card .side-row{
+  padding:8px 0;
+}
+#dashboardView .dashboard-lower-grid-full{
+  display:block !important;
+}
+#dashboardView .dashboard-lower-grid-full .dashboard-detail-card-new{
+  width:100% !important;
+}
+#dashboardView .dashboard-side-stack{
+  display:none !important;
+}
+
+/* Keep the approved desktop shell and use all available space after the sidebar. */
+@media(min-width:901px){
+  #appView > section:not(#dashboardStickyTop){
+    margin-left:246px !important;
+    width:calc(100% - 246px) !important;
+    max-width:none !important;
+  }
+  #appView #dashboardView{
+    padding-left:18px !important;
+    padding-right:18px !important;
+  }
+}
+
+@media(max-width:1200px){
+  #dashboardView .dashboard-insight-grid-three{
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  }
+}
+@media(max-width:900px){
+  #dashboardView .dashboard-insight-grid-three{
+    grid-template-columns:1fr !important;
+  }
+}

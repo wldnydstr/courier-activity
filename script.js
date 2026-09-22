@@ -1213,7 +1213,7 @@ function renderDashboardPagination(totalPages){
 function renderActivityTypeBarsNew(rows){
   const el=$("activityTypeChart");if(!el)return;
   const counts={};rows.forEach(a=>String(a.jenisTugas||a.pekerjaan||"Lainnya").split("|").map(x=>x.trim()).filter(Boolean).forEach(x=>counts[x]=(counts[x]||0)+1));
-  const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]); if(!entries.length){el.innerHTML='<div class="category-chart-empty">Belum ada aktivitas.</div>';return;}
+  const entries=Object.entries(counts).sort((a,b)=>a[0].localeCompare(b[0],"id",{sensitivity:"base"})); if(!entries.length){el.innerHTML='<div class="category-chart-empty">Belum ada aktivitas.</div>';return;}
   const colors=["#4d8df7","#51bf8a","#8d62db","#ff963b","#48b7c7","#a9b4c2"];const max=Math.max(...entries.map(x=>x[1]),1);
   el.innerHTML=`<div class="bars-axis">${entries.map(([label,v],i)=>`<div class="bar-col"><strong>${v}</strong><div class="bar-track"><div class="bar-fill" style="height:${Math.max(8,v/max*100)}%;background:${colors[i%colors.length]}"></div></div><span>${escapeHtml(label)}</span></div>`).join("")}</div>`;
 }

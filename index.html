@@ -154,22 +154,22 @@
         <div class="dashboard-stat stat-courier-card"><div class="dashboard-stat-icon">♙</div><div><div class="stat-label">Total Kurir</div><div id="statCouriers" class="stat-value">0</div><div class="stat-foot"><span>tetap</span></div></div></div>
       </div>
 
-      <div class="dashboard-insight-grid">
+      <div class="dashboard-insight-grid dashboard-insight-grid-three">
         <div class="card dashboard-insight-card">
           <div class="section-title">Aktivitas Berdasarkan Jenis Kegiatan</div>
           <div id="activityTypeChart" class="activity-type-bars"></div>
         </div>
         <div class="card dashboard-insight-card">
-          <div class="section-title">Rekap Status Aktivitas</div>
-          <div class="status-dashboard-layout-new"><div id="statusChart" class="status-donut"></div><div id="statusLegend" class="status-summary"></div></div>
-        </div>
-        <div class="card dashboard-insight-card">
           <div class="section-title">Total Aktivitas per Kurir</div>
           <div id="courierChart" class="courier-bars-new"></div>
         </div>
+        <div class="card dashboard-insight-card time-distance-inline-card">
+          <div class="section-title">Total Waktu &amp; Jarak</div>
+          <div id="timeDistanceSummary"></div>
+        </div>
       </div>
 
-      <div class="dashboard-lower-grid">
+      <div class="dashboard-lower-grid dashboard-lower-grid-full">
         <div class="card dashboard-detail-card-new">
           <div class="dashboard-table-head-new">
             <div><div class="section-title">Detail Aktivitas Kurir</div><span id="dashboardDetailDate" class="dashboard-detail-date">September 2026</span></div>
@@ -183,10 +183,6 @@
           </div>
           <div id="dashboardEmpty" class="empty hidden">Belum ada aktivitas.</div>
           <div id="dashboardPagination" class="dashboard-pagination" aria-label="Navigasi halaman"></div>
-        </div>
-        <div class="dashboard-side-stack">
-          <div class="card side-summary-card"><div class="section-title">Total Waktu &amp; Jarak</div><div id="timeDistanceSummary"></div></div>
-          <div class="card side-summary-card"><div class="section-title">Ringkasan Aktivitas</div><div id="activitySummary"></div></div>
         </div>
       </div>
     </section>
