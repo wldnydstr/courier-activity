@@ -126,86 +126,108 @@
     </section>
 
     <section id="dashboardView" class="hidden dashboard-page">
-      <div class="dashboard-report-head">
+      <div class="dash-head">
         <div>
-          <div class="dashboard-report-title">Dashboard Aktivitas Kurir</div>
-          <div class="dashboard-report-subtitle">Rekap seluruh aktivitas kurir selama periode tertentu</div>
+          <h2>Dashboard Aktivitas Kurir</h2>
+          <p>Rekap seluruh aktivitas kurir selama periode tertentu</p>
         </div>
-        <div class="dashboard-report-actions">
-          <label class="dashboard-period-control"><span>▣</span><select id="dashboardPeriodSelect"><option>September 2026</option></select><b>⌄</b></label>
-          <button type="button" class="dashboard-export-btn excel" id="dashboardExportExcelBtn">▣&nbsp; Export Excel</button>
-          <button type="button" class="dashboard-export-btn pdf" id="dashboardExportPdfBtn">▣&nbsp; Export PDF</button>
-        </div>
-      </div>
-
-      <div class="dashboard-filter-bar card">
-        <label class="dashboard-filter-field"><span class="filter-icon">▣</span><span><small>Periode</small><b>September 2026</b></span><input id="dashboardDate" type="date" aria-label="Periode"><i>⌄</i></label>
-        <label class="dashboard-filter-field"><span class="filter-icon">♙</span><span><small>Kurir</small><b>Semua Kurir</b></span><select id="dashboardCourier" aria-label="Kurir"><option value="">Semua kurir</option></select><i>⌄</i></label>
-        <label class="dashboard-filter-field static-filter"><span class="filter-icon">▥</span><span><small>Rumah Sakit</small><b>Semua Rumah Sakit</b></span><i>⌄</i></label>
-        <label class="dashboard-filter-field static-filter"><span class="filter-icon">◇</span><span><small>Jenis Kegiatan</small><b>Semua Jenis Kegiatan</b></span><i>⌄</i></label>
-        <button type="button" class="dashboard-apply-btn" id="applyDashboardFilterBtn">⌕&nbsp; Terapkan</button>
-        <button type="button" class="dashboard-reset-btn" id="resetDashboardFilterBtn">⟳&nbsp; Reset</button>
-      </div>
-
-      <div class="dashboard-kpi-grid">
-        <div class="dashboard-kpi kpi-blue"><span class="kpi-icon">▣</span><div><small>Total Aktivitas</small><strong id="statTotal">0</strong><em>↗ <b id="statTotalTrend">12%</b> &nbsp;vs bulan lalu</em></div></div>
-        <div class="dashboard-kpi kpi-green"><span class="kpi-icon">●</span><div><small>Total Kunjungan RS</small><strong id="statKunjungan">0</strong><em>↗ 10% &nbsp;vs bulan lalu</em></div></div>
-        <div class="dashboard-kpi kpi-purple"><span class="kpi-icon">◷</span><div><small>Total Waktu OTW</small><strong id="statOtw">0 jam</strong><em>↗ 8% &nbsp;vs bulan lalu</em></div></div>
-        <div class="dashboard-kpi kpi-red"><span class="kpi-icon">◷</span><div><small>Total Waktu di RS</small><strong id="statAtRs">0 jam</strong><em>↗ 14% &nbsp;vs bulan lalu</em></div></div>
-        <div class="dashboard-kpi kpi-orange"><span class="kpi-icon">▲</span><div><small>Total Jarak</small><strong id="statJarak">—</strong><em>↗ 9% &nbsp;vs bulan lalu</em></div></div>
-        <div class="dashboard-kpi kpi-indigo"><span class="kpi-icon">♙</span><div><small>Total Kurir</small><strong id="statKurir">0</strong><em>tetap</em></div></div>
-      </div>
-
-      <div class="dashboard-chart-grid">
-        <div class="card dashboard-chart-card">
-          <div class="dashboard-card-title">Aktivitas Berdasarkan Jenis Kegiatan</div>
-          <div class="dashboard-chart-box dashboard-bar-box"><div id="activityTypeChart" class="type-donut"></div></div>
-        </div>
-        <div class="card dashboard-chart-card">
-          <div class="dashboard-card-title">Rekap Status Aktivitas</div>
-          <div class="dashboard-status-layout"><div id="statusChart" class="status-donut"></div><div id="statusLegend" class="status-legend"></div></div>
-        </div>
-        <div class="card dashboard-chart-card dashboard-courier-chart-card">
-          <div class="dashboard-card-title">Total Aktivitas per Kurir</div>
-          <div id="courierChart" class="courier-chart"></div>
-          <div id="courierLegend" class="courier-legend"></div>
+        <div class="dash-head-actions">
+          <label class="dash-period">
+            <span class="dash-icon">▣</span>
+            <span class="dash-period-text"><small>Periode</small><b id="dashboardPeriodLabel">September 2026</b></span>
+            <input id="dashboardDate" type="month" aria-label="Periode">
+            <span class="dash-chevron">⌄</span>
+          </label>
+          <button id="dashboardExportExcelBtn" class="dash-export excel" type="button">▣&nbsp; Export Excel</button>
+          <button id="dashboardExportPdfBtn" class="dash-export pdf" type="button">▤&nbsp; Export PDF</button>
         </div>
       </div>
 
-      <div class="dashboard-content-grid">
-        <div class="card dashboard-detail-card">
-          <div class="dashboard-card-title">Detail Aktivitas Kurir <span id="dashboardDetailDate">Semua tanggal</span></div>
-          <div class="table-wrap dashboard-detail-wrap">
-            <table class="dashboard-detail-table">
-              <thead><tr><th>Jam<br>Berangkat</th><th>Jam<br>Tiba</th><th>Durasi<br>Perjalanan</th><th>Kurir</th><th>Rumah Sakit/Tujuan</th><th>Jenis Kegiatan</th><th>Keterangan</th><th>Status</th><th>Foto Bukti</th></tr></thead>
+      <div class="dash-filter-shell">
+        <label class="dash-filter">
+          <span class="dash-filter-icon">▣</span>
+          <span><small>Periode</small><b id="dashboardPeriodFilterLabel">September 2026</b></span>
+          <input id="dashboardDateMirror" type="month" aria-label="Periode">
+          <i>⌄</i>
+        </label>
+        <label class="dash-filter">
+          <span class="dash-filter-icon">♙</span>
+          <span><small>Kurir</small><b id="dashboardCourierLabel">Semua Kurir</b></span>
+          <select id="dashboardCourier" aria-label="Kurir"><option value="">Semua kurir</option></select>
+          <i>⌄</i>
+        </label>
+        <label class="dash-filter">
+          <span class="dash-filter-icon">▥</span>
+          <span><small>Rumah Sakit</small><b id="dashboardHospitalLabel">Semua Rumah Sakit</b></span>
+          <select id="dashboardHospital" aria-label="Rumah Sakit"><option value="">Semua Rumah Sakit</option></select>
+          <i>⌄</i>
+        </label>
+        <label class="dash-filter">
+          <span class="dash-filter-icon">◇</span>
+          <span><small>Jenis Kegiatan</small><b id="dashboardActivityTypeLabel">Semua Jenis Kegiatan</b></span>
+          <select id="dashboardActivityType" aria-label="Jenis Kegiatan"><option value="">Semua Jenis Kegiatan</option></select>
+          <i>⌄</i>
+        </label>
+        <button id="applyDashboardFilterBtn" class="dash-apply" type="button">⌕&nbsp; Terapkan</button>
+        <button id="resetDashboardFilterBtn" class="dash-reset" type="button">⟳&nbsp; Reset</button>
+      </div>
+
+      <div class="dash-kpis">
+        <article class="dash-kpi blue"><span class="kpi-symbol">▣</span><div><small>Total Aktivitas</small><strong id="statTotal">0</strong><em>↗ <b id="statTotalTrend">12%</b>&nbsp; vs bulan lalu</em></div></article>
+        <article class="dash-kpi green"><span class="kpi-symbol">●</span><div><small>Total Kunjungan RS</small><strong id="statKunjungan">0</strong><em>↗ 10%&nbsp; vs bulan lalu</em></div></article>
+        <article class="dash-kpi purple"><span class="kpi-symbol">◷</span><div><small>Total Waktu OTW</small><strong id="statOtw">0 jam</strong><em>↗ 8%&nbsp; vs bulan lalu</em></div></article>
+        <article class="dash-kpi red"><span class="kpi-symbol">◷</span><div><small>Total Waktu di RS</small><strong id="statAtRs">—</strong><em>↗ 14%&nbsp; vs bulan lalu</em></div></article>
+        <article class="dash-kpi orange"><span class="kpi-symbol">▲</span><div><small>Total Jarak</small><strong id="statJarak">—</strong><em>↗ 9%&nbsp; vs bulan lalu</em></div></article>
+        <article class="dash-kpi indigo"><span class="kpi-symbol">♙</span><div><small>Total Kurir</small><strong id="statKurir">0</strong><em>tetap</em></div></article>
+      </div>
+
+      <div class="dash-analytics">
+        <article class="dash-panel activity-panel">
+          <h3>Aktivitas Berdasarkan Jenis Kegiatan</h3>
+          <div id="activityTypeChart" class="dash-bar-chart"></div>
+        </article>
+        <article class="dash-panel status-panel">
+          <h3>Rekap Hasil Penagihan</h3>
+          <div class="dash-donut-layout"><div id="statusChart" class="dash-status-donut"></div><div id="statusLegend" class="dash-status-legend"></div></div>
+        </article>
+        <article class="dash-panel courier-panel">
+          <h3>Total Aktivitas per Kurir</h3>
+          <div id="courierChart" class="dash-courier-list"></div>
+        </article>
+      </div>
+
+      <div class="dash-lower">
+        <article class="dash-panel detail-panel">
+          <div class="dash-panel-head"><h3>Detail Aktivitas Kurir <span id="dashboardDetailDate">Semua tanggal</span></h3><small id="dashboardDetailCount">Data: 0</small></div>
+          <div class="dash-table-wrap">
+            <table class="dash-table">
+              <thead><tr><th>No</th><th>Tanggal</th><th>Kurir</th><th>RS / Tujuan</th><th>Jenis Kegiatan</th><th>Hasil Kunjungan</th><th>Berangkat</th><th>Tiba</th><th>OTW</th><th>Di RS</th><th>Status</th><th>Foto</th></tr></thead>
               <tbody id="dashboardTable"></tbody>
             </table>
           </div>
-          <div id="dashboardEmpty" class="empty hidden">Belum ada aktivitas.</div>
-        </div>
+          <div class="dash-table-footer"><span id="dashboardTableInfo">Menampilkan 0 data</span><div id="dashboardPagination" class="dash-pagination"></div></div>
+          <div id="dashboardEmpty" class="dash-empty hidden">Belum ada aktivitas.</div>
+        </article>
 
-        <aside class="dashboard-side-stack">
-          <div class="card dashboard-side-card">
-            <div class="dashboard-card-title">Total Waktu &amp; Jarak</div>
-            <div class="dashboard-side-person"><span class="side-avatar blue">♙</span><span>Aktivitas selesai</span><b id="sideDoneTotal">0</b></div>
-            <div class="dashboard-side-person"><span class="side-avatar green">●</span><span>Total aktivitas</span><b id="sideActivityTotal">0</b></div>
-            <div class="dashboard-side-person"><span class="side-avatar purple">◷</span><span>Total durasi</span><b id="sideDurationTotal">0 jam</b></div>
-            <div class="dashboard-side-person"><span class="side-avatar orange">▲</span><span>Total jarak</span><b id="sideDistanceTotal">—</b></div>
-          </div>
-          <div class="card dashboard-side-card dashboard-mini-summary">
-            <div class="dashboard-card-title">Ringkasan Aktivitas</div>
-            <div class="mini-stat"><span>Menunggu Berangkat</span><b id="statMenunggu">0</b></div>
-            <div class="mini-stat"><span>Lagi Jalan</span><b id="statJalan">0</b></div>
-            <div class="mini-stat"><span>Lagi Diproses</span><b id="statProses">0</b></div>
-            <div class="mini-stat"><span>Selesai</span><b id="statSelesai">0</b></div>
-          </div>
+        <aside class="dash-side">
+          <article class="dash-panel side-summary">
+            <h3>Total Waktu &amp; Jarak</h3>
+            <div class="side-row"><span class="side-dot blue">♙</span><span>Aktivitas selesai</span><b id="sideDoneTotal">0</b></div>
+            <div class="side-row"><span class="side-dot green">●</span><span>Total aktivitas</span><b id="sideActivityTotal">0</b></div>
+            <div class="side-row"><span class="side-dot purple">◷</span><span>Total durasi</span><b id="sideDurationTotal">0 jam</b></div>
+            <div class="side-row"><span class="side-dot orange">▲</span><span>Total jarak</span><b id="sideDistanceTotal">—</b></div>
+          </article>
+          <article class="dash-panel activity-summary">
+            <h3>Ringkasan Aktivitas</h3>
+            <div class="summary-row"><span>Menunggu Berangkat</span><b id="statMenunggu">0</b></div>
+            <div class="summary-row"><span>Lagi Jalan</span><b id="statJalan">0</b></div>
+            <div class="summary-row"><span>Lagi Diproses</span><b id="statProses">0</b></div>
+            <div class="summary-row"><span>Selesai</span><b id="statSelesai">0</b></div>
+          </article>
+          <article class="dash-panel insight-panel"><div class="insight-icon">♧</div><div><h3>Insight Bulanan</h3><p id="dashboardInsight">Aktivitas terbanyak akan tampil berdasarkan data yang tersedia.</p></div></article>
         </aside>
       </div>
 
-      <div class="dashboard-hidden-compat" aria-hidden="true">
-        <div id="activityTypeLegend"></div><div id="journeyPanel"></div><div id="proofGallery"></div>
-        <span id="statMenungguProgress"></span><span id="statMenungguPercent"></span><span id="statJalanProgress"></span><span id="statJalanPercent"></span><span id="statProsesProgress"></span><span id="statProsesPercent"></span><span id="statSelesaiProgress"></span><span id="statSelesaiPercent"></span>
-      </div>
       <div id="dashboardMsg" class="muted small dashboard-msg"></div>
     </section>
 
