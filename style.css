@@ -3230,3 +3230,150 @@ input:focus,select:focus,textarea:focus{
   #dashboardView .dash-table{width:1540px;min-width:1540px}
   #dashboardView .dash-table-wrap{margin-right:0}
 }
+
+/* V102 — sidebar-safe content + load more table
+   Main content must sit beside the fixed sidebar, never underneath it. */
+#appView #dashboardView.dashboard-page{
+  margin-left:218px !important;
+  width:calc(100% - 218px) !important;
+  max-width:none !important;
+  box-sizing:border-box !important;
+  padding:24px 20px 36px !important;
+}
+#appView #dashboardView .dash-table-wrap{
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  width:100%;
+}
+#appView #dashboardView .dash-table{
+  min-width:1180px !important;
+  table-layout:auto !important;
+}
+#appView #dashboardView .dash-table th,
+#appView #dashboardView .dash-table td{
+  font-size:10px !important;
+}
+#appView #dashboardView .dash-table th{font-size:9px !important;}
+#appView #dashboardView .dash-table td{line-height:1.35 !important;}
+#appView #dashboardView .dash-table .dash-result-cell{
+  width:260px;
+  max-width:260px;
+  white-space:normal !important;
+  overflow-wrap:anywhere !important;
+  word-break:break-word !important;
+  vertical-align:top !important;
+}
+#appView #dashboardView .dash-table td:nth-child(4){min-width:150px;max-width:190px;overflow:hidden;text-overflow:ellipsis;}
+#appView #dashboardView .dash-table td:nth-child(5){min-width:120px;}
+#appView #dashboardView .dash-table td:nth-child(7),
+#appView #dashboardView .dash-table td:nth-child(8),
+#appView #dashboardView .dash-table td:nth-child(9),
+#appView #dashboardView .dash-table td:nth-child(10),
+#appView #dashboardView .dash-table td:nth-child(11),
+#appView #dashboardView .dash-table td:nth-child(12){white-space:nowrap;}
+#appView #dashboardView .dash-table-footer{align-items:center;gap:12px;}
+#appView #dashboardView .dash-load-more-wrap{margin-left:auto;}
+#appView #dashboardView .dash-load-more{
+  min-width:145px;
+  height:38px;
+  padding:0 18px;
+  border:1px solid #d6e1ed;
+  border-radius:8px;
+  background:#fff;
+  color:#1f70c9;
+  font-size:10px;
+  font-weight:800;
+  cursor:pointer;
+  box-shadow:0 2px 7px rgba(31,76,120,.05);
+}
+#appView #dashboardView .dash-load-more:hover:not(:disabled){background:#f3f8ff;border-color:#a9c9ed;}
+#appView #dashboardView .dash-load-more:disabled{cursor:default;color:#9aa8b8;background:#f7f9fb;}
+#appView #dashboardView .dash-pagination{display:none !important;}
+@media(max-width:850px){
+  #appView #dashboardView.dashboard-page{margin-left:0 !important;width:100% !important;padding:18px 14px 28px !important;}
+}
+\n\n/* V103 — Poppins global + larger courier summary cards */
+html,body,
+button,input,select,textarea,
+#appView,#loginView,
+#appView *,#loginView *{
+  font-family:"Poppins",sans-serif !important;
+}
+
+/* keep icon glyphs visually simple while using Poppins for all UI text */
+#appView .courier-panel{
+  min-height:240px !important;
+  padding:18px !important;
+}
+#appView .courier-panel h3{
+  font-size:16px !important;
+  margin-bottom:14px !important;
+  color:#17365f !important;
+}
+#appView .courier-panel .dash-courier-list{
+  height:182px !important;
+}
+#appView .courier-panel .dash-courier-row{
+  grid-template-columns:185px minmax(0,1fr) 40px !important;
+  gap:12px !important;
+  padding:11px 0 !important;
+}
+#appView .courier-panel .dash-courier-person{
+  gap:10px !important;
+}
+#appView .courier-panel .dash-courier-person>span{
+  width:38px !important;
+  height:38px !important;
+  font-size:12px !important;
+}
+#appView .courier-panel .dash-courier-person b{
+  font-size:12px !important;
+}
+#appView .courier-panel .dash-courier-person small{
+  font-size:9px !important;
+  margin-top:3px !important;
+}
+#appView .courier-panel .dash-courier-track{
+  height:13px !important;
+}
+#appView .courier-panel .dash-courier-row>strong{
+  font-size:12px !important;
+}
+
+#appView .side-summary{
+  padding:18px !important;
+}
+#appView .side-summary h3{
+  font-size:16px !important;
+  margin-bottom:12px !important;
+  color:#17365f !important;
+}
+#appView .side-summary .side-row{
+  grid-template-columns:38px 1fr auto !important;
+  gap:11px !important;
+  padding:12px 0 !important;
+  font-size:11px !important;
+}
+#appView .side-summary .side-row b{
+  font-size:12px !important;
+}
+#appView .side-summary .side-dot{
+  width:38px !important;
+  height:38px !important;
+  font-size:12px !important;
+}
+
+/* also enlarge the second summary card slightly for consistency */
+#appView .activity-summary{
+  padding:18px !important;
+}
+#appView .activity-summary h3{
+  font-size:16px !important;
+}
+#appView .activity-summary .summary-row{
+  padding:11px 0 !important;
+  font-size:11px !important;
+}
+#appView .activity-summary .summary-row b{
+  font-size:12px !important;
+}

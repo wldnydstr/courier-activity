@@ -1470,8 +1470,8 @@ async function handleCreateUser(e){
 
 
 /* DASHBOARD V100 — rebuilt from the reference layout. Backend/API is unchanged. */
-let dashboardTablePage = 1;
-const DASH_PAGE_SIZE = 8;
+let dashboardTableVisible = 10;
+const DASH_PAGE_SIZE = 10;
 
 function dashboardMonthKey(value){
   if(!value)return "";
@@ -1558,25 +1558,30 @@ function renderDashboardCourierReference(rows){
   el.innerHTML=entries.slice(0,7).map(([name,total])=>{const initials=name.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase();return `<div class="dash-courier-row"><div class="dash-courier-person"><span>${escapeHtml(initials||'?')}</span><div><b>${escapeHtml(name)}</b><small>${total} aktivitas</small></div></div><div class="dash-courier-track"><i style="width:${Math.max(10,total/max*100)}%"></i></div><strong>${total}</strong></div>`}).join('')||'<div class="dash-chart-empty">Belum ada aktivitas.</div>';
 }
 function renderDashboardTableReference(rows){
-  const tbody=$("dashboardTable"), info=$("dashboardTableInfo"), pager=$("dashboardPagination"); if(!tbody)return;
+  const tbody=$("dashboardTable"), info=$("dashboardTableInfo"), loadMore=$("dashboardLoadMore"); if(!tbody)return;
   const sorted=[...rows].sort((a,b)=>(parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0)-(parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0));
-  const pages=Math.max(1,Math.ceil(sorted.length/DASH_PAGE_SIZE)); dashboardTablePage=Math.min(Math.max(1,dashboardTablePage),pages);
-  const start=(dashboardTablePage-1)*DASH_PAGE_SIZE, pageRows=sorted.slice(start,start+DASH_PAGE_SIZE);
+  dashboardTableVisible=Math.min(Math.max(DASH_PAGE_SIZE,dashboardTableVisible),Math.max(DASH_PAGE_SIZE,sorted.length));
+  const visibleRows=sorted.slice(0,dashboardTableVisible);
   const statusClass=s=>String(s)==='Selesai'?'done':String(s)==='Lagi Jalan'?'jalan':String(s)==='Lagi Diproses'?'proses':'waiting';
-  tbody.innerHTML=pageRows.map((a,i)=>{
+  tbody.innerHTML=visibleRows.map((a,i)=>{
     const d=parseActivityDate(a.berangkat||a.datang||a.selesai);
     const date=d?displayIndonesiaDateOnly(d):'-';
     const foto=a.fotoDatang||a.fotoBerangkat||a.fotoDokumen;
     const types=dashboardTypes(a).join(', ');
     const otw=displayDuration(a.durasiMengemudi);
     const rsTime=String(a.durasiDiRs||a.durasiRS||a.waktuDiRs||'').trim()||'—';
-    return `<tr><td>${start+i+1}</td><td>${escapeHtml(date)}</td><td><span class="dash-table-courier"><i>${escapeHtml((a.kurir||'?').split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase())}</i>${escapeHtml(a.kurir||'-')}</span></td><td>${escapeHtml(dashboardHospital(a)||'-')}</td><td><span class="dash-type-pill">${escapeHtml(types||'-')}</span></td><td>${escapeHtml(a.keterangan||a.hasilKunjungan||'-')}</td><td>${escapeHtml(displayIndonesiaTime(a.berangkat))}</td><td>${escapeHtml(displayIndonesiaTime(a.datang))}</td><td>${escapeHtml(otw)}</td><td>${escapeHtml(rsTime)}</td><td><span class="dash-status ${statusClass(a.status)}">${escapeHtml(a.status||'-')}</span></td><td>${foto?`<a href="${escapeHtml(foto)}" target="_blank" rel="noopener" class="dash-photo">▣</a>`:'—'}</td></tr>`;
+    return `<tr><td>${i+1}</td><td>${escapeHtml(date)}</td><td><span class="dash-table-courier"><i>${escapeHtml((a.kurir||'?').split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase())}</i>${escapeHtml(a.kurir||'-')}</span></td><td>${escapeHtml(dashboardHospital(a)||'-')}</td><td><span class="dash-type-pill">${escapeHtml(types||'-')}</span></td><td class="dash-result-cell" title="${escapeHtml(a.keterangan||a.hasilKunjungan||'-')}">${escapeHtml(a.keterangan||a.hasilKunjungan||'-')}</td><td>${escapeHtml(displayIndonesiaTime(a.berangkat))}</td><td>${escapeHtml(displayIndonesiaTime(a.datang))}</td><td>${escapeHtml(otw)}</td><td>${escapeHtml(rsTime)}</td><td><span class="dash-status ${statusClass(a.status)}">${escapeHtml(a.status||'-')}</span></td><td>${foto?`<a href="${escapeHtml(foto)}" target="_blank" rel="noopener" class="dash-photo">▣</a>`:'—'}</td></tr>`;
   }).join('');
   $("dashboardEmpty")?.classList.toggle('hidden',sorted.length>0);
-  if(info)info.textContent=sorted.length?`Menampilkan ${start+1}–${Math.min(start+DASH_PAGE_SIZE,sorted.length)} dari ${sorted.length} data`:'Menampilkan 0 data';
-  if(pager)pager.innerHTML=pages>1?Array.from({length:pages},(_,i)=>`<button type="button" class="${i+1===dashboardTablePage?'active':''}" data-page="${i+1}">${i+1}</button>`).join(''):'';
-  pager?.querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>{dashboardTablePage=Number(btn.dataset.page);renderDashboardTableReference(rows)}));
+  if(info)info.textContent=sorted.length?`Menampilkan 1–${Math.min(dashboardTableVisible,sorted.length)} dari ${sorted.length} data`:'Menampilkan 0 data';
+  if(loadMore){
+    const remaining=sorted.length-dashboardTableVisible;
+    loadMore.textContent=remaining>0?`Muat ${Math.min(DASH_PAGE_SIZE,remaining)} lagi`:'Semua data sudah ditampilkan';
+    loadMore.disabled=remaining<=0;
+    loadMore.classList.toggle('hidden',sorted.length<=DASH_PAGE_SIZE);
+  }
 }
+
 function renderDashboard(data){
   const allRows=(data.activities||[]).filter(a=>String(a.idAktivitas||'').trim());
   dashboardPopulateFilters(allRows);
@@ -1605,8 +1610,8 @@ function renderDashboard(data){
   msg('dashboardMsg','');
 }
 function setDashboardDefaultDay(){if(!$('dashboardDate').value)$('dashboardDate').value=todayKey().slice(0,7);}
-function applyDashboardFilters(){dashboardTablePage=1;renderDashboard({activities:state.dashboardActivities||[]});}
-function resetDashboardFilters(){$('dashboardDate').value=todayKey().slice(0,7);$('dashboardCourier').value='';$('dashboardHospital').value='';$('dashboardActivityType').value='';dashboardTablePage=1;renderDashboard({activities:state.dashboardActivities||[]});}
+function applyDashboardFilters(){dashboardTableVisible=DASH_PAGE_SIZE;renderDashboard({activities:state.dashboardActivities||[]});}
+function resetDashboardFilters(){$('dashboardDate').value=todayKey().slice(0,7);$('dashboardCourier').value='';$('dashboardHospital').value='';$('dashboardActivityType').value='';dashboardTableVisible=DASH_PAGE_SIZE;renderDashboard({activities:state.dashboardActivities||[]});}
 function dashboardExportExcel(){
   const rows=dashboardApplyClientFilters(state.dashboardActivities||[]); if(!rows.length){msg('dashboardMsg','Tidak ada data untuk diekspor.');return;}
   if(typeof XLSX==='undefined'){msg('dashboardMsg','Export Excel tidak tersedia.');return;}
@@ -1640,6 +1645,7 @@ $("dashboardDate")?.addEventListener("change",e=>{ if($("dashboardDateMirror"))$
 $("dashboardCourier")?.addEventListener("change",()=>dashboardSetLabel("dashboardCourierLabel",$("dashboardCourier").value||"Semua Kurir"));
 $("dashboardHospital")?.addEventListener("change",()=>dashboardSetLabel("dashboardHospitalLabel",$("dashboardHospital").value||"Semua Rumah Sakit"));
 $("dashboardActivityType")?.addEventListener("change",()=>dashboardSetLabel("dashboardActivityTypeLabel",$("dashboardActivityType").value||"Semua Jenis Kegiatan"));
+$("dashboardLoadMore")?.addEventListener("click",()=>{dashboardTableVisible+=DASH_PAGE_SIZE;renderDashboardTableReference(dashboardApplyClientFilters(state.dashboardActivities||[]));});
 $("journeyPanel").addEventListener("click",e=>{
   const toggle=e.target.closest(".journey-group-toggle");
   if(!toggle)return;
