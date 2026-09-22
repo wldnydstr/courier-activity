@@ -2258,239 +2258,152 @@ body.admin-report-only #appView #reportView #reportMsg{
   display:none !important;
 }
 
-
-/* V83 — final dashboard spacing + readable activity table reference */
-@media (min-width: 901px){
-  body:has(#dashboardView:not(.hidden)) .app{
-    width:100% !important;
-    max-width:none !important;
-    margin:0 !important;
-    padding:24px 24px 48px !important;
-  }
-  #appView .dashboard-page,
-  #appView .dashboard-main-grid,
-  #appView .dashboard-bottom-grid,
-  #appView .dashboard-summary,
-  #appView .dashboard-filters,
-  #appView .dashboard-detail-card{
-    width:100%;
-    max-width:none;
-  }
+/* V90 — final shell: dark sidebar stays; dashboard content uses the current design. */
+html,body{min-height:100%;}
+body{font-family:"Poppins",ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f4f7fb;color:#17345b;}
+#appView{min-height:100vh;}
+#appView .dashboard-sticky-top{
+  position:fixed !important;
+  left:0 !important;
+  top:0 !important;
+  bottom:0 !important;
+  width:246px !important;
+  height:100vh !important;
+  z-index:1000 !important;
+  padding:0 !important;
+  margin:0 !important;
+  background:#13294b !important;
+  color:#fff;
+  box-shadow:none !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
 }
-
-/* Dashboard table: flat rows like the reference, no courier accordion rows. */
-#dashboardView .dashboard-detail-card{
-  border-radius:14px;
-  overflow:hidden;
-}
-#dashboardView .dashboard-detail-card .dashboard-section-head{
-  padding:18px 20px 14px;
-}
-#dashboardView .dashboard-detail-wrap{
-  overflow-x:auto !important;
-  overflow-y:hidden;
-  padding:0 14px 8px !important;
-  margin:0;
-  -webkit-overflow-scrolling:touch;
-}
-#dashboardView .dashboard-detail-table{
+#appView .dashboard-sticky-top .topbar{
+  position:static !important;
+  display:block !important;
   width:100% !important;
-  min-width:1250px !important;
-  max-width:none !important;
-  table-layout:fixed !important;
-  border-collapse:separate;
-  border-spacing:0;
-  font-size:13px !important;
-  color:#243447;
+  margin:0 !important;
+  padding:22px 17px 16px !important;
+  background:transparent !important;
+  color:#fff;
 }
-#dashboardView .dashboard-detail-table th{
-  padding:13px 10px !important;
-  background:#eaf2fb !important;
-  color:#49627e !important;
-  border-bottom:1px solid #d8e3ee !important;
-  font-size:11px !important;
-  font-weight:700 !important;
-  line-height:1.25 !important;
-  text-transform:uppercase;
-  letter-spacing:.02em;
-  white-space:normal !important;
-  vertical-align:middle;
-}
-#dashboardView .dashboard-detail-table td{
-  padding:12px 10px !important;
-  border-bottom:1px solid #e7edf3 !important;
-  background:#fff;
-  color:#334155;
-  font-size:13px !important;
-  line-height:1.35;
-  vertical-align:middle !important;
-  overflow-wrap:normal;
-  word-break:normal;
-}
-#dashboardView .dashboard-detail-table tbody tr:hover td{
-  background:#f9fbfd;
-}
-
-/* Reference column proportions */
-#dashboardView .dashboard-detail-table th:nth-child(1),
-#dashboardView .dashboard-detail-table td:nth-child(1){width:4%;text-align:center;}
-#dashboardView .dashboard-detail-table th:nth-child(2),
-#dashboardView .dashboard-detail-table td:nth-child(2){width:8%;white-space:nowrap;}
-#dashboardView .dashboard-detail-table th:nth-child(3),
-#dashboardView .dashboard-detail-table td:nth-child(3){width:10%;white-space:nowrap;}
-#dashboardView .dashboard-detail-table th:nth-child(4),
-#dashboardView .dashboard-detail-table td:nth-child(4){width:13%;}
-#dashboardView .dashboard-detail-table th:nth-child(5),
-#dashboardView .dashboard-detail-table td:nth-child(5){width:10%;}
-#dashboardView .dashboard-detail-table th:nth-child(6),
-#dashboardView .dashboard-detail-table td:nth-child(6){width:18%;}
-#dashboardView .dashboard-detail-table th:nth-child(7),
-#dashboardView .dashboard-detail-table td:nth-child(7){width:7%;white-space:nowrap;}
-#dashboardView .dashboard-detail-table th:nth-child(8),
-#dashboardView .dashboard-detail-table td:nth-child(8){width:7%;white-space:nowrap;}
-#dashboardView .dashboard-detail-table th:nth-child(9),
-#dashboardView .dashboard-detail-table td:nth-child(9){width:8%;white-space:nowrap;}
-#dashboardView .dashboard-detail-table th:nth-child(10),
-#dashboardView .dashboard-detail-table td:nth-child(10){width:6%;white-space:nowrap;}
-#dashboardView .dashboard-detail-table th:nth-child(11),
-#dashboardView .dashboard-detail-table td:nth-child(11){width:6%;white-space:nowrap;text-align:center;}
-#dashboardView .dashboard-detail-table th:nth-child(12),
-#dashboardView .dashboard-detail-table td:nth-child(12){width:3%;white-space:nowrap;text-align:center;}
-
-#dashboardView .dashboard-detail-table .recent-courier{
+#appView .sidebar-brand{
   display:flex;
   align-items:center;
-  gap:8px;
-  white-space:nowrap;
+  gap:10px;
+  padding:0 2px 17px;
+  border-bottom:1px solid rgba(255,255,255,.12);
+  margin-bottom:16px;
 }
-#dashboardView .dashboard-detail-table .recent-avatar{
-  width:30px;
-  height:30px;
-  flex:0 0 30px;
-  font-size:10px;
+#appView .sidebar-brand-mark{
+  width:40px;height:40px;border-radius:11px;
+  display:grid;place-items:center;
+  background:#eef5ff;color:#176de1;
+  font-size:13px;font-weight:800;
 }
-#dashboardView .dashboard-detail-table .dashboard-destination strong{
+#appView .sidebar-brand strong{display:block;font-size:14px;line-height:1.15;color:#fff;font-weight:700;}
+#appView .sidebar-brand small{display:block;font-size:9px;line-height:1.4;color:rgba(255,255,255,.62);margin-top:2px;}
+#appView .sidebar-user-block{display:block;}
+#appView .sidebar-user-block .eyebrow{font-size:9px;color:rgba(255,255,255,.5);letter-spacing:.1em;margin-bottom:10px;}
+#appView .sidebar-user-block .greeting-text{display:block;color:rgba(255,255,255,.72);font-size:11px !important;font-weight:500 !important;margin-bottom:2px;}
+#appView .sidebar-user-block .welcome-user{display:block;color:#fff;font-size:17px !important;font-weight:800 !important;}
+#appView .sidebar-user-block .topbar-actions{display:block;margin-top:16px;}
+#appView .sidebar-user-block #logoutBtn{width:100%;min-height:36px;padding:8px 12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;border-radius:9px;font-size:11px;}
+#appView .dashboard-sticky-top .nav{
+  position:static !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  gap:5px !important;
+  width:100% !important;
+  margin:0 !important;
+  padding:0 12px 20px !important;
+  background:transparent !important;
+  overflow:visible !important;
+}
+#appView .sidebar-menu-label{
   display:block;
-  font-size:13px;
-  font-weight:600;
-  line-height:1.35;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-#dashboardView .dashboard-detail-table .task-tag{
-  display:inline-flex;
-  align-items:center;
-  max-width:100%;
-  padding:6px 9px;
-  border-radius:9px;
-  background:#e9f5fb;
-  color:#2580aa;
-  font-size:11px;
-  font-weight:600;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-#dashboardView .dashboard-detail-table .dashboard-note{
-  max-width:none !important;
-  white-space:normal !important;
-}
-#dashboardView .dashboard-detail-table .dashboard-note-text{
-  display:block;
-  line-height:1.45;
-  font-size:13px;
-  white-space:normal;
-  overflow-wrap:anywhere;
-}
-#dashboardView .dashboard-detail-table .dashboard-note-text.is-collapsed{
-  display:-webkit-box;
-  -webkit-box-orient:vertical;
-  -webkit-line-clamp:2;
-  overflow:hidden;
-}
-#dashboardView .dashboard-note-toggle{
-  appearance:none;
-  border:0;
-  background:transparent;
-  color:#1677d2;
-  padding:4px 0 0;
-  min-height:0;
-  font-size:12px;
-  line-height:1.3;
+  padding:0 8px 9px;
+  color:rgba(255,255,255,.48);
+  font-size:9px;
   font-weight:700;
-  cursor:pointer;
+  letter-spacing:.08em;
 }
-#dashboardView .dashboard-note-toggle:hover{
-  text-decoration:underline;
-}
-
-#dashboardView .dashboard-detail-table .dashboard-status-pill{
-  padding:7px 10px !important;
-  font-size:11px !important;
-  font-weight:700 !important;
-}
-#dashboardView .dashboard-photo-btn{
-  width:34px;
-  height:34px;
-  display:inline-grid;
-  place-items:center;
-  border:1px solid #d7e2ee;
-  border-radius:8px;
-  background:#fff;
-  color:#1677d2;
-  text-decoration:none;
-  font-size:15px;
-}
-#dashboardView .dashboard-photo-btn:hover{
-  background:#eef6ff;
-}
-#dashboardView .dashboard-load-more-wrap{
+#appView .nav-btn{
+  width:100%;
+  min-height:40px;
   display:flex;
   align-items:center;
-  justify-content:space-between;
-  gap:16px;
-  padding:14px 20px 18px;
-  border-top:1px solid #edf1f5;
+  gap:10px;
+  padding:10px 12px !important;
+  border:0 !important;
+  border-radius:9px !important;
+  background:transparent !important;
+  color:rgba(255,255,255,.72) !important;
+  font-size:11px !important;
+  font-weight:600 !important;
+  text-align:left;
+  box-shadow:none !important;
 }
-#dashboardView .dashboard-load-more-info{
-  color:#718096;
-  font-size:12px;
+#appView .nav-btn:hover{background:rgba(255,255,255,.06) !important;color:#fff !important;}
+#appView .nav-btn.active{background:#2f83e6 !important;color:#fff !important;box-shadow:0 7px 18px rgba(0,0,0,.16) !important;}
+#appView .nav-btn:before{display:inline-grid;place-items:center;width:17px;flex:0 0 17px;font-size:12px;opacity:.9;}
+#appView #navActivity:before{content:"＋";}#appView #navConfirm:before{content:"✓";}#appView #navHistory:before{content:"≡";}#appView #navDashboard:before{content:"⌂";}#appView #navReport:before{content:"▤";}#appView #navUsers:before{content:"♙";}
+#appView .dashboard-sticky-spacer{display:none !important;height:0 !important;}
+#appView > section:not(#dashboardStickyTop){
+  margin-left:246px !important;
+  width:calc(100% - 246px) !important;
+  max-width:none !important;
 }
-#dashboardView .dashboard-load-more-btn{
-  min-height:40px;
-  padding:9px 18px;
-  border-radius:9px;
-  font-size:12px;
-  color:#2f5f8f;
-  border-color:#d7e2ee;
-}
-#dashboardView .dashboard-load-more-btn:not(.hidden):hover{
-  background:#f4f8fc;
-}
+#appView #dashboardView,
+#appView #reportView,
+#appView #courierView,
+#appView #confirmationView,
+#appView #historyView,
+#appView #usersView{padding:28px 28px 48px !important;}
+#appView #dashboardView{max-width:none !important;}
+#appView .dashboard-summary{width:100%;}
+#appView .dashboard-filters,#appView .dashboard-bottom-grid,#appView .dashboard-main-grid{width:100%;}
 
-/* Hide legacy accordion-only styling; the table is now a normal flat data table. */
-#dashboardView .dashboard-courier-group,
-#dashboardView .dashboard-courier-detail-row[hidden]{
-  display:none !important;
-}
+/* Table reference: flat spreadsheet-like rows, no courier accordion. */
+#dashboardView .dashboard-detail-card{padding:0 !important;overflow:hidden;}
+#dashboardView .dashboard-detail-head{padding:20px 20px 10px;margin:0 !important;}
+#dashboardView .dashboard-detail-wrap{margin:0 !important;padding:0 12px 8px;overflow-x:auto;}
+#dashboardView .dashboard-detail-table{width:100%;min-width:1260px;border-collapse:separate;border-spacing:0;font-size:12px;}
+#dashboardView .dashboard-detail-table th{padding:11px 10px !important;background:#eaf1f8 !important;color:#173b67 !important;border-bottom:1px solid #d7e1eb !important;font-size:10px !important;font-weight:700 !important;white-space:nowrap;text-transform:none;letter-spacing:0;}
+#dashboardView .dashboard-detail-table td{padding:12px 10px !important;border-bottom:1px solid #e9eef3 !important;color:#294564;vertical-align:middle !important;background:#fff;}
+#dashboardView .dashboard-detail-table tbody tr:hover td{background:#f8fbfe;}
+#dashboardView .dashboard-detail-table th:nth-child(1),#dashboardView .dashboard-detail-table td:nth-child(1){width:60px;}
+#dashboardView .dashboard-detail-table th:nth-child(2),#dashboardView .dashboard-detail-table td:nth-child(2){width:105px;}
+#dashboardView .dashboard-detail-table th:nth-child(3),#dashboardView .dashboard-detail-table td:nth-child(3){width:135px;}
+#dashboardView .dashboard-detail-table th:nth-child(4),#dashboardView .dashboard-detail-table td:nth-child(4){width:180px;}
+#dashboardView .dashboard-detail-table th:nth-child(5),#dashboardView .dashboard-detail-table td:nth-child(5){width:145px;}
+#dashboardView .dashboard-detail-table th:nth-child(6),#dashboardView .dashboard-detail-table td:nth-child(6){width:285px;}
+#dashboardView .dashboard-detail-table th:nth-child(7),#dashboardView .dashboard-detail-table td:nth-child(7){width:92px;white-space:nowrap;}
+#dashboardView .dashboard-detail-table th:nth-child(8),#dashboardView .dashboard-detail-table td:nth-child(8){width:92px;white-space:nowrap;}
+#dashboardView .dashboard-detail-table th:nth-child(9),#dashboardView .dashboard-detail-table td:nth-child(9){width:105px;white-space:nowrap;}
+#dashboardView .dashboard-detail-table th:nth-child(10),#dashboardView .dashboard-detail-table td:nth-child(10){width:80px;white-space:nowrap;}
+#dashboardView .dashboard-detail-table th:nth-child(11),#dashboardView .dashboard-detail-table td:nth-child(11){width:105px;white-space:nowrap;}
+#dashboardView .dashboard-detail-table th:nth-child(12),#dashboardView .dashboard-detail-table td:nth-child(12){width:70px;text-align:center;}
+#dashboardView .dashboard-detail-table .detail-no{font-size:11px;color:#708096;}
+#dashboardView .dashboard-detail-table .detail-date{white-space:nowrap;}
+#dashboardView .dashboard-detail-table .detail-destination{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;}
+#dashboardView .dashboard-detail-table .recent-courier{display:flex;align-items:center;gap:8px;white-space:nowrap;}
+#dashboardView .dashboard-detail-table .recent-avatar{width:30px;height:30px;flex:0 0 30px;font-size:10px;}
+#dashboardView .activity-type-pill{display:inline-flex;align-items:center;padding:6px 10px;border-radius:8px;background:#e8f4fb;color:#1776a8;font-size:10px;font-weight:700;white-space:nowrap;}
+#dashboardView .dashboard-note{position:relative;line-height:1.5;overflow-wrap:anywhere;}
+#dashboardView .dashboard-note-text{display:block;max-height:3em;overflow:hidden;line-height:1.5;}
+#dashboardView .dashboard-note-text.expanded{max-height:none;overflow:visible;}
+#dashboardView .dashboard-note-inline-toggle{display:inline;margin:0;padding:0 0 0 5px;border:0;background:transparent;color:#176de1;font:inherit;font-size:10px;font-weight:700;cursor:pointer;}
+#dashboardView .proof-icon-link{display:inline-grid;place-items:center;width:30px;height:30px;border:1px solid #d6e2ef;border-radius:8px;color:#176de1;text-decoration:none;font-weight:700;}
+#dashboardView .proof-icon-link:hover{background:#eef6ff;}
+#dashboardView .dashboard-empty{margin:12px;}
 
 @media(max-width:900px){
-  body:has(#dashboardView:not(.hidden)) .app{
-    width:100% !important;
-    max-width:none !important;
-    padding:18px 14px 40px !important;
-  }
-  #dashboardView .dashboard-detail-table{
-    min-width:1250px !important;
-  }
+  #appView > section:not(#dashboardStickyTop){margin-left:0 !important;width:100% !important;padding:20px 16px 40px !important;}
+  #appView .dashboard-sticky-top{position:static !important;width:100% !important;height:auto !important;min-height:0;background:#13294b !important;}
+  #appView .dashboard-sticky-top .nav{flex-direction:row !important;overflow:auto !important;padding:0 12px 14px !important;}
+  #appView .sidebar-menu-label{display:none;}
+  #appView .nav-btn{min-width:max-content;width:auto !important;}
+  #appView .sidebar-user-block .topbar-actions{position:absolute;right:16px;top:16px;margin:0;}
 }
-@media(max-width:560px){
-  #dashboardView .dashboard-load-more-wrap{
-    align-items:flex-start;
-    flex-direction:column;
-  }
-}
-
-/* V8 — Load more khusus kolom Keterangan, bukan pagination tabel */
-#dashboardView .dashboard-load-more-wrap{display:none !important;}

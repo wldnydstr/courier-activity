@@ -25,7 +25,8 @@
   <section id="appView" class="hidden">
     <div id="dashboardStickyTop" class="dashboard-sticky-top">
     <header class="topbar">
-      <div>
+      <div class="sidebar-brand"><span class="sidebar-brand-mark">PT</span><span><strong>PT Gamamed</strong><small>Kurir &amp; Logistik</small></span></div>
+      <div class="sidebar-user-block">
         <div class="eyebrow">AKTIVITAS KURIR</div>
         <h1 id="welcomeName"><span class="greeting-text">Selamat pagi ☀️</span><span class="welcome-user">-</span></h1>
       </div>
@@ -35,7 +36,7 @@
       </div>
     </header>
 
-    <nav id="nav" class="nav hidden">
+    <nav id="nav" class="nav hidden"><div class="sidebar-menu-label">MENU UTAMA</div>
       <button id="navActivity" class="nav-btn" type="button">Buat Tugas</button>
       <button id="navConfirm" class="nav-btn hidden" type="button">Konfirmasi Tugas</button>
       <button id="navHistory" class="nav-btn hidden" type="button">Riwayat Tugas</button>
@@ -158,20 +159,7 @@
           </div>
           <div class="table-wrap dashboard-detail-wrap">
             <table class="dashboard-detail-table">
-              <thead><tr>
-                <th>No</th>
-                <th>Tanggal</th>
-                <th>Kurir</th>
-                <th>RS / Tujuan</th>
-                <th>Jenis Kegiatan</th>
-                <th>Hasil Kunjungan</th>
-                <th>Jam<br>Berangkat</th>
-                <th>Tiba</th>
-                <th>Durasi<br>Perjalanan</th>
-                <th>Di RS</th>
-                <th>Status</th>
-                <th>Foto</th>
-              </tr></thead>
+              <thead><tr><th>No</th><th>Tanggal</th><th>Kurir</th><th>RS / Tujuan</th><th>Jenis Kegiatan</th><th>Hasil Kunjungan</th><th>Jam Berangkat</th><th>Tiba</th><th>Durasi Perjalanan</th><th>Di RS</th><th>Status</th><th>Foto</th></tr></thead>
               <tbody id="dashboardTable"></tbody>
             </table>
           </div>
