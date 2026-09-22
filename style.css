@@ -2892,3 +2892,123 @@ input:focus,select:focus,textarea:focus{
 ::-webkit-scrollbar{width:7px;height:7px}
 ::-webkit-scrollbar-track{background:#eef2f7}
 ::-webkit-scrollbar-thumb{background:#c5cfdb;border-radius:999px}
+
+/* V91 — FINAL SIDEBAR OVERRIDE
+   Menimpa legacy freeze/nav rules yang memakai !important.
+   UI only; tidak mengubah API/flow. */
+#appView #dashboardStickyTop{
+  position:fixed !important;
+  top:0 !important;
+  left:0 !important;
+  right:auto !important;
+  bottom:0 !important;
+  width:218px !important;
+  height:100vh !important;
+  max-width:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  transform:none !important;
+  box-sizing:border-box !important;
+  overflow:visible !important;
+  z-index:1000 !important;
+  background:linear-gradient(180deg,#13294b 0%,#0e2341 100%) !important;
+  box-shadow:8px 0 24px rgba(13,32,59,.08) !important;
+}
+#appView #dashboardStickyTop .topbar{
+  position:relative !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:194px !important;
+  margin:0 !important;
+  padding:18px 17px 15px !important;
+  background:transparent !important;
+  color:#fff !important;
+  display:block !important;
+  box-sizing:border-box !important;
+}
+#appView #dashboardStickyTop .app-brand{display:flex !important;}
+#appView #dashboardStickyTop .app-brand-copy strong{color:#fff !important;}
+#appView #dashboardStickyTop .app-brand-copy span{color:#aebfd5 !important;}
+#appView #dashboardStickyTop .topbar-welcome .eyebrow{color:#8fa6c5 !important;}
+#appView #dashboardStickyTop .topbar-welcome h1{color:#fff !important;}
+#appView #dashboardStickyTop .topbar-welcome .greeting-text{color:#afc0d7 !important;font-size:8px !important;}
+#appView #dashboardStickyTop .topbar-welcome .welcome-user{color:#fff !important;font-size:13px !important;}
+#appView #dashboardStickyTop .topbar-actions{
+  position:absolute !important;
+  left:15px !important;
+  right:15px !important;
+  bottom:12px !important;
+  width:auto !important;
+  margin:0 !important;
+}
+#appView #dashboardStickyTop #logoutBtn{
+  width:100% !important;
+  min-height:32px !important;
+  color:#bdcce0 !important;
+  background:rgba(255,255,255,.05) !important;
+  border:1px solid rgba(255,255,255,.13) !important;
+}
+#appView #dashboardStickyTop .nav{
+  position:absolute !important;
+  top:206px !important;
+  left:0 !important;
+  right:0 !important;
+  width:100% !important;
+  height:auto !important;
+  margin:0 !important;
+  padding:4px 10px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  gap:4px !important;
+  overflow:visible !important;
+  background:transparent !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-sizing:border-box !important;
+}
+#appView #dashboardStickyTop .nav:before{display:block !important;}
+#appView #dashboardStickyTop .nav-btn{
+  width:100% !important;
+  min-width:0 !important;
+  min-height:38px !important;
+  padding:0 11px !important;
+  border:0 !important;
+  border-radius:8px !important;
+  background:transparent !important;
+  color:#b8c8dc !important;
+  font-size:9px !important;
+  font-weight:800 !important;
+  box-shadow:none !important;
+  transform:none !important;
+  text-align:left !important;
+}
+#appView #dashboardStickyTop .nav-btn:hover{background:rgba(255,255,255,.07) !important;color:#fff !important;}
+#appView #dashboardStickyTop .nav-btn.active{
+  background:linear-gradient(90deg,#1a6ee0,#267bdc) !important;
+  color:#fff !important;
+  box-shadow:0 7px 18px rgba(0,86,194,.18) !important;
+}
+#appView #dashboardStickyTop .nav-btn.active:before{color:#fff !important;}
+#appView #dashboardStickySpacer{display:none !important;height:0 !important;}
+
+@media(max-width:700px){
+  #appView #dashboardStickyTop{
+    position:relative !important;
+    top:auto !important;left:auto !important;right:auto !important;bottom:auto !important;
+    width:100% !important;height:auto !important;min-height:0 !important;
+    background:linear-gradient(180deg,#13294b 0%,#0e2341 100%) !important;
+  }
+  #appView #dashboardStickyTop .topbar{
+    min-height:116px !important;
+    padding:18px 14px 12px !important;
+  }
+  #appView #dashboardStickyTop .topbar-actions{position:absolute !important;left:14px !important;right:14px !important;bottom:10px !important;}
+  #appView #dashboardStickyTop .nav{
+    position:relative !important;top:auto !important;left:auto !important;right:auto !important;
+    flex-direction:row !important;overflow-x:auto !important;
+    padding:7px 10px 9px !important;
+    border-top:1px solid rgba(255,255,255,.1) !important;
+  }
+  #appView #dashboardStickyTop .nav:before{display:none !important;}
+  #appView #dashboardStickyTop .nav-btn{width:auto !important;min-width:105px !important;min-height:34px !important;padding:0 10px !important;}
+}
