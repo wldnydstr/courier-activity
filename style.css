@@ -2494,3 +2494,133 @@ body{font-family:"Poppins",ui-sans-serif,system-ui,-apple-system,BlinkMacSystemF
 @media(max-width:900px){#dashboardView .dashboard-hero{align-items:flex-start;flex-direction:column}#dashboardView .dashboard-hero-actions{width:100%;flex-wrap:wrap}#dashboardView .dashboard-filter-grid-new{grid-template-columns:1fr 1fr}.dashboard-filter-buttons{grid-column:1/-1}#dashboardView .dashboard-lower-grid{grid-template-columns:1fr}}
 @media(max-width:650px){#dashboardView .dashboard-summary-six{grid-template-columns:1fr 1fr}#dashboardView .dashboard-insight-grid{grid-template-columns:1fr}#dashboardView .dashboard-insight-card:last-child{grid-column:auto}#dashboardView .status-dashboard-layout-new{grid-template-columns:1fr}.dashboard-hero-actions>*{flex:1}.dashboard-period{min-width:0!important}}
 @media print{#dashboardView .dashboard-hero-actions,#dashboardView .dashboard-filter-card-new,#appView .dashboard-sticky-top{display:none!important}#dashboardView.dashboard-page{padding:0!important}}
+
+/* V11 — final requested adjustments */
+/* 1) logout lives at the bottom of the sidebar, away from the greeting/menu */
+@media (min-width:901px){
+  #appView .dashboard-sticky-top .topbar-actions{
+    position:absolute !important;
+    left:17px !important;
+    right:17px !important;
+    bottom:18px !important;
+    width:auto !important;
+    margin:0 !important;
+  }
+  #appView .sidebar-user-block .topbar-actions{position:absolute !important;}
+}
+#appView .dashboard-sticky-top .topbar-actions #logoutBtn{
+  width:100% !important;
+  min-height:38px !important;
+  border:1px solid rgba(255,255,255,.18) !important;
+  background:#fff !important;
+  color:#17345b !important;
+  border-radius:12px !important;
+  font-size:13px !important;
+  font-weight:700 !important;
+}
+/* 2) menu is a clean sidebar list — no outer border/container */
+#appView .dashboard-sticky-top .nav{
+  border:0 !important;
+  outline:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  background:transparent !important;
+}
+#appView .dashboard-sticky-top .nav-btn{border:0 !important;outline:0 !important;}
+
+/* 3) dashboard uses the complete area to the right of the sidebar */
+#appView > section:not(#dashboardStickyTop){
+  margin-left:246px !important;
+  width:calc(100% - 246px) !important;
+  max-width:none !important;
+}
+#appView #dashboardView,
+#appView #reportView,
+#appView #courierView,
+#appView #confirmationView,
+#appView #historyView,
+#appView #usersView{
+  padding-left:20px !important;
+  padding-right:20px !important;
+  max-width:none !important;
+}
+
+/* 4) summary typography is smaller and calmer */
+#dashboardView .dashboard-summary-six .dashboard-stat{min-height:92px;padding:12px 13px;}
+#dashboardView .dashboard-summary-six .stat-label{font-size:10px !important;line-height:1.2;}
+#dashboardView .dashboard-summary-six .stat-value{font-size:18px !important;line-height:1.08 !important;letter-spacing:-.02em !important;font-weight:750 !important;}
+#dashboardView .dashboard-summary-six .stat-foot{font-size:8px !important;}
+
+/* 5–7) detail table: natural column sizing + numbered pagination + note load-more */
+#dashboardView .dashboard-detail-wrap-new{overflow-x:auto;}
+#dashboardView .dashboard-detail-table-new{
+  width:100%;
+  min-width:1120px;
+  table-layout:auto !important;
+  font-size:11px !important;
+}
+#dashboardView .dashboard-detail-table-new th{
+  font-size:9px !important;
+  padding:10px 8px !important;
+  white-space:nowrap;
+}
+#dashboardView .dashboard-detail-table-new td{
+  font-size:11px !important;
+  padding:10px 8px !important;
+}
+#dashboardView .dashboard-detail-table-new th:nth-child(1),#dashboardView .dashboard-detail-table-new td:nth-child(1){width:42px !important;min-width:42px;text-align:center;}
+#dashboardView .dashboard-detail-table-new th:nth-child(2),#dashboardView .dashboard-detail-table-new td:nth-child(2){width:88px !important;min-width:88px;white-space:nowrap;}
+#dashboardView .dashboard-detail-table-new th:nth-child(3),#dashboardView .dashboard-detail-table-new td:nth-child(3){width:110px !important;min-width:110px;white-space:nowrap;}
+#dashboardView .dashboard-detail-table-new th:nth-child(4),#dashboardView .dashboard-detail-table-new td:nth-child(4){width:180px !important;min-width:150px;}
+#dashboardView .dashboard-detail-table-new th:nth-child(5),#dashboardView .dashboard-detail-table-new td:nth-child(5){width:135px !important;min-width:120px;}
+#dashboardView .dashboard-detail-table-new th:nth-child(6),#dashboardView .dashboard-detail-table-new td:nth-child(6){width:280px !important;min-width:230px;}
+#dashboardView .dashboard-detail-table-new th:nth-child(7),#dashboardView .dashboard-detail-table-new td:nth-child(7),
+#dashboardView .dashboard-detail-table-new th:nth-child(8),#dashboardView .dashboard-detail-table-new td:nth-child(8){width:82px !important;min-width:72px;white-space:nowrap;text-align:center;}
+#dashboardView .dashboard-detail-table-new th:nth-child(9),#dashboardView .dashboard-detail-table-new td:nth-child(9),
+#dashboardView .dashboard-detail-table-new th:nth-child(10),#dashboardView .dashboard-detail-table-new td:nth-child(10){width:76px !important;min-width:68px;white-space:nowrap;text-align:center;}
+#dashboardView .dashboard-detail-table-new th:nth-child(11),#dashboardView .dashboard-detail-table-new td:nth-child(11){width:95px !important;min-width:90px;white-space:nowrap;text-align:center;}
+#dashboardView .dashboard-detail-table-new th:nth-child(12),#dashboardView .dashboard-detail-table-new td:nth-child(12){width:58px !important;min-width:58px;text-align:center;}
+#dashboardView .dashboard-detail-table-new .dashboard-note-new{vertical-align:top;}
+#dashboardView .dashboard-note-text-new{display:block;line-height:1.45;max-width:260px;white-space:normal;overflow-wrap:anywhere;}
+#dashboardView .dashboard-note-text-new.expanded{max-height:none;}
+#dashboardView .dashboard-note-inline-toggle-new{
+  display:inline;
+  margin:4px 0 0;
+  padding:0;
+  min-height:0;
+  border:0;
+  background:transparent;
+  color:#176de1;
+  font-size:10px;
+  font-weight:700;
+  cursor:pointer;
+}
+#dashboardView .dashboard-pagination{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:6px;
+  padding:12px 10px 14px;
+  border-top:1px solid #edf1f5;
+}
+#dashboardView .dashboard-pagination .page-btn{
+  min-width:34px;
+  height:34px;
+  min-height:34px;
+  padding:0 9px;
+  border:1px solid #dbe5ef;
+  border-radius:8px;
+  background:#fff;
+  color:#355575;
+  font-size:11px;
+  font-weight:700;
+}
+#dashboardView .dashboard-pagination .page-btn.active{background:#176de1;color:#fff;border-color:#176de1;}
+#dashboardView .dashboard-pagination .page-btn:disabled{opacity:.4;cursor:default;}
+#dashboardView .dashboard-pagination .page-ellipsis{padding:0 3px;color:#8191a3;font-size:11px;}
+
+@media(max-width:900px){
+  #appView > section:not(#dashboardStickyTop){margin-left:0 !important;width:100% !important;}
+  #appView #dashboardView,#appView #reportView,#appView #courierView,#appView #confirmationView,#appView #historyView,#appView #usersView{padding-left:14px !important;padding-right:14px !important;}
+  #appView .dashboard-sticky-top .topbar-actions{position:absolute !important;right:16px !important;top:16px !important;left:auto !important;bottom:auto !important;width:110px !important;}
+}

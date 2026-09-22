@@ -1016,6 +1016,8 @@ function renderActivityTypeSummary(rows){
 
 let dashboardJourneyOpen = new Set();
 let dashboardDetailOpen = new Set();
+let dashboardDetailPage = 1;
+const DASHBOARD_DETAIL_PAGE_SIZE = 8;
 
 function renderJourneyPanel(allRows, day){
   const panel=$("journeyPanel");
@@ -1163,12 +1165,17 @@ function renderDashboard(data){
 
   const statusClass=status=>{const value=String(status||"").trim();const cls=value==="Selesai"?"done":value==="Lagi Jalan"?"jalan":value==="Lagi Diproses"?"proses":value==="Menunggu Berangkat"?"waiting":"unknown";return `<span class="dashboard-status-pill ${cls}">${escapeHtml(value||"-")}</span>`;};
   const sorted=[...rows].sort((a,b)=>(parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0)-(parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0));
-  const rowsHtml=sorted.map((a,i)=>{
+  const totalPages=Math.max(1,Math.ceil(sorted.length/DASHBOARD_DETAIL_PAGE_SIZE));
+  if(dashboardDetailPage>totalPages)dashboardDetailPage=totalPages;
+  const start=(dashboardDetailPage-1)*DASHBOARD_DETAIL_PAGE_SIZE;
+  const visibleRows=sorted.slice(start,start+DASHBOARD_DETAIL_PAGE_SIZE);
+  const rowsHtml=visibleRows.map((a,i)=>{
+    const rowNumber=start+i+1;
     const initials=String(a.kurir||"?").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase();
     const photo=a.fotoDatang||a.fotoBerangkat||a.fotoDokumen||"";
     const note=String(a.keterangan||a.hasil||"-").trim()||"-";
     return `<tr>
-      <td>${i+1}</td>
+      <td>${rowNumber}</td>
       <td>${escapeHtml(displayIndonesiaDateOnly(a.berangkat||a.datang||a.selesai))}</td>
       <td><span class="recent-courier"><span class="recent-avatar">${escapeHtml(initials||"?")}</span><span>${escapeHtml(a.kurir||"-")}</span></span></td>
       <td>${escapeHtml(a.tujuan||a.asal||"-")}</td>
@@ -1184,7 +1191,24 @@ function renderDashboard(data){
   }).join("");
   $("dashboardTable").innerHTML=rowsHtml;
   $("dashboardEmpty").classList.toggle("hidden",rows.length>0);
+  renderDashboardPagination(totalPages);
   setupDashboardNoteLoadMore();
+}
+
+function renderDashboardPagination(totalPages){
+  const el=$("dashboardPagination");
+  if(!el)return;
+  if(totalPages<=1){el.innerHTML="";return;}
+  const buttons=[];
+  for(let page=1;page<=totalPages;page++){
+    buttons.push(`<button type="button" class="page-btn ${page===dashboardDetailPage?'active':''}" data-page="${page}" aria-label="Halaman ${page}">${page}</button>`);
+  }
+  el.innerHTML=buttons.join("");
+  el.querySelectorAll(".page-btn").forEach(btn=>btn.addEventListener("click",()=>{
+    dashboardDetailPage=Number(btn.dataset.page)||1;
+    renderDashboard({activities:state.dashboardActivities||[]});
+    document.querySelector("#dashboardView .dashboard-detail-card-new")?.scrollIntoView({behavior:"smooth",block:"start"});
+  }));
 }
 function renderActivityTypeBarsNew(rows){
   const el=$("activityTypeChart");if(!el)return;
@@ -1218,7 +1242,7 @@ async function loadDashboard(){
   catch(err){msg("dashboardMsg",err.message);}
 }
 
-function applyDashboardFilters(){renderDashboard({activities:state.dashboardActivities||[]});}
+function applyDashboardFilters(){dashboardDetailPage=1;renderDashboard({activities:state.dashboardActivities||[]});}
 function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
 function setDashboardDefaultDay(){return;}
 function resetDashboardFilters(){$("dashboardDate").value="";$(("dashboardCourier"));$("dashboardCourier").value="";$("dashboardHospital").value="";$("dashboardActivityType").value="";applyDashboardFilters();}
