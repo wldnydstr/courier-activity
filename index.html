@@ -124,56 +124,71 @@
     </section>
 
     <section id="dashboardView" class="hidden dashboard-page">
-      <div class="dashboard-summary">
-        <div class="dashboard-stat stat-total-card"><div class="dashboard-stat-icon">▣</div><div><div class="stat-label">Total Aktivitas</div><div id="statTotal" class="stat-value">0</div><div class="stat-foot"><span class="stat-trend">↗ <span id="statTotalTrend">12%</span></span><span>dari kemarin</span></div></div></div>
-        <div class="dashboard-stat stat-wait-card"><div class="dashboard-stat-icon">◷</div><div><div class="stat-label">Menunggu Berangkat</div><div id="statMenunggu" class="stat-value">0</div><div class="stat-progress"><span id="statMenungguProgress"></span></div><div class="stat-percent" id="statMenungguPercent">0%</div></div></div>
-        <div class="dashboard-stat stat-road-card"><div class="dashboard-stat-icon">▰</div><div><div class="stat-label">Lagi Jalan</div><div id="statJalan" class="stat-value">0</div><div class="stat-progress"><span id="statJalanProgress"></span></div><div class="stat-percent" id="statJalanPercent">0%</div></div></div>
-        <div class="dashboard-stat stat-proses-card"><div class="dashboard-stat-icon">◔</div><div><div class="stat-label">Lagi Diproses</div><div id="statProses" class="stat-value">0</div><div class="stat-progress"><span id="statProsesProgress"></span></div><div class="stat-percent" id="statProsesPercent">0%</div></div></div>
-        <div class="dashboard-stat stat-done-card"><div class="dashboard-stat-icon">✓</div><div><div class="stat-label">Selesai</div><div id="statSelesai" class="stat-value">0</div><div class="stat-progress"><span id="statSelesaiProgress"></span></div><div class="stat-percent" id="statSelesaiPercent">0%</div></div></div>
-      </div>
-
-      <div class="card dashboard-filters dashboard-filter-compact">
-        <div class="dashboard-filter-head">
-          <div><div class="section-title">Filter aktivitas</div><div class="muted small">Gunakan filter untuk melihat data yang lebih spesifik.</div></div>
+      <div class="dashboard-hero">
+        <div>
+          <h1>Dashboard Aktivitas Kurir</h1>
+          <p>Rekap seluruh aktivitas kurir selama periode tertentu</p>
         </div>
-        <div class="filters-grid dashboard-filter-grid">
-          <label>Hari<input id="dashboardDate" type="date"></label>
-          <label>Kurir<select id="dashboardCourier"><option value="">Semua kurir</option></select></label>
-          <div class="dashboard-filter-actions"><button id="applyDashboardFilterBtn" class="primary" type="button">Terapkan</button><button id="resetDashboardFilterBtn" class="ghost" type="button">Reset</button></div>
+        <div class="dashboard-hero-actions">
+          <label class="dashboard-period"><span>▣</span><span><small>Periode</small><strong id="dashboardPeriodLabel">September 2026</strong></span><span>⌄</span></label>
+          <button id="dashboardExportExcel" class="dashboard-export excel" type="button">▣ &nbsp; Export Excel</button>
+          <button id="dashboardExportPdf" class="dashboard-export pdf" type="button">▤ &nbsp; Export PDF</button>
         </div>
       </div>
 
-      <div class="dashboard-bottom-grid">
-        <div class="card dashboard-type-card">
-          <div class="section-title-row dashboard-section-head"><div><div class="section-title">Rekap Jenis Tugas</div><div class="muted small">Distribusi jenis tugas pada aktivitas yang tampil.</div></div></div>
-          <div class="type-summary-layout"><div id="activityTypeChart" class="type-donut"></div><div id="activityTypeLegend" class="type-legend"></div></div>
+      <div class="card dashboard-filter-card-new">
+        <div class="dashboard-filter-grid-new">
+          <label><span>▣ &nbsp; Periode</span><select id="dashboardDate"><option value="">Semua periode</option></select></label>
+          <label><span>♟ &nbsp; Kurir</span><select id="dashboardCourier"><option value="">Semua Kurir</option></select></label>
+          <label><span>▥ &nbsp; Rumah Sakit</span><select id="dashboardHospital"><option value="">Semua Rumah Sakit</option></select></label>
+          <label><span>◇ &nbsp; Jenis Kegiatan</span><select id="dashboardActivityType"><option value="">Semua Jenis Kegiatan</option></select></label>
+          <div class="dashboard-filter-buttons"><button id="applyDashboardFilterBtn" class="primary" type="button">⌕ Terapkan</button><button id="resetDashboardFilterBtn" class="ghost" type="button">↻ Reset</button></div>
         </div>
-
       </div>
 
-      <div class="dashboard-main-grid">
-        <div class="card dashboard-detail-card">
-          <div class="section-title-row dashboard-section-head dashboard-detail-head">
-            <div><div class="section-title">Detail Aktivitas Kurir</div><div class="muted small">Pantau aktivitas kurir berdasarkan filter yang dipilih.</div></div>
-            <div id="dashboardDetailDate" class="dashboard-detail-date" aria-label="Tanggal data">Semua tanggal</div>
+      <div class="dashboard-summary dashboard-summary-six">
+        <div class="dashboard-stat stat-total-card"><div class="dashboard-stat-icon">▣</div><div><div class="stat-label">Total Aktivitas</div><div id="statTotal" class="stat-value">0</div><div class="stat-foot"><span class="stat-trend">↗ <span id="statTotalTrend">12%</span></span><span>vs bulan lalu</span></div></div></div>
+        <div class="dashboard-stat stat-rs-card"><div class="dashboard-stat-icon">●</div><div><div class="stat-label">Total Kunjungan RS</div><div id="statVisits" class="stat-value">0</div><div class="stat-foot"><span class="stat-trend">↗ 10%</span><span>vs bulan lalu</span></div></div></div>
+        <div class="dashboard-stat stat-otw-card"><div class="dashboard-stat-icon">◷</div><div><div class="stat-label">Total Waktu OTW</div><div id="statOtw" class="stat-value">—</div><div class="stat-foot"><span class="stat-trend">↗ 8%</span><span>vs bulan lalu</span></div></div></div>
+        <div class="dashboard-stat stat-dirs-card"><div class="dashboard-stat-icon">◷</div><div><div class="stat-label">Total Waktu di RS</div><div id="statDiRs" class="stat-value">—</div><div class="stat-foot"><span class="stat-trend">↗ 14%</span><span>vs bulan lalu</span></div></div></div>
+        <div class="dashboard-stat stat-distance-card"><div class="dashboard-stat-icon">▲</div><div><div class="stat-label">Total Jarak</div><div id="statDistance" class="stat-value">—</div><div class="stat-foot"><span class="stat-trend">↗ 9%</span><span>vs bulan lalu</span></div></div></div>
+        <div class="dashboard-stat stat-courier-card"><div class="dashboard-stat-icon">♙</div><div><div class="stat-label">Total Kurir</div><div id="statCouriers" class="stat-value">0</div><div class="stat-foot"><span>tetap</span></div></div></div>
+      </div>
+
+      <div class="dashboard-insight-grid">
+        <div class="card dashboard-insight-card">
+          <div class="section-title">Aktivitas Berdasarkan Jenis Kegiatan</div>
+          <div id="activityTypeChart" class="activity-type-bars"></div>
+        </div>
+        <div class="card dashboard-insight-card">
+          <div class="section-title">Rekap Status Aktivitas</div>
+          <div class="status-dashboard-layout-new"><div id="statusChart" class="status-donut"></div><div id="statusLegend" class="status-summary"></div></div>
+        </div>
+        <div class="card dashboard-insight-card">
+          <div class="section-title">Total Aktivitas per Kurir</div>
+          <div id="courierChart" class="courier-bars-new"></div>
+        </div>
+      </div>
+
+      <div class="dashboard-lower-grid">
+        <div class="card dashboard-detail-card-new">
+          <div class="dashboard-table-head-new">
+            <div><div class="section-title">Detail Aktivitas Kurir</div><span id="dashboardDetailDate" class="dashboard-detail-date">September 2026</span></div>
+            <span id="dashboardTableCount">Data: 0</span>
           </div>
-          <div class="table-wrap dashboard-detail-wrap">
-            <table class="dashboard-detail-table">
-              <thead><tr><th>No</th><th>Tanggal</th><th>Kurir</th><th>RS / Tujuan</th><th>Jenis Kegiatan</th><th>Hasil Kunjungan</th><th>Jam Berangkat</th><th>Tiba</th><th>Durasi Perjalanan</th><th>Di RS</th><th>Status</th><th>Foto</th></tr></thead>
+          <div class="table-wrap dashboard-detail-wrap-new">
+            <table class="dashboard-detail-table-new">
+              <thead><tr><th>No</th><th>Tanggal</th><th>Kurir</th><th>RS / Tujuan</th><th>Jenis Kegiatan</th><th>Hasil Kunjungan</th><th>Berangkat</th><th>Tiba</th><th>OTW</th><th>Di RS</th><th>Status</th><th>Foto</th></tr></thead>
               <tbody id="dashboardTable"></tbody>
             </table>
           </div>
           <div id="dashboardEmpty" class="empty hidden">Belum ada aktivitas.</div>
         </div>
-
-        <div class="card dashboard-journey-card">
-          <div class="section-title-row dashboard-section-head">
-            <div><div class="section-title">Perjalanan Kurir</div><div class="muted small">Lihat urutan perjalanan tiap kurir berdasarkan Trip.</div></div>
-          </div>
-          <div id="journeyPanel" class="journey-panel"></div>
+        <div class="dashboard-side-stack">
+          <div class="card side-summary-card"><div class="section-title">Total Waktu &amp; Jarak</div><div id="timeDistanceSummary"></div></div>
+          <div class="card side-summary-card"><div class="section-title">Ringkasan Aktivitas</div><div id="activitySummary"></div></div>
         </div>
       </div>
-
     </section>
 
     <section id="reportView" class="hidden report-page">
