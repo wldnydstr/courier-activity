@@ -175,108 +175,215 @@
     </section>
 
     <section id="reportView" class="hidden report-page">
-      <div class="report-hero">
-        <div>
-          <div class="eyebrow report-eyebrow">LAPORAN AKTIVITAS</div>
-          <div class="section-title report-hero-title">Laporan</div>
-          <div class="muted report-hero-subtitle">Pantau, filter, dan unduh data aktivitas kurir dari satu halaman.</div>
-        </div>
-        <div class="report-hero-actions">
-          <button id="refreshReportBtn" class="ghost" type="button">Muat Ulang</button>
-          <button id="exportReportBtn" class="primary" type="button">Ekspor Excel</button>
-        </div>
-      </div>
+      <div class="super-report-shell">
+        <aside class="super-report-sidebar">
+          <div class="super-report-brand">
+            <div class="super-report-brand-mark">PT</div>
+            <div>
+              <strong>PT Gamamed</strong>
+              <span>Kurir & Logistik</span>
+            </div>
+          </div>
 
-      <div class="card report-filter-card">
-        <div class="report-filter-title-row">
-          <div>
-            <div class="section-title">Filter laporan</div>
-            <div class="muted small">Gunakan filter di bawah untuk menampilkan data yang kamu butuhkan.</div>
+          <div class="super-report-side-nav">
+            <button type="button" class="super-report-side-btn" data-report-nav="dashboard">⌂<span>Dashboard</span></button>
+            <button type="button" class="super-report-side-btn" data-report-nav="activity">▣<span>Aktivitas Kurir</span></button>
+            <button type="button" class="super-report-side-btn is-active" data-report-nav="report">▤<span>Laporan Bulanan</span></button>
+            <button type="button" class="super-report-side-btn" data-report-nav="users">♙<span>Data Pengguna</span></button>
           </div>
-          <div class="report-filter-label">FILTER DATA</div>
-        </div>
-        <div class="filters-grid report-filters-grid">
-          <label>Dari tanggal
-            <input id="reportDateFrom" type="date">
-          </label>
-          <label>Sampai tanggal
-            <input id="reportDateTo" type="date">
-          </label>
-          <label>Status
-            <select id="reportStatus">
-              <option value="" selected disabled>Pilih status</option>
-              <option value="__ALL__">Semua status</option>
-              <option>Menunggu Berangkat</option>
-              <option>Lagi Jalan</option>
-              <option>Lagi Diproses</option>
-              <option>Selesai</option>
-            </select>
-          </label>
-          <label>Kurir
-            <select id="reportCourier">
-              <option value="" selected disabled>Pilih kurir</option>
-              <option value="__ALL__">Semua kurir</option>
-            </select>
-          </label>
-          <label>Asal
-            <select id="reportOrigin">
-              <option value="" selected disabled>Pilih asal</option>
-              <option value="__ALL__">Semua asal</option>
-            </select>
-          </label>
-          <label>Tujuan
-            <select id="reportDestination">
-              <option value="" selected disabled>Pilih tujuan</option>
-              <option value="__ALL__">Semua tujuan</option>
-            </select>
-          </label>
-        </div>
-        <div class="filter-actions">
-          <button id="applyReportBtn" class="primary" type="button">Terapkan</button>
-          <button id="resetReportBtn" class="ghost" type="button">Reset</button>
-        </div>
-        <p id="reportMsg" class="message"></p>
-      </div>
 
-      <div class="card report-data-card">
-        <div class="section-title-row report-data-head">
-          <div>
-            <div class="eyebrow report-data-eyebrow">HASIL LAPORAN</div>
-            <div class="section-title">Data Aktivitas</div>
-            <div class="muted small">Daftar aktivitas sesuai filter laporan yang diterapkan.</div>
+          <div class="super-report-side-user">
+            <div class="super-report-avatar">●</div>
+            <div>
+              <strong id="reportSideUserName">Super User</strong>
+              <span>Super User</span>
+            </div>
+            <button id="reportSideLogout" type="button" aria-label="Keluar">›</button>
           </div>
-          <div id="reportCount" class="report-count-badge">0 aktivitas</div>
-        </div>
-        <div class="report-table-frame">
-          <div class="table-wrap">
-            <table>
-              <thead>
-              <tr>
-                <th>ID Aktivitas</th>
-                <th>Status</th>
-                <th>ID Pengguna</th>
-                <th>Nama</th>
-                <th>Trip</th>
-                <th>Jenis Tugas</th>
-                <th>Asal</th>
-                <th>Tujuan</th>
-                <th>Foto Dokumen</th>
-                <th><span class="report-head-line">Foto</span><span class="report-head-line">Saat Berangkat</span></th>
-                <th><span class="report-head-single">Waktu Berangkat</span></th>
-                <th><span class="report-head-single">Waktu Datang</span></th>
-                <th><span class="report-head-line">Foto</span><span class="report-head-line">Saat Datang</span></th>
-                <th>Hasil</th>
-                <th>Keterangan</th>
-                <th>Waktu Selsai</th>
-                <th>Durasi Mengemudi</th>
-                <th>Durasi Tugas</th>
-              </tr>
-            </thead>
-            <tbody id="reportTable"></tbody>
-            </table>
+        </aside>
+
+        <main class="super-report-main">
+          <header class="super-report-header">
+            <div>
+              <div class="super-report-eyebrow">LAPORAN AKTIVITAS KURIR</div>
+              <h1>Laporan Aktivitas Kurir</h1>
+              <p>Rekap aktivitas kurir berdasarkan periode dan filter yang dipilih.</p>
+            </div>
+            <div class="super-report-header-actions">
+              <div class="super-report-period-display" id="reportPeriodDisplay">September 2026</div>
+              <button id="refreshReportBtn" class="super-report-icon-btn" type="button" title="Muat ulang">↻</button>
+              <button id="exportReportBtn" class="super-report-export excel" type="button">▣ <span>Export Excel</span></button>
+              <button id="exportPdfReportBtn" class="super-report-export pdf" type="button">▤ <span>Export PDF</span></button>
+            </div>
+          </header>
+
+          <div class="super-report-filterbar">
+            <div class="super-report-filter-item">
+              <span class="filter-icon">▣</span>
+              <label>Periode<select id="reportPeriod">
+                <option value="2026-01">Januari 2026</option>
+                <option value="2026-02">Februari 2026</option>
+                <option value="2026-03">Maret 2026</option>
+                <option value="2026-04">April 2026</option>
+                <option value="2026-05">Mei 2026</option>
+                <option value="2026-06">Juni 2026</option>
+                <option value="2026-07">Juli 2026</option>
+                <option value="2026-08">Agustus 2026</option>
+                <option value="2026-09" selected>September 2026</option>
+                <option value="2026-10">Oktober 2026</option>
+                <option value="2026-11">November 2026</option>
+                <option value="2026-12">Desember 2026</option>
+              </select></label>
+            </div>
+
+            <div class="super-report-filter-item">
+              <span class="filter-icon">♙</span>
+              <label>Kurir<select id="reportCourier">
+                <option value="__ALL__" selected>Semua Kurir</option>
+              </select></label>
+            </div>
+
+            <div class="super-report-filter-item">
+              <span class="filter-icon">▥</span>
+              <label>Rumah Sakit<select id="reportDestination">
+                <option value="__ALL__" selected>Semua Rumah Sakit</option>
+              </select></label>
+            </div>
+
+            <div class="super-report-filter-item">
+              <span class="filter-icon">◇</span>
+              <label>Jenis Kegiatan<select id="reportJenis">
+                <option value="__ALL__" selected>Semua Jenis Kegiatan</option>
+              </select></label>
+            </div>
+
+            <button id="applyReportBtn" class="super-report-apply" type="button">⌕ <span>Terapkan</span></button>
+            <button id="resetReportBtn" class="super-report-reset" type="button">↻ <span>Reset</span></button>
+
+            <input id="reportDateFrom" type="hidden">
+            <input id="reportDateTo" type="hidden">
+            <select id="reportStatus" class="hidden"><option value="__ALL__" selected>Semua status</option></select>
+            <select id="reportOrigin" class="hidden"><option value="__ALL__" selected>Semua asal</option></select>
           </div>
-        </div>
-        <div id="reportEmpty" class="empty hidden">Data aktivitas tidak ditemukan.</div>
+
+          <p id="reportMsg" class="message super-report-message"></p>
+
+          <div class="super-report-stat-grid">
+            <div class="super-report-stat stat-blue">
+              <div class="stat-icon">▣</div>
+              <div><span>Total Aktivitas</span><strong id="superStatTotal">0</strong><small id="superStatTotalSub">periode terpilih</small></div>
+            </div>
+            <div class="super-report-stat stat-green">
+              <div class="stat-icon">●</div>
+              <div><span>Total Kunjungan RS</span><strong id="superStatVisits">0</strong><small>berdasarkan tujuan</small></div>
+            </div>
+            <div class="super-report-stat stat-purple">
+              <div class="stat-icon">◷</div>
+              <div><span>Total Waktu OTW</span><strong id="superStatOtw">0 menit</strong><small>akumulasi perjalanan</small></div>
+            </div>
+            <div class="super-report-stat stat-red">
+              <div class="stat-icon">◷</div>
+              <div><span>Total Waktu di RS</span><strong id="superStatRs">0 menit</strong><small>estimasi dari durasi tugas</small></div>
+            </div>
+            <div class="super-report-stat stat-orange">
+              <div class="stat-icon">⌁</div>
+              <div><span>Total Jarak</span><strong id="superStatDistance">—</strong><small>belum tersedia di data aktivitas</small></div>
+            </div>
+            <div class="super-report-stat stat-indigo">
+              <div class="stat-icon">♙</div>
+              <div><span>Total Kurir</span><strong id="superStatCouriers">0</strong><small>kurir aktif di hasil</small></div>
+            </div>
+          </div>
+
+          <div class="super-report-content-grid">
+            <div class="super-report-card type-card">
+              <div class="super-report-card-title">Aktivitas Berdasarkan Jenis Kegiatan</div>
+              <div id="superActivityChart" class="super-bar-chart"></div>
+            </div>
+
+            <div class="super-report-card result-card">
+              <div class="super-report-card-title">Rekap Hasil Penagihan</div>
+              <div class="super-donut-layout">
+                <div id="superResultDonut" class="super-donut"><div><strong id="superResultTotal">0</strong><span>Total Aktivitas</span></div></div>
+                <div id="superResultLegend" class="super-result-legend"></div>
+              </div>
+            </div>
+
+            <div class="super-report-card courier-card">
+              <div class="super-report-card-title">Total Aktivitas per Kurir</div>
+              <div id="superCourierRanking" class="super-courier-ranking"></div>
+            </div>
+          </div>
+
+          <div class="super-report-lower-grid">
+            <div class="super-report-card detail-card">
+              <div class="super-report-detail-head">
+                <div>
+                  <div class="super-report-card-title">Detail Aktivitas Kurir <span id="superDetailScope">(Semua Kurir)</span></div>
+                  <small>Data aktivitas sesuai periode dan filter yang dipilih.</small>
+                </div>
+                <div id="reportCount" class="super-report-count">0 aktivitas</div>
+              </div>
+
+              <div class="super-report-table-wrap">
+                <table class="super-report-table">
+                  <thead>
+                    <tr>
+                      <th>No</th>
+                      <th>Tanggal</th>
+                      <th>Kurir</th>
+                      <th>RS / Tujuan</th>
+                      <th>Jenis Kegiatan</th>
+                      <th>Hasil Kunjungan</th>
+                      <th>Berangkat</th>
+                      <th>Tiba</th>
+                      <th>OTW</th>
+                      <th>Di RS</th>
+                      <th>Status</th>
+                      <th>Foto</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reportTable"></tbody>
+                </table>
+              </div>
+              <div id="reportEmpty" class="empty hidden">Data aktivitas tidak ditemukan.</div>
+              <div class="super-report-table-footer">
+                <span id="superTableShowing">Menampilkan 0 aktivitas</span>
+                <div class="super-report-pagination">
+                  <button type="button" class="is-disabled">‹</button>
+                  <button type="button" class="is-active">1</button>
+                  <button type="button">2</button>
+                  <button type="button">3</button>
+                  <button type="button">4</button>
+                  <button type="button">5</button>
+                  <button type="button">…</button>
+                  <button type="button">›</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="super-report-side-column">
+              <div class="super-report-card mini-card">
+                <div class="super-report-card-title">Total Waktu & Jarak</div>
+                <div class="super-time-list">
+                  <div><span class="mini-dot blue"></span><div><small>OTW</small><strong id="superSideOtw">0 menit</strong></div></div>
+                  <div><span class="mini-dot purple"></span><div><small>Di RS</small><strong id="superSideRs">0 menit</strong></div></div>
+                  <div><span class="mini-dot orange"></span><div><small>Jarak</small><strong id="superSideDistance">—</strong></div></div>
+                </div>
+              </div>
+
+              <div class="super-report-card mini-card">
+                <div class="super-report-card-title">Ringkasan Kurir</div>
+                <div id="superCourierMini" class="super-time-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="super-report-insight">
+            <div class="insight-icon">♢</div>
+            <div><strong>Insight Bulanan</strong><span id="superInsightText">Belum ada data aktivitas untuk periode ini.</span></div>
+          </div>
+        </main>
       </div>
     </section>
 
