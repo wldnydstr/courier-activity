@@ -1072,6 +1072,31 @@ function renderDashboard(data){
   }
   const stats={total:rows.length,menungguBerangkat:rows.filter(a=>a.status==="Menunggu Berangkat").length,lagiJalan:rows.filter(a=>a.status==="Lagi Jalan").length,lagiDiproses:rows.filter(a=>a.status==="Lagi Diproses").length,selesai:rows.filter(a=>a.status==="Selesai").length};
   $("statTotal").textContent=stats.total||0; $("statMenunggu").textContent=stats.menungguBerangkat||0; $("statJalan").textContent=stats.lagiJalan||0; $("statSelesai").textContent=stats.selesai||0;
+  // KPI tambahan untuk dashboard baru — dihitung dari data aktivitas yang sudah dimuat, tanpa mengubah API.
+  const uniqueCouriers=new Set(rows.map(a=>String(a.kurir||"").trim()).filter(Boolean));
+  const uniqueDestinations=new Set(rows.map(a=>String(a.tujuan||"").trim()).filter(Boolean));
+  const durationToMinutes=value=>{
+    const text=String(value??"").trim();
+    if(!text)return 0;
+    const hm=text.match(/(\d+)\s*jam\s*(?:([0-9]+)\s*menit)?/i);
+    if(hm)return Number(hm[1])*60+Number(hm[2]||0);
+    const colon=text.match(/^(\d+):(\d{1,2})$/);
+    if(colon)return Number(colon[1])*60+Number(colon[2]);
+    const num=Number(text.replace(",","."));
+    return Number.isFinite(num)?Math.round(num):0;
+  };
+  const totalMinutes=rows.reduce((sum,a)=>sum+durationToMinutes(a.durasiMengemudi),0);
+  const durationLabel=`${Math.floor(totalMinutes/60)} jam ${String(totalMinutes%60).padStart(2,"0")} menit`;
+  const setText=(id,value)=>{const el=$(id);if(el)el.textContent=value;};
+  setText("statKunjungan",uniqueDestinations.size||0);
+  setText("statKurir",uniqueCouriers.size||0);
+  setText("statOtw",durationLabel);
+  setText("statAtRs","—");
+  setText("statJarak","—");
+  setText("sideDoneTotal",stats.selesai||0);
+  setText("sideActivityTotal",stats.total||0);
+  setText("sideDurationTotal",durationLabel);
+  setText("sideDistanceTotal","—");
   const prosesEl=$("statProses"); if(prosesEl)prosesEl.textContent=stats.lagiDiproses||0;
   const pct=n=>stats.total?Math.round(n/stats.total*100):0;
   [["Menunggu",stats.menungguBerangkat],["Jalan",stats.lagiJalan],["Proses",stats.lagiDiproses],["Selesai",stats.selesai]].forEach(([key,n])=>{const p=pct(n),el=$("stat"+key+"Progress"),tx=$("stat"+key+"Percent");if(el)el.style.width=p+"%";if(tx)tx.textContent=p+"%";});
