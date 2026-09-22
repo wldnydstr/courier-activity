@@ -1,6 +1,6 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbzsVUudEB169aaXav19C7tNPTL6RpPNqQv5E_o6Bn368zbAgetT4L2N7ZZwjA4WTTcv/exec";
 
-let state = { user:null, activity:null, locations:[], dashboardActivities:[], superReportActivities:[], courierTasks:{pendingDeparture:null,confirmations:[],history:[]} };
+let state = { user:null, activity:null, locations:[], dashboardActivities:[], courierTasks:{pendingDeparture:null,confirmations:[],history:[]} };
 let sessionExpiryTimer = null;
 // Sesi tidak memiliki batas waktu. Session tetap aktif sampai user logout manual.
 const SESSION_LIMIT = null;
@@ -198,7 +198,7 @@ function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;",
 function clearSession(){
   if(sessionExpiryTimer){clearTimeout(sessionExpiryTimer);sessionExpiryTimer=null;}
   removeStoredSession();
-  state={user:null,activity:null,locations:[],dashboardActivities:[],superReportActivities:[],courierTasks:{pendingDeparture:null,confirmations:[],history:[]}};
+  state={user:null,activity:null,locations:[],dashboardActivities:[],courierTasks:{pendingDeparture:null,confirmations:[],history:[]}};
 }
 
 function resetUiStateOnLogout(){
@@ -212,9 +212,7 @@ function resetUiStateOnLogout(){
     if($("reportStatus"))$("reportStatus").value="";
     if($("reportCourier"))$("reportCourier").value="";
     if($("reportOrigin"))$("reportOrigin").value="";
-    if($("reportDestination"))$("reportDestination").value="__ALL__";
-    if($("reportJenis"))$("reportJenis").value="__ALL__";
-    if($("reportPeriod"))$("reportPeriod").value="";
+    if($("reportDestination"))$("reportDestination").value="";
     if(typeof dashboardJourneyOpen!=="undefined" && dashboardJourneyOpen?.clear)dashboardJourneyOpen.clear();
     if($("dashboardTable"))$("dashboardTable").innerHTML="";
     if($("reportTable"))$("reportTable").innerHTML="";
@@ -246,12 +244,12 @@ function checkSessionExpiry(){
 }
 
 function setView(view){
-  if(typeof setSuperReportMode==="function")setSuperReportMode(view==="reportView" && state.user?.peran==="Super User");
   ["courierView","confirmationView","historyView","dashboardView","reportView","usersView"].forEach(id=>$(id).classList.add("hidden"));
   $(view).classList.remove("hidden");
   ["navActivity","navConfirm","navHistory","navDashboard","navReport","navUsers"].forEach(id=>$(id).classList.remove("active"));
   const nav={courierView:"navActivity",confirmationView:"navConfirm",historyView:"navHistory",dashboardView:"navDashboard",reportView:"navReport",usersView:"navUsers"}[view];
   if(nav)$(nav).classList.add("active");
+  document.body.dataset.activeView=view;
   if(state.user){
     try{
       const saved=readSession();
@@ -266,33 +264,14 @@ function setupNav(role){
   $("navActivity").classList.toggle("hidden",!isCourier);
   $("navConfirm").classList.toggle("hidden",!isCourier);
   $("navHistory").classList.toggle("hidden",!isCourier);
-  $("navDashboard").classList.toggle("hidden",role!=="Super User");
+  $("navDashboard").classList.toggle("hidden",role!=="Admin"&&role!=="Super User");
   $("navReport").classList.toggle("hidden",role!=="Admin"&&role!=="Super User");
   $("navUsers").classList.toggle("hidden",role!=="Super User");
-
-  const isAdmin=role==="Admin";
-  $("navActivity").classList.toggle("hidden",true);
-  $("navConfirm").classList.toggle("hidden",true);
-  $("navHistory").classList.toggle("hidden",true);
-
-  document.body.classList.toggle("admin-report-only",isAdmin);
   $("navActivity").onclick=async()=>{setView("courierView");await loadCourierTasks();await restoreActivityDraft();};
   $("navConfirm").onclick=async()=>{setView("confirmationView");await loadCourierTasks();};
   $("navHistory").onclick=async()=>{setView("historyView");await loadCourierTasks();};
   $("navDashboard").onclick=async()=>{setView("dashboardView");setDashboardDefaultDay();await loadDashboard();requestAnimationFrame(syncDashboardFreeze);};
-  $("navReport").onclick=async()=>{
-    setView("reportView");
-    setSuperReportMode(state.user?.peran==="Super User");
-    renderReport([]);
-    if(state.user?.peran==="Admin"){
-      applyAdminReportUI();
-      await loadAdminTodayReport();
-    }else{
-      applySuperReportPeriodDefaults();
-      await loadReportOptions();
-      await loadSuperReport();
-    }
-  };
+  $("navReport").onclick=async()=>{setView("reportView");renderReport([]);await loadReportOptions();await loadReport();};
   $("navUsers").onclick=async()=>{setView("usersView");await loadUsers();};
 }
 
@@ -537,12 +516,7 @@ async function restoreSession(){
   setWelcome(state.user.nama);
   setupNav(state.user.peran);
 
-  const lastView=saved.lastView ||
-    (state.user.peran==="Kurir"
-      ? "courierView"
-      : state.user.peran==="Admin"
-        ? "reportView"
-        : "dashboardView");
+  const lastView=saved.lastView || (state.user.peran==="Kurir"?"courierView":"dashboardView");
 
   // Error API tidak menghapus sesi. User tetap masuk dan bisa lanjut lagi.
   try{
@@ -553,16 +527,8 @@ async function restoreSession(){
       else{setView("courierView");await loadCourierTasks();await restoreActivityDraft();}
     }else if(lastView==="reportView"){
       setView("reportView");
-      setSuperReportMode(state.user.peran==="Super User");
       renderReport([]);
-      if(state.user.peran==="Admin"){
-        applyAdminReportUI();
-        await loadAdminTodayReport();
-      }else{
-        applySuperReportPeriodDefaults();
-        await loadReportOptions();
-        await loadSuperReport();
-      }
+      await loadReportOptions();
     }else if(lastView==="usersView" && state.user.peran==="Super User"){
       setView("usersView");
       await loadUsers();
@@ -598,26 +564,11 @@ async function handleLogin(e){
     }
 
     state.user=user;
-    const initialView=user.peran==="Kurir"?"courierView":user.peran==="Admin"?"reportView":"dashboardView";
-    const loginAt=Date.now(); writeSession({user,loginAt,lastView:initialView}); scheduleSessionExpiry(loginAt);
+    const loginAt=Date.now(); writeSession({user,loginAt,lastView:user.peran==="Kurir"?"courierView":"dashboardView"}); scheduleSessionExpiry(loginAt);
     $("loginView").classList.add("hidden");$("appView").classList.remove("hidden");
     setWelcome(user.nama);setupNav(user.peran);
-    if(user.peran==="Kurir"){
-      await loadLocations();
-      setView("courierView");
-      await loadCourierTasks();
-      await restoreActivityDraft();
-    }else if(user.peran==="Admin"){
-      setView("reportView");
-      setSuperReportMode(false);
-      applyAdminReportUI();
-      renderReport([]);
-      await loadAdminTodayReport();
-    }else{
-      setView("dashboardView");
-      setSuperReportMode(false);
-      await loadDashboard();
-    }
+    if(user.peran==="Kurir"){await loadLocations();setView("courierView");await loadCourierTasks();await restoreActivityDraft();}
+    else{setView("dashboardView");await loadDashboard();}
   }catch(err){msg("loginMsg",err.message)}
 }
 
@@ -1252,7 +1203,7 @@ function populateReportOptions(data){
 
   fillReportSelect("reportOrigin", data.origins, "Semua asal");
 
-  fillReportSelect("reportDestination", data.destinations, "Semua Rumah Sakit");
+  fillReportSelect("reportDestination", data.destinations, "Semua tujuan");
 }
 
 
@@ -1289,245 +1240,8 @@ function displayReportTime(value){
   return displayIndonesiaDateTime(value);
 }
 
-
-function setSuperReportMode(enabled){
-  document.body.classList.toggle("superuser-report-mode",!!enabled);
-  const name=state.user?.nama||"Super User";
-  if($("reportSideUserName"))$("reportSideUserName").textContent=name;
-}
-
-function getMonthRange(period){
-  const [y,m]=String(period||"").split("-").map(Number);
-  if(!y||!m)return null;
-  const from=`${y}-${String(m).padStart(2,"0")}-01`;
-  const last=new Date(y,m,0).getDate();
-  const to=`${y}-${String(m).padStart(2,"0")}-${String(last).padStart(2,"0")}`;
-  return {from,to};
-}
-
-function formatMinutesTotal(value){
-  const n=Math.max(0,Math.round(Number(value)||0));
-  const h=Math.floor(n/60);
-  const m=n%60;
-  if(h&&m)return `${h} jam ${m} menit`;
-  if(h)return `${h} jam`;
-  return `${m} menit`;
-}
-
-function parseDurationMinutes(value){
-  if(value===null||value===undefined||value==="")return 0;
-  if(typeof value==="number")return Math.max(0,Number(value));
-  const s=String(value).toLowerCase().trim();
-  const h=s.match(/(\d+(?:\.\d+)?)\s*(?:jam|hours?|h)\b/);
-  const m=s.match(/(\d+(?:\.\d+)?)\s*(?:menit|minutes?|min|m)\b/);
-  if(h||m)return (h?Number(h[1])*60:0)+(m?Number(m[1]):0);
-  const num=parseFloat(s.replace(",","."));
-  return Number.isFinite(num)?num:0;
-}
-
-function activityJenis(a){
-  return String(a.jenisTugas||a.pekerjaan||"Lainnya").split("|").map(x=>x.trim()).filter(Boolean);
-}
-
-function updateSuperReportOptions(rows){
-  const jenis=[...new Set(rows.flatMap(activityJenis))].sort();
-  const el=$("reportJenis");
-  if(el){
-    const current=el.value||"__ALL__";
-    el.innerHTML='<option value="__ALL__">Semua Jenis Kegiatan</option>'+
-      jenis.map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join("");
-    el.value=jenis.includes(current)?current:"__ALL__";
-  }
-}
-
-function filterSuperReportRows(rows){
-  let out=Array.isArray(rows)?rows.slice():[];
-  const courier=$("reportCourier")?.value||"__ALL__";
-  const hospital=$("reportDestination")?.value||"__ALL__";
-  const jenis=$("reportJenis")?.value||"__ALL__";
-  if(courier!=="__ALL__")out=out.filter(a=>String(a.nama||a.kurir||"")===courier);
-  if(hospital!=="__ALL__")out=out.filter(a=>String(a.tujuan||"")===hospital);
-  if(jenis!=="__ALL__")out=out.filter(a=>activityJenis(a).includes(jenis));
-  return out;
-}
-
-function renderSuperBarChart(rows){
-  const el=$("superActivityChart"); if(!el)return;
-  const counts={};
-  rows.forEach(a=>activityJenis(a).forEach(j=>counts[j]=(counts[j]||0)+1));
-  const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,7);
-  const max=Math.max(1,...entries.map(x=>x[1]));
-  const palette=["#4d8fe9","#50b986","#9160d8","#f19b3f","#3bb3c8","#9ba8b8","#e56f84"];
-  el.innerHTML=entries.length?entries.map(([name,count],i)=>`
-    <div class="super-bar">
-      <div class="super-bar-value">${count}</div>
-      <div class="super-bar-track"><div class="super-bar-fill" style="height:${Math.max(5,(count/max)*100)}%;background:${palette[i%palette.length]}"></div></div>
-      <div class="super-bar-label">${escapeHtml(name)}</div>
-    </div>`).join(""):`<div class="super-report-chart-empty">Belum ada data</div>`;
-}
-
-function renderSuperResults(rows){
-  const el=$("superResultLegend"); const donut=$("superResultDonut"); if(!el||!donut)return;
-  const counts={};
-  rows.forEach(a=>{const k=String(a.hasil||"Lainnya").trim()||"Lainnya";counts[k]=(counts[k]||0)+1;});
-  const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,6);
-  const total=entries.reduce((s,x)=>s+x[1],0);
-  const colors=["#4bbf87","#4f8fe8","#8f5bd7","#f39a4d","#e46c7a","#b6c0cd"];
-  let cursor=0;
-  const stops=entries.map(([,v],i)=>{
-    const a=cursor; cursor+=total?(v/total)*100:0; return `${colors[i%colors.length]} ${a}% ${cursor}%`;
-  });
-  donut.style.background=entries.length?`conic-gradient(${stops.join(",")})`:"conic-gradient(#e7edf4 0 100%)";
-  $("superResultTotal").textContent=rows.length;
-  el.innerHTML=entries.length?entries.map(([name,count],i)=>`
-    <div class="super-result-row"><i style="background:${colors[i%colors.length]}"></i><span>${escapeHtml(name)}</span><strong>${count}</strong></div>`).join(""):`<div class="super-report-chart-empty">Belum ada data</div>`;
-}
-
-function renderSuperCourier(rows){
-  const counts={};
-  rows.forEach(a=>{const n=String(a.nama||a.kurir||"Tidak diketahui");counts[n]=(counts[n]||0)+1;});
-  const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-  const max=Math.max(1,...entries.map(x=>x[1]));
-  const palette=["#4d8fe9","#50b986","#9160d8","#f19b3f","#3bb3c8","#e56f84","#9ba8b8"];
-  $("superCourierRanking").innerHTML=entries.length?entries.slice(0,8).map(([name,count],i)=>`
-    <div class="super-rank-row"><span>${escapeHtml(name)}</span><div class="super-rank-track"><div class="super-rank-fill" style="width:${(count/max)*100}%;background:${palette[i%palette.length]}"></div></div><strong class="super-rank-value">${count}</strong></div>`).join(""):`<div class="super-report-chart-empty">Belum ada data</div>`;
-  $("superCourierMini").innerHTML=entries.length?entries.slice(0,6).map(([name,count],i)=>`
-    <div><span class="mini-dot ${["blue","purple","orange"][i%3]}"></span><div><small>${escapeHtml(name)}</small><strong>${count} aktivitas</strong></div></div>`).join(""):`<div><div><small>Belum ada data</small></div></div>`;
-  $("superStatCouriers").textContent=entries.length;
-  $("superDetailScope").textContent=($("reportCourier")?.value&&$("reportCourier").value!=="__ALL__")?`(${$("reportCourier").value})`:"(Semua Kurir)";
-}
-
-function renderSuperReportSummary(rows){
-  const total=rows.length;
-  const visits=rows.filter(a=>String(a.tujuan||"").trim()).length;
-  const otw=rows.reduce((s,a)=>s+parseDurationMinutes(a.durasiMengemudi),0);
-  const task=rows.reduce((s,a)=>s+parseDurationMinutes(a.durasiTugas),0);
-  const rs=Math.max(0,task-otw);
-  $("superStatTotal").textContent=total;
-  $("superStatVisits").textContent=visits;
-  $("superStatOtw").textContent=formatMinutesTotal(otw);
-  $("superStatRs").textContent=formatMinutesTotal(rs);
-  $("superStatDistance").textContent="—";
-  $("superSideOtw").textContent=formatMinutesTotal(otw);
-  $("superSideRs").textContent=formatMinutesTotal(rs);
-  $("superSideDistance").textContent="—";
-  $("superTableShowing").textContent=`Menampilkan ${total} aktivitas`;
-  $("superInsightText").textContent=total
-    ? `${activityJenis(rows[0])[0]||"Aktivitas"} merupakan aktivitas pertama pada hasil saat ini. Rekap dapat berubah mengikuti filter.`
-    : "Belum ada data aktivitas untuk periode ini.";
-  renderSuperBarChart(rows);
-  renderSuperResults(rows);
-  renderSuperCourier(rows);
-}
-
-function renderSuperReportTable(rows){
-  const photo=(url)=>url?`<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">▧</a>`:"-";
-  $("reportTable").innerHTML=rows.map((a,i)=>{
-    const otw=parseDurationMinutes(a.durasiMengemudi);
-    const task=parseDurationMinutes(a.durasiTugas);
-    const rs=Math.max(0,task-otw);
-    const date=a.berangkat||a.datang||a.selesai;
-    return `<tr>
-      <td>${i+1}</td>
-      <td>${escapeHtml(displayReportDate(date))}</td>
-      <td>${escapeHtml(a.nama||a.kurir||"")}</td>
-      <td>${escapeHtml(a.tujuan||a.asal||"-")}</td>
-      <td>${escapeHtml(activityJenis(a).join(", "))}</td>
-      <td title="${escapeHtml(a.hasil||"-")}">${escapeHtml(a.hasil||"-")}</td>
-      <td>${escapeHtml(displayReportClock(a.berangkat))}</td>
-      <td>${escapeHtml(displayReportClock(a.datang))}</td>
-      <td>${escapeHtml(formatMinutesShort(otw))}</td>
-      <td>${escapeHtml(formatMinutesShort(rs))}</td>
-      <td>${statusBadgeReport(a.status)}</td>
-      <td>${photo(a.fotoDatang||a.fotoBerangkat||a.fotoDokumen)}</td>
-    </tr>`;
-  }).join("");
-}
-
-function displayReportDate(value){
-  if(!value)return "-";
-  const d=new Date(value);
-  if(Number.isNaN(d.getTime()))return String(value).slice(0,10);
-  return `${String(d.getDate()).padStart(2,"0")} ${["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"][d.getMonth()]} ${d.getFullYear()}`;
-}
-function displayReportClock(value){
-  if(!value)return "-";
-  const d=new Date(value);
-  if(Number.isNaN(d.getTime()))return String(value);
-  return d.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit",hour12:false});
-}
-function formatMinutesShort(value){
-  const n=Math.max(0,Math.round(Number(value)||0));
-  if(n>=60)return `${Math.floor(n/60)}j ${n%60?`${n%60}m`:""}`;
-  return `${n}m`;
-}
-function statusBadgeReport(status){
-  const s=String(status||"-");
-  const cls=s.toLowerCase().includes("selesai")?"done":s.toLowerCase().includes("proses")?"process":s.toLowerCase().includes("jalan")?"road":"wait";
-  return `<span class="super-status ${cls}">${escapeHtml(s)}</span>`;
-}
-
-function renderSuperReport(rows){
-  updateSuperReportOptions(rows);
-  const filtered=filterSuperReportRows(rows);
-  currentReportRows=filtered;
-  renderSuperReportSummary(filtered);
-  renderSuperReportTable(filtered);
-  $("reportEmpty").classList.toggle("hidden",filtered.length>0);
-  $("reportCount").textContent=`${filtered.length} aktivitas`;
-}
-
-function applySuperReportPeriodDefaults(){
-  const now=new Date();
-  const period=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
-  if($("reportPeriod"))$("reportPeriod").value=period;
-  updateSuperReportPeriodDisplay();
-  const range=getMonthRange(period);
-  if(range){$("reportDateFrom").value=range.from;$("reportDateTo").value=range.to;}
-}
-
-function updateSuperReportPeriodDisplay(){
-  const el=$("reportPeriod"),out=$("reportPeriodDisplay");
-  if(!el||!out)return;
-  const text=el.options[el.selectedIndex]?.text||"";
-  out.textContent=text;
-}
-
-async function loadSuperReport(){
-  if(state.user?.peran!=="Super User")return;
-  const range=getMonthRange($("reportPeriod")?.value);
-  if(!range)return;
-  $("reportDateFrom").value=range.from;
-  $("reportDateTo").value=range.to;
-  updateSuperReportPeriodDisplay();
-  msg("reportMsg","Memuat data laporan...");
-  try{
-    const data=await api("getReport",{
-      idPengguna:state.user.id,
-      tanggalDari:range.from,
-      tanggalSampai:range.to,
-      status:"",
-      kurir:($("reportCourier")?.value||"__ALL__")==="__ALL__"?"":$("reportCourier").value,
-      asal:"",
-      tujuan:($("reportDestination")?.value||"__ALL__")==="__ALL__"?"":$("reportDestination").value
-    });
-    state.superReportActivities=data.activities||[];
-    renderSuperReport(state.superReportActivities);
-    msg("reportMsg","");
-  }catch(err){
-    state.superReportActivities=[];
-    renderSuperReport([]);
-    msg("reportMsg",err.message);
-  }
-}
-
 function renderReport(rows){
-  const safe=Array.isArray(rows)?rows:[];
-  if(state.user?.peran==="Super User"){
-    renderSuperReport(safe);
-    return;
-  }
-  currentReportRows=safe;
+  currentReportRows=Array.isArray(rows)?rows:[];
   const photoLink=(url)=>url?`<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Lihat Foto</a>`:"-";
   $("reportTable").innerHTML = currentReportRows.map(a=>`<tr>
     <td>${escapeHtml(a.idAktivitas||"")}</td>
@@ -1583,7 +1297,6 @@ function setupReportNoteLoadMore(){
 }
 
 function exportReportExcel(){
-  if(state.user?.peran==="Super User")currentReportRows=filterSuperReportRows(state.superReportActivities||[]);
   if(!currentReportRows.length){
     msg("reportMsg","Belum ada data untuk diekspor.");
     return;
@@ -1643,43 +1356,6 @@ function exportReportExcel(){
   const d=String(stamp.getDate()).padStart(2,"0");
   XLSX.writeFile(wb,`gamamed_${d}-${m}-${String(y).slice(-2)}.xlsx`);
   msg("reportMsg","File Excel siap.");
-}
-
-function getTodayISO(){
-  const now=new Date();
-  const y=now.getFullYear();
-  const m=String(now.getMonth()+1).padStart(2,"0");
-  const d=String(now.getDate()).padStart(2,"0");
-  return `${y}-${m}-${d}`;
-}
-
-function applyAdminReportUI(){
-  if(state.user?.peran!=="Admin")return;
-  document.body.classList.add("admin-report-only");
-  const subtitle=document.querySelector("#reportView .report-data-head .muted.small");
-  if(subtitle)subtitle.textContent="Data aktivitas hari ini.";
-}
-
-async function loadAdminTodayReport(){
-  if(state.user?.peran!=="Admin")return;
-
-  const today=getTodayISO();
-  try{
-    const data=await api("getReport",{
-      idPengguna:state.user.id,
-      tanggalDari:today,
-      tanggalSampai:today,
-      status:"",
-      kurir:"",
-      asal:"",
-      tujuan:""
-    });
-    renderReport(data.activities||[]);
-    msg("reportMsg","");
-  }catch(err){
-    msg("reportMsg",err.message);
-    renderReport([]);
-  }
 }
 
 function getReportFilterValues(){
@@ -1798,49 +1474,10 @@ $("journeyPanel").addEventListener("click",e=>{
   const body=group.querySelector(".journey-group-body");
   if(body)body.hidden=!open;
 });
-$("refreshReportBtn").addEventListener("click",async()=>{
-  if(state.user?.peran==="Admin")return;
-  if(state.user?.peran==="Super User"){
-    await loadReportOptions();
-    await loadSuperReport();
-    return;
-  }
-  await loadReportOptions();
-  msg("reportMsg","");
-  updateReportApplyState();
-});
+$("refreshReportBtn").addEventListener("click",async()=>{await loadReportOptions();msg("reportMsg","");updateReportApplyState();});
 $("exportReportBtn").addEventListener("click",exportReportExcel);
 $("applyReportBtn").addEventListener("click",loadReport);
 $("resetReportBtn").addEventListener("click",resetReportFilters);
-if($("reportPeriod"))$("reportPeriod").addEventListener("change",async()=>{
-  updateSuperReportPeriodDisplay();
-  if(state.user?.peran==="Super User")await loadSuperReport();
-});
-if($("reportJenis"))$("reportJenis").addEventListener("change",()=>renderSuperReport(state.superReportActivities||[]));
-if($("applyReportBtn"))$("applyReportBtn").addEventListener("click",async()=>{
-  if(state.user?.peran==="Super User")await loadSuperReport();
-});
-if($("resetReportBtn"))$("resetReportBtn").addEventListener("click",async()=>{
-  if(state.user?.peran==="Super User"){
-    applySuperReportPeriodDefaults();
-    $("reportCourier").value="__ALL__";
-    $("reportDestination").value="__ALL__";
-    $("reportJenis").value="__ALL__";
-    await loadSuperReport();
-  }
-});
-if($("exportPdfReportBtn"))$("exportPdfReportBtn").addEventListener("click",()=>window.print());
-document.querySelectorAll("[data-report-nav]").forEach(btn=>{
-  btn.addEventListener("click",()=>{
-    const target=btn.dataset.reportNav;
-    if(target==="report")return;
-    if(target==="dashboard" && $("navDashboard"))$("navDashboard").click();
-    if(target==="activity" && $("navActivity"))$("navActivity").click();
-    if(target==="users" && $("navUsers"))$("navUsers").click();
-  });
-});
-if($("reportSideLogout"))$("reportSideLogout").addEventListener("click",()=>logoutToLogin(""));
-
 ["reportDateFrom","reportDateTo","reportStatus","reportCourier","reportOrigin","reportDestination"].forEach(id=>{
   const el=$(id);
   if(el)el.addEventListener("change",updateReportApplyState);
