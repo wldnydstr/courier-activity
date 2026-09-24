@@ -263,31 +263,14 @@ function setupNav(role){
   $("navActivity").classList.toggle("hidden",!isCourier);
   $("navConfirm").classList.toggle("hidden",!isCourier);
   $("navHistory").classList.toggle("hidden",!isCourier);
-  $("navDashboard").classList.toggle("hidden",role!=="Super User");
+  $("navDashboard").classList.toggle("hidden",role!=="Admin"&&role!=="Super User");
   $("navReport").classList.toggle("hidden",role!=="Admin"&&role!=="Super User");
   $("navUsers").classList.toggle("hidden",role!=="Super User");
-
-  const isAdmin=role==="Admin";
-  $("navActivity").classList.toggle("hidden",true);
-  $("navConfirm").classList.toggle("hidden",true);
-  $("navHistory").classList.toggle("hidden",true);
-
-  document.body.classList.toggle("admin-report-only",isAdmin);
   $("navActivity").onclick=async()=>{setView("courierView");await loadCourierTasks();await restoreActivityDraft();};
   $("navConfirm").onclick=async()=>{setView("confirmationView");await loadCourierTasks();};
   $("navHistory").onclick=async()=>{setView("historyView");await loadCourierTasks();};
   $("navDashboard").onclick=async()=>{setView("dashboardView");setDashboardDefaultDay();await loadDashboard();requestAnimationFrame(syncDashboardFreeze);};
-  $("navReport").onclick=async()=>{
-    setView("reportView");
-    renderReport([]);
-    if(state.user?.peran==="Admin"){
-      applyAdminReportUI();
-      await loadAdminTodayReport();
-    }else{
-      await loadReportOptions();
-      await loadReport();
-    }
-  };
+  $("navReport").onclick=async()=>{setView("reportView");renderReport([]);await loadReportOptions();await loadReport();};
   $("navUsers").onclick=async()=>{setView("usersView");await loadUsers();};
 }
 
@@ -532,12 +515,7 @@ async function restoreSession(){
   setWelcome(state.user.nama);
   setupNav(state.user.peran);
 
-  const lastView=saved.lastView ||
-    (state.user.peran==="Kurir"
-      ? "courierView"
-      : state.user.peran==="Admin"
-        ? "reportView"
-        : "dashboardView");
+  const lastView=saved.lastView || (state.user.peran==="Kurir"?"courierView":"dashboardView");
 
   // Error API tidak menghapus sesi. User tetap masuk dan bisa lanjut lagi.
   try{
@@ -549,12 +527,7 @@ async function restoreSession(){
     }else if(lastView==="reportView"){
       setView("reportView");
       renderReport([]);
-      if(state.user.peran==="Admin"){
-        applyAdminReportUI();
-        await loadAdminTodayReport();
-      }else{
-        await loadReportOptions();
-      }
+      await loadReportOptions();
     }else if(lastView==="usersView" && state.user.peran==="Super User"){
       setView("usersView");
       await loadUsers();
@@ -590,24 +563,11 @@ async function handleLogin(e){
     }
 
     state.user=user;
-    const initialView=user.peran==="Kurir"?"courierView":user.peran==="Admin"?"reportView":"dashboardView";
-    const loginAt=Date.now(); writeSession({user,loginAt,lastView:initialView}); scheduleSessionExpiry(loginAt);
+    const loginAt=Date.now(); writeSession({user,loginAt,lastView:user.peran==="Kurir"?"courierView":"dashboardView"}); scheduleSessionExpiry(loginAt);
     $("loginView").classList.add("hidden");$("appView").classList.remove("hidden");
     setWelcome(user.nama);setupNav(user.peran);
-    if(user.peran==="Kurir"){
-      await loadLocations();
-      setView("courierView");
-      await loadCourierTasks();
-      await restoreActivityDraft();
-    }else if(user.peran==="Admin"){
-      setView("reportView");
-      applyAdminReportUI();
-      renderReport([]);
-      await loadAdminTodayReport();
-    }else{
-      setView("dashboardView");
-      await loadDashboard();
-    }
+    if(user.peran==="Kurir"){await loadLocations();setView("courierView");await loadCourierTasks();await restoreActivityDraft();}
+    else{setView("dashboardView");await loadDashboard();}
   }catch(err){msg("loginMsg",err.message)}
 }
 
@@ -1397,43 +1357,6 @@ function exportReportExcel(){
   msg("reportMsg","File Excel siap.");
 }
 
-function getTodayISO(){
-  const now=new Date();
-  const y=now.getFullYear();
-  const m=String(now.getMonth()+1).padStart(2,"0");
-  const d=String(now.getDate()).padStart(2,"0");
-  return `${y}-${m}-${d}`;
-}
-
-function applyAdminReportUI(){
-  if(state.user?.peran!=="Admin")return;
-  document.body.classList.add("admin-report-only");
-  const subtitle=document.querySelector("#reportView .report-data-head .muted.small");
-  if(subtitle)subtitle.textContent="Data aktivitas hari ini.";
-}
-
-async function loadAdminTodayReport(){
-  if(state.user?.peran!=="Admin")return;
-
-  const today=getTodayISO();
-  try{
-    const data=await api("getReport",{
-      idPengguna:state.user.id,
-      tanggalDari:today,
-      tanggalSampai:today,
-      status:"",
-      kurir:"",
-      asal:"",
-      tujuan:""
-    });
-    renderReport(data.activities||[]);
-    msg("reportMsg","");
-  }catch(err){
-    msg("reportMsg",err.message);
-    renderReport([]);
-  }
-}
-
 function getReportFilterValues(){
   return {
     from: $("reportDateFrom")?.value || "",
@@ -1550,12 +1473,7 @@ $("journeyPanel").addEventListener("click",e=>{
   const body=group.querySelector(".journey-group-body");
   if(body)body.hidden=!open;
 });
-$("refreshReportBtn").addEventListener("click",async()=>{
-  if(state.user?.peran==="Admin")return;
-  await loadReportOptions();
-  msg("reportMsg","");
-  updateReportApplyState();
-});
+$("refreshReportBtn").addEventListener("click",async()=>{await loadReportOptions();msg("reportMsg","");updateReportApplyState();});
 $("exportReportBtn").addEventListener("click",exportReportExcel);
 $("applyReportBtn").addEventListener("click",loadReport);
 $("resetReportBtn").addEventListener("click",resetReportFilters);

@@ -2236,24 +2236,3 @@ td{color:#4d5865}
 /* V82 performance/status polish — no flow or API behavior changes. */
 #dashboardView .dashboard-detail-table td:nth-child(8){white-space:nowrap !important;vertical-align:middle;}
 #dashboardView .dashboard-detail-table td:nth-child(8) .dashboard-status-pill{white-space:nowrap !important;display:inline-flex;flex-wrap:nowrap;min-width:max-content;}
-
-
-/* ADMIN — hanya Data Aktivitas hari ini */
-body.admin-report-only #appView #reportView .report-hero,
-body.admin-report-only #appView #reportView .report-filter-card{
-  display:none !important;
-}
-
-body.admin-report-only #appView #reportView .report-data-card{
-  width:100% !important;
-  max-width:none !important;
-  margin-top:0;
-}
-
-body.admin-report-only #appView #reportView .report-data-card .report-data-head{
-  border-bottom:1px solid #eceff3;
-}
-
-body.admin-report-only #appView #reportView #reportMsg{
-  display:none !important;
-}
