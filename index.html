@@ -175,15 +175,29 @@
     </section>
 
     <section id="reportView" class="hidden report-page">
+      <div class="report-layout">
+      <aside class="report-sidebar">
+        <div class="report-brand"><div class="report-brand-mark">G</div><div><strong>PT Gamamed</strong><small>Kurir & Logistik</small></div></div>
+        <nav class="report-side-nav">
+          <button type="button" data-report-nav="navDashboard">⌂ <span>Dashboard</span></button>
+          <button type="button" data-report-nav="navActivity">▣ <span>Aktivitas Kurir</span></button>
+          <button type="button" class="active">▤ <span>Laporan Bulanan</span></button>
+          <button type="button" data-report-nav="navUsers">♙ <span>Manajemen Pengguna</span></button>
+        </nav>
+        <div class="report-side-user"><div class="report-user-avatar">●</div><div><strong id="reportSideUserName">Admin</strong><small>Pengguna</small></div></div>
+      </aside>
+      <div class="report-content">
+
       <div class="report-hero">
         <div>
           <div class="eyebrow report-eyebrow">LAPORAN AKTIVITAS</div>
-          <div class="section-title report-hero-title">Laporan</div>
-          <div class="muted report-hero-subtitle">Pantau, filter, dan unduh data aktivitas kurir dari satu halaman.</div>
+          <div class="section-title report-hero-title">Laporan Aktivitas Kurir</div>
+          <div class="muted report-hero-subtitle">Rekap seluruh aktivitas kurir selama periode tertentu.</div>
         </div>
         <div class="report-hero-actions">
-          <button id="refreshReportBtn" class="ghost" type="button">Muat Ulang</button>
-          <button id="exportReportBtn" class="primary" type="button">Ekspor Excel</button>
+          <button id="refreshReportBtn" class="ghost" type="button">↻ Muat Ulang</button>
+          <button id="exportReportBtn" class="report-excel-btn" type="button">▣ Export Excel</button>
+          <button id="exportPdfBtn" class="report-pdf-btn" type="button">▤ Export PDF</button>
         </div>
       </div>
 
@@ -193,7 +207,7 @@
             <div class="section-title">Filter laporan</div>
             <div class="muted small">Gunakan filter di bawah untuk menampilkan data yang kamu butuhkan.</div>
           </div>
-          <div class="report-filter-label">FILTER DATA</div>
+          
         </div>
         <div class="filters-grid report-filters-grid">
           <label>Dari tanggal
@@ -238,6 +252,21 @@
         <p id="reportMsg" class="message"></p>
       </div>
 
+      <div id="reportKpiGrid" class="report-kpi-grid">
+        <div class="report-kpi kpi-blue"><span class="kpi-icon">▣</span><div><div class="kpi-label">Total Aktivitas</div><strong id="reportKpiTotal">0</strong><small id="reportKpiTotalSub">periode terpilih</small></div></div>
+        <div class="report-kpi kpi-green"><span class="kpi-icon">●</span><div><div class="kpi-label">Total Kunjungan RS</div><strong id="reportKpiVisits">0</strong><small>tujuan unik</small></div></div>
+        <div class="report-kpi kpi-purple"><span class="kpi-icon">◷</span><div><div class="kpi-label">Total Waktu OTW</div><strong id="reportKpiOtw">00j 00m</strong><small>durasi mengemudi</small></div></div>
+        <div class="report-kpi kpi-red"><span class="kpi-icon">◷</span><div><div class="kpi-label">Total Waktu di RS</div><strong id="reportKpiRs">00j 00m</strong><small>estimasi dari durasi tugas</small></div></div>
+        <div class="report-kpi kpi-orange"><span class="kpi-icon">↗</span><div><div class="kpi-label">Total Jarak</div><strong id="reportKpiDistance">-</strong><small>data jarak belum tersedia</small></div></div>
+        <div class="report-kpi kpi-indigo"><span class="kpi-icon">●</span><div><div class="kpi-label">Total Kurir</div><strong id="reportKpiCouriers">0</strong><small>kurir aktif di hasil</small></div></div>
+      </div>
+
+      <div class="report-analytics-grid">
+        <div class="card report-chart-card"><div class="section-title">Aktivitas Berdasarkan Jenis Kegiatan</div><div id="reportActivityChart" class="report-bar-chart"></div></div>
+        <div class="card report-chart-card"><div class="section-title">Rekap Hasil Penagihan</div><div id="reportCollectionChart" class="report-donut-layout"></div></div>
+        <div class="card report-chart-card"><div class="section-title">Total Aktivitas per Kurir</div><div id="reportCourierChart" class="report-courier-bars"></div></div>
+      </div>
+
       <div class="card report-data-card">
         <div class="section-title-row report-data-head">
           <div>
@@ -278,8 +307,8 @@
         </div>
         <div id="reportEmpty" class="empty hidden">Data aktivitas tidak ditemukan.</div>
       </div>
+      </div>
     </section>
-
     <section id="usersView" class="hidden">
       <div class="card">
         <div class="section-title-row">
@@ -312,6 +341,8 @@
     <footer class="app-footer"><div class="developer-credit">Developed by Rizkya Andini Putri</div></footer>
 </main>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<script src="script.js?v=720"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="script.js?v=721"></script>
 </body>
 </html>

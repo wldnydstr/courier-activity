@@ -2236,160 +2236,71 @@ td{color:#4d5865}
 /* V82 performance/status polish — no flow or API behavior changes. */
 #dashboardView .dashboard-detail-table td:nth-child(8){white-space:nowrap !important;vertical-align:middle;}
 #dashboardView .dashboard-detail-table td:nth-child(8) .dashboard-status-pill{white-space:nowrap !important;display:inline-flex;flex-wrap:nowrap;min-width:max-content;}
-
-/* =========================================================
-   FINAL UI/UX IMPLEMENTATION
-   Based on Courier Activity UI/UX Code Review
-   Presentation layer only — no business/API/data-flow changes.
-   ========================================================= */
-:root{
-  --bg:#F6F8FA;
-  --surface:#FFFFFF;
-  --surface-soft:#F8FAFC;
-  --text:#17202A;
-  --muted:#6F7A86;
-  --line:#E5E9EE;
-  --line-strong:#D6DDE5;
-  --primary:#1769D5;
-  --primary-hover:#1259B7;
-  --success:#16845B;
-  --warning:#B7791F;
-  --info:#1769D5;
-  --danger:#C2414B;
-  --radius-lg:18px;
-  --radius-md:12px;
-  --radius-sm:10px;
-  --shadow-card:0 6px 22px rgba(23,32,42,.055);
-}
-
-html,body{background:var(--bg);color:var(--text)}
-body{font-weight:400}
-
-.app{max-width:1440px;margin:0 auto;padding:28px 20px 48px}
-
-/* Global hierarchy */
-h1{font-size:28px;line-height:1.15;font-weight:700;letter-spacing:-.035em}
-.section-title{font-size:18px;line-height:1.25;font-weight:700;letter-spacing:-.02em}
-.muted{color:var(--muted)}
-.small{font-size:12px;line-height:1.5}
-.eyebrow{font-size:10px;font-weight:600;letter-spacing:.12em;color:var(--muted)}
-
-.card,#loginView.login-card{
-  background:var(--surface);
-  border:1px solid var(--line);
-  border-radius:var(--radius-lg);
-  box-shadow:var(--shadow-card);
-}
-.card{padding:20px}
-
-/* Header / navigation */
-#appView .topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:0 0 16px;margin:0;background:transparent}
-#appView .topbar h1{margin:2px 0 0;font-size:26px;line-height:1.12}
-#appView .topbar-actions{display:flex;align-items:center;gap:8px}
-.nav{display:flex;align-items:center;gap:8px;margin:0 0 20px;padding:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
-.nav-btn{height:42px;min-height:42px;padding:0 15px;border:1px solid var(--line);border-radius:11px;background:#fff;color:#44505C;font-size:13px;font-weight:600;white-space:nowrap;flex:0 0 auto}
-.nav-btn:hover{border-color:var(--line-strong);background:var(--surface-soft)}
-.nav-btn.active{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:none}
-#logoutBtn{height:42px;min-height:42px;padding:0 15px;border-radius:11px;font-size:13px;font-weight:600}
-
-/* Login */
-#loginView.login-card{max-width:430px;margin:9vh auto 0;padding:30px}
-#loginView h1{font-size:30px;margin:0 0 8px}
-#loginView form{gap:15px}
-#loginView label{font-size:13px;font-weight:600;color:#4D5865}
-#loginView input{height:44px}
-#loginView button{height:44px;min-height:44px;width:100%;margin-top:2px}
-
-/* Inputs / buttons */
-input,select,textarea{border-color:var(--line-strong);border-radius:var(--radius-sm);min-height:44px;color:var(--text);background:#fff}
-input:focus,select:focus,textarea:focus{outline:2px solid rgba(23,105,213,.18);outline-offset:1px;border-color:var(--primary)}
-button{min-height:42px;font-weight:600}
-.primary{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:none;border-radius:var(--radius-sm)}
-.primary:not(:disabled):hover{background:var(--primary-hover);box-shadow:none}
-.ghost{background:#fff;border:1px solid var(--line-strong);color:#43505D;border-radius:var(--radius-sm);box-shadow:none}
-.ghost:not(:disabled):hover{background:var(--surface-soft);border-color:#C8D1DB}
-.primary:disabled{opacity:.48;color:#fff}
-
-/* Courier / forms */
-.section-title-row{align-items:flex-start;margin-bottom:18px}
-.jenis-tugas-group{gap:10px}
-.jenis-tugas-option{min-height:46px;border-color:var(--line);border-radius:var(--radius-md);font-weight:500!important}
-.jenis-tugas-option:has(input:checked){border-color:var(--primary);background:#F1F6FF;box-shadow:0 0 0 1px rgba(23,105,213,.08)}
-
-/* Status / badges */
-.badge{min-height:28px;padding:5px 10px;border-radius:999px;background:var(--surface-soft);border-color:var(--line);font-size:11px;font-weight:600}
-
-/* Dashboard summary */
-.dashboard-summary{gap:12px}
-.dashboard-stat{border:1px solid var(--line);border-radius:16px;box-shadow:none;background:#fff}
-.dashboard-stat-icon{width:34px;height:34px;border-radius:10px;font-size:15px}
-.stat-value{font-size:28px;font-weight:700;line-height:1.05;letter-spacing:-.035em}
-.stat-label{font-size:12px;font-weight:600;color:#55616D}
-.stat-foot,.stat-percent{font-size:11px;color:var(--muted)}
-
-/* Dashboard filter / actions */
-.dashboard-filter,.report-filter{gap:10px}
-.dashboard-filter button,.report-filter button{height:42px;min-height:42px}
-
-/* Charts */
-.activity-chart{gap:12px}
-.chart-label{font-size:11px;color:#53606C}
-.chart-active{font-size:13px;font-weight:700}
-
-/* Tables: compact operational density */
-.table-wrap{border:1px solid var(--line);border-radius:14px;background:#fff;overflow:auto}
-table{border-collapse:separate;border-spacing:0}
-th{background:#F3F6F9;color:#4C5865;font-size:10px;font-weight:700;letter-spacing:.02em;text-transform:none}
-th,td{border-bottom:1px solid var(--line);padding:10px 9px;vertical-align:middle}
-td{font-size:12px;color:#26313C}
-tbody tr:last-child td{border-bottom:0}
-tbody tr:hover td{background:#FBFCFD}
-
-/* Status remains readable without relying on color alone */
-.status-badge,.journey-status{font-weight:600;border-radius:999px}
-
-/* Journey accordion */
-.journey-group-toggle,.dashboard-courier-group-toggle{min-height:44px;border-radius:10px}
-.journey-group-toggle:focus-visible,.dashboard-courier-group-toggle:focus-visible,.nav-btn:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid rgba(23,105,213,.35);outline-offset:2px}
-.journey-group-body[hidden]{display:none}
-
-/* Proof links */
-.proof-link{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:5px 9px;border:1px solid var(--line-strong);border-radius:8px;background:#fff;color:var(--primary);font-size:11px;font-weight:600;text-decoration:none}
-.proof-link:hover{background:#F1F6FF;border-color:#BFD3F2}
-
-/* Report */
-#reportView .table-wrap{overflow-x:auto}
-#reportView .table-wrap table{min-width:1180px}
-#reportView .report-note{font-size:12px;color:var(--muted)}
-
-/* Footer */
-.app > .app-footer .developer-credit{color:#8A949F;font-size:11px;font-weight:400}
-
-/* Responsive: one clear desktop/tablet/mobile system */
-@media (max-width:900px){
-  .app{padding:22px 16px 40px}
-  #appView .topbar h1{font-size:24px}
-  .dashboard-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
-}
-
-@media (max-width:600px){
-  .app{padding:18px 12px 32px}
-  #appView .topbar{align-items:flex-start}
-  #appView .topbar h1{font-size:22px}
-  #logoutBtn{height:40px;min-height:40px;padding:0 12px}
-  .nav{margin-bottom:14px;padding-bottom:2px;flex-wrap:nowrap}
-  .nav-btn{height:42px;min-height:42px;padding:0 13px}
-  .card{padding:16px;border-radius:16px}
-  .dashboard-summary{grid-template-columns:1fr 1fr;gap:8px}
-  .dashboard-stat{padding:14px}
-  .stat-value{font-size:24px}
-  .two{grid-template-columns:1fr}
-  .jenis-tugas-group{grid-template-columns:1fr}
-  .section-title{font-size:17px}
-  #reportView .table-wrap{margin-right:-1px}
-}
-
-@media (max-width:430px){
-  .dashboard-summary{grid-template-columns:1fr}
-  #loginView.login-card{margin-top:5vh;padding:22px}
-}
+/* REPORT REFERENCE UI — v90 */
+#appView #reportView.report-page{width:100%!important;max-width:none!important;position:static!important;left:auto!important;transform:none!important;margin:0!important;padding:0!important;background:#f5f8fc}
+#appView #reportView .report-layout{display:grid;grid-template-columns:200px minmax(0,1fr);min-height:calc(100vh - 30px);margin:-30px -18px -52px;background:#f5f8fc}
+#appView #reportView .report-sidebar{background:linear-gradient(180deg,#132b4f 0%,#102646 100%);color:#fff;padding:22px 14px 18px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;box-sizing:border-box;z-index:5}
+#appView #reportView .report-brand{display:flex;align-items:center;gap:10px;padding:0 7px 28px}
+#appView #reportView .report-brand-mark{width:40px;height:40px;border-radius:10px;background:#fff;color:#1677ed;display:grid;place-items:center;font-weight:900;font-size:23px;box-shadow:0 5px 14px rgba(0,0,0,.12)}
+#appView #reportView .report-brand strong{display:block;font-size:15px;line-height:1.1;letter-spacing:-.02em}
+#appView #reportView .report-brand small{display:block;margin-top:4px;color:#c9d6e8;font-size:10px}
+#appView #reportView .report-side-nav{display:grid;gap:7px}
+#appView #reportView .report-side-nav button{border:0;background:transparent;color:#dbe6f4;text-align:left;min-height:42px;padding:0 12px;border-radius:9px;font:600 12px/1 inherit;display:flex;align-items:center;gap:12px;cursor:pointer}
+#appView #reportView .report-side-nav button:hover{background:rgba(255,255,255,.08)}
+#appView #reportView .report-side-nav button.active{background:#1e6de0;color:#fff;box-shadow:0 6px 14px rgba(4,75,175,.24)}
+#appView #reportView .report-side-nav button span{flex:1}
+#appView #reportView .report-side-user{margin-top:auto;border-top:1px solid rgba(255,255,255,.14);padding:15px 7px 2px;display:flex;gap:10px;align-items:center}
+#appView #reportView .report-user-avatar{width:30px;height:30px;border-radius:50%;background:#8fb5e8;display:grid;place-items:center;color:#fff;font-size:10px}
+#appView #reportView .report-side-user strong{display:block;font-size:11px}.report-side-user small{display:block;color:#b9c9dc;font-size:9px;margin-top:2px}
+#appView #reportView .report-content{min-width:0;padding:28px 24px 42px}
+#appView #reportView .report-hero{padding:0;min-height:auto;margin:0 0 18px;align-items:flex-start}
+#appView #reportView .report-eyebrow{display:none}
+#appView #reportView .report-hero-title{font-size:27px;line-height:1.15;color:#142a4d;letter-spacing:-.035em;margin:0 0 4px;font-weight:800}
+#appView #reportView .report-hero-subtitle{font-size:13px;color:#66778d}
+#appView #reportView .report-hero-actions{gap:9px}
+#appView #reportView .report-hero-actions button{min-height:40px;padding:0 14px;border-radius:9px;font-size:11px;font-weight:700}
+#appView #reportView .report-excel-btn{background:#109c70;color:#fff;border:1px solid #109c70}
+#appView #reportView .report-pdf-btn{background:#1478e8;color:#fff;border:1px solid #1478e8}
+#appView #reportView .report-filter-card{padding:14px;border-radius:13px;border:1px solid #e0e7ef;background:#fff;box-shadow:0 5px 18px rgba(26,57,91,.045);margin-bottom:13px}
+#appView #reportView .report-filter-title-row{display:none}
+#appView #reportView .report-filters-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;align-items:end}
+#appView #reportView .report-filters-grid label{font-size:10px;font-weight:700;color:#55677d;gap:5px}
+#appView #reportView .report-filters-grid input,#appView #reportView .report-filters-grid select{height:42px;min-height:42px;border:1px solid #d9e2ec;border-radius:9px;font-size:11px;padding:0 11px;color:#24364e}
+#appView #reportView .report-filter-card .filter-actions{margin-top:10px;justify-content:flex-end;gap:7px}
+#appView #reportView .report-filter-card .filter-actions button{min-height:40px;padding:0 15px;border-radius:9px;font-size:11px}
+#appView #reportView .report-filter-card #applyReportBtn{background:#1478e8}
+#appView #reportView .report-kpi-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:13px}
+#appView #reportView .report-kpi{min-height:94px;border:1px solid #e0e7ef;border-radius:10px;background:#fff;padding:13px 12px;display:flex;gap:10px;align-items:flex-start;box-sizing:border-box;box-shadow:0 4px 14px rgba(26,57,91,.035)}
+#appView #reportView .report-kpi .kpi-icon{width:31px;height:31px;border-radius:9px;display:grid;place-items:center;font-size:16px;font-weight:800;flex:0 0 auto}
+#appView #reportView .report-kpi .kpi-label{font-size:10px;color:#596b81;margin-bottom:5px;white-space:nowrap}
+#appView #reportView .report-kpi strong{display:block;color:#162d4f;font-size:21px;line-height:1.05;letter-spacing:-.035em;white-space:nowrap}
+#appView #reportView .report-kpi small{display:block;color:#8492a4;font-size:8px;margin-top:8px}
+#appView #reportView .kpi-blue .kpi-icon{background:#e8f2ff;color:#1678ea}.kpi-green .kpi-icon{background:#e2f7ed;color:#25a36e}.kpi-purple .kpi-icon{background:#eee7ff;color:#8052dc}.kpi-red .kpi-icon{background:#ffe8e9;color:#e15c65}.kpi-orange .kpi-icon{background:#fff0dc;color:#f08b22}.kpi-indigo .kpi-icon{background:#ececff;color:#6465df}
+#appView #reportView .report-analytics-grid{display:grid;grid-template-columns:1.35fr 1.25fr 1.05fr;gap:11px;margin-bottom:13px}
+#appView #reportView .report-chart-card{min-width:0;min-height:210px;padding:14px;border:1px solid #e0e7ef;border-radius:11px;box-shadow:0 4px 14px rgba(26,57,91,.035);background:#fff}
+#appView #reportView .report-chart-card .section-title{font-size:12px;color:#193250;margin-bottom:12px}
+#appView #reportView .report-bar-chart{height:155px;display:flex;align-items:flex-end;gap:10px;padding:5px 5px 0;border-bottom:1px solid #e5eaf0}
+#appView #reportView .report-bar-item{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px}
+#appView #reportView .report-bar-value{font-size:9px;font-weight:800;color:#2c4059}.report-bar-fill{width:70%;max-width:34px;border-radius:5px 5px 0 0;min-height:4px}.report-bar-label{font-size:8px;color:#607188;text-align:center;line-height:1.2;max-width:55px;min-height:20px;overflow:hidden}
+#appView #reportView .report-donut-layout{height:155px;display:flex;align-items:center;justify-content:center;gap:16px}
+#appView #reportView .report-donut{width:126px;height:126px;border-radius:50%;position:relative;flex:0 0 auto}.report-donut::after{content:"";position:absolute;inset:29px;background:#fff;border-radius:50%}.report-donut-center{position:absolute;z-index:1;inset:0;display:grid;place-items:center;text-align:center;color:#1b3353;font-weight:800;font-size:18px}.report-donut-center small{display:block;font-size:7px;font-weight:500;color:#718197}
+#appView #reportView .report-legend{display:grid;gap:6px;min-width:120px}.report-legend-row{display:grid;grid-template-columns:8px 1fr auto;gap:6px;align-items:center;font-size:8px;color:#64758a}.report-legend-dot{width:7px;height:7px;border-radius:50%}.report-legend-row strong{color:#263a55;font-size:9px}
+#appView #reportView .report-courier-bars{display:grid;gap:9px;padding-top:3px}.report-courier-row{display:grid;grid-template-columns:62px 1fr 22px;align-items:center;gap:7px;font-size:8px;color:#607188}.report-courier-track{height:9px;background:#edf1f5;border-radius:99px;overflow:hidden}.report-courier-fill{height:100%;border-radius:99px;background:#4d8fee}.report-courier-row strong{text-align:right;color:#29405d;font-size:9px}
+#appView #reportView .report-data-card{border-radius:11px;border:1px solid #dfe6ee;box-shadow:0 4px 14px rgba(26,57,91,.035)}
+#appView #reportView .report-data-head{padding:14px 16px 12px;min-height:auto;border-bottom:1px solid #e7edf3}
+#appView #reportView .report-data-eyebrow{display:none}#appView #reportView .report-data-head .section-title{font-size:14px;color:#193250}.report-data-head .muted{font-size:9px}
+#appView #reportView .report-count-badge{font-size:9px;padding:6px 9px;background:#f3f7fb}
+#appView #reportView .report-data-card .report-table-frame{padding:0 12px 12px}
+#appView #reportView .report-data-card .report-table-frame .table-wrap{border:1px solid #e1e7ee;border-radius:8px}
+#appView #reportView .report-data-card table{font-size:8px;border-collapse:separate;border-spacing:0;min-width:1180px}
+#appView #reportView .report-data-card th{background:#edf4fb;color:#294363;font-size:8px;font-weight:800;padding:8px 6px;white-space:nowrap;border-bottom:1px solid #dce5ef}
+#appView #reportView .report-data-card td{padding:7px 6px;color:#50647c;border-bottom:1px solid #edf1f5;vertical-align:middle;line-height:1.25}
+#appView #reportView .report-data-card tbody tr:nth-child(even){background:#fbfdff}
+#appView #reportView .report-data-card tbody tr:hover{background:#f1f7ff}
+#appView #reportView .report-data-card .status-pill{font-size:7px;padding:3px 7px;border-radius:99px;background:#e6f7ed;color:#218557;border:0;white-space:nowrap}
+#appView #reportView .report-data-card a{font-size:7px;color:#287be5;font-weight:700;text-decoration:none;white-space:nowrap}
+#appView #reportView .report-data-card a:hover{text-decoration:underline}
+#appView #reportView .report-note{max-width:180px;font-size:8px}.report-note-text{font-size:8px}
+@media(max-width:1100px){#appView #reportView .report-kpi-grid{grid-template-columns:repeat(3,1fr)}#appView #reportView .report-analytics-grid{grid-template-columns:1fr 1fr}#appView #reportView .report-analytics-grid .report-chart-card:last-child{grid-column:1/-1}}
+@media(max-width:850px){#appView #reportView .report-layout{grid-template-columns:74px minmax(0,1fr)}#appView #reportView .report-brand div:not(.report-brand-mark),#appView #reportView .report-side-nav span,#appView #reportView .report-side-user div:not(.report-user-avatar){display:none}#appView #reportView .report-brand{justify-content:center;padding:0 0 28px}#appView #reportView .report-side-nav button{justify-content:center;padding:0}#appView #reportView .report-content{padding:20px 14px 34px}#appView #reportView .report-filters-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:650px){#appView #reportView .report-layout{display:block;margin:-30px -18px -52px}#appView #reportView .report-sidebar{position:sticky;top:0;height:auto;padding:9px 10px;display:block}#appView #reportView .report-brand{display:none}#appView #reportView .report-side-nav{display:flex;overflow:auto;gap:6px}#appView #reportView .report-side-nav button{min-width:max-content;padding:0 12px;height:34px;min-height:34px;justify-content:center}#appView #reportView .report-side-user{display:none}#appView #reportView .report-content{padding:15px 12px 30px}#appView #reportView .report-hero{flex-direction:column;gap:10px}.report-hero-actions{width:100%;overflow:auto}.report-hero-actions button{flex:1;white-space:nowrap}#appView #reportView .report-filters-grid{grid-template-columns:1fr 1fr}#appView #reportView .report-filter-card .filter-actions{justify-content:stretch}#appView #reportView .report-filter-card .filter-actions button{flex:1}#appView #reportView .report-kpi-grid{grid-template-columns:1fr 1fr}#appView #reportView .report-analytics-grid{grid-template-columns:1fr}#appView #reportView .report-analytics-grid .report-chart-card:last-child{grid-column:auto}}

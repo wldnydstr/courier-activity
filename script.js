@@ -1265,6 +1265,7 @@ function renderReport(rows){
   $("reportEmpty").classList.toggle("hidden",currentReportRows.length>0);
   $("reportCount").textContent = `${currentReportRows.length} aktivitas`;
   setupReportNoteLoadMore();
+  renderReportAnalytics(currentReportRows);
 }
 
 function setupReportNoteLoadMore(){
@@ -1355,6 +1356,80 @@ function exportReportExcel(){
   const d=String(stamp.getDate()).padStart(2,"0");
   XLSX.writeFile(wb,`gamamed_${d}-${m}-${String(y).slice(-2)}.xlsx`);
   msg("reportMsg","File Excel siap.");
+}
+
+
+
+function reportDurationMinutes(value){
+  if(value===null||value===undefined||value==="")return 0;
+  const text=String(value).trim();
+  let m=text.match(/T(\d+):(\d{2})(?::(\d{2}))?/);
+  if(!m)m=text.match(/^(\d+):(\d{2})(?::(\d{2}))?$/);
+  if(m)return Number(m[1])*60+Number(m[2]);
+  if(typeof value==="number"&&Number.isFinite(value))return Math.round(value*24*60);
+  return 0;
+}
+function reportDurationLabel(minutes){
+  const m=Math.max(0,Math.round(minutes||0));
+  return `${Math.floor(m/60)}j ${m%60}m`;
+}
+function reportTaskEntries(rows){
+  const counts={};
+  (rows||[]).forEach(a=>String(a.jenisTugas||a.pekerjaan||"Lainnya").split("|").map(x=>x.trim()).filter(Boolean).forEach(x=>counts[x]=(counts[x]||0)+1));
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"id"));
+}
+function reportCourierEntries(rows){
+  const counts={};
+  (rows||[]).forEach(a=>{const n=String(a.nama||a.kurir||"Tidak diketahui").trim()||"Tidak diketahui";counts[n]=(counts[n]||0)+1;});
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"id"));
+}
+function reportKpiSet(rows){
+  const visits=new Set((rows||[]).map(a=>String(a.tujuan||"").trim()).filter(Boolean));
+  const couriers=new Set((rows||[]).map(a=>String(a.nama||a.kurir||"").trim()).filter(Boolean));
+  const otw=(rows||[]).reduce((s,a)=>s+reportDurationMinutes(a.durasiMengemudi),0);
+  const task=(rows||[]).reduce((s,a)=>s+reportDurationMinutes(a.durasiTugas),0);
+  return {total:(rows||[]).length,visits:visits.size,couriers:couriers.size,otw,rs:Math.max(0,task-otw)};
+}
+function renderReportAnalytics(rows){
+  const k=reportKpiSet(rows);
+  $("reportKpiTotal").textContent=k.total; $("reportKpiVisits").textContent=k.visits; $("reportKpiOtw").textContent=reportDurationLabel(k.otw); $("reportKpiRs").textContent=reportDurationLabel(k.rs); $("reportKpiCouriers").textContent=k.couriers; $("reportKpiDistance").textContent="-";
+  const task=reportTaskEntries(rows), max=Math.max(...task.map(x=>x[1]),1);
+  const palette=["#4d8fee","#48b986","#8c63d8","#f39a35","#49b8c8","#9ca8b7"];
+  const chart=$("reportActivityChart");
+  if(chart)chart.innerHTML=task.length?task.slice(0,8).map(([n,v],i)=>`<div class="report-bar-item"><div class="report-bar-value">${v}</div><div class="report-bar-fill" style="height:${Math.max(5,Math.round(v/max*125))}px;background:${palette[i%palette.length]}"></div><div class="report-bar-label" title="${escapeHtml(n)}">${escapeHtml(n)}</div></div>`).join(""):"<div class='empty'>Belum ada data.</div>";
+  const hasil={}; (rows||[]).forEach(a=>{const h=String(a.hasil||"Lainnya").trim()||"Lainnya";hasil[h]=(hasil[h]||0)+1;});
+  const he=Object.entries(hasil).sort((a,b)=>b[1]-a[1]); const htot=Math.max(he.reduce((s,x)=>s+x[1],0),1); let cursor=0; const hp=["#49b985","#4d8fee","#8c63d8","#f39a35","#ef7180","#aab4c1"];
+  const dg=he.map(([n,v],i)=>{const a=cursor,b=cursor+v/htot*360;cursor=b;return `${hp[i%hp.length]} ${a}deg ${b}deg`;}).join(",");
+  const col=$("reportCollectionChart");
+  if(col)col.innerHTML=he.length?`<div class="report-donut" style="background:conic-gradient(${dg})"><div class="report-donut-center">${rows.length}<small>Total Aktivitas</small></div></div><div class="report-legend">${he.slice(0,6).map(([n,v],i)=>`<div class="report-legend-row"><i class="report-legend-dot" style="background:${hp[i%hp.length]}"></i><span>${escapeHtml(n)}</span><strong>${v}</strong></div>`).join("")}</div>`:"<div class='empty'>Belum ada data.</div>";
+  const ce=reportCourierEntries(rows), cm=Math.max(...ce.map(x=>x[1]),1), cc=$("reportCourierChart");
+  if(cc)cc.innerHTML=ce.length?ce.slice(0,8).map(([n,v])=>`<div class="report-courier-row"><span title="${escapeHtml(n)}">${escapeHtml(n)}</span><div class="report-courier-track"><div class="report-courier-fill" style="width:${Math.max(5,Math.round(v/cm*100))}%"></div></div><strong>${v}</strong></div>`).join(""):"<div class='empty'>Belum ada data.</div>";
+}
+function pdfText(doc,text,x,y,size=9,style="normal"){doc.setFont("helvetica",style);doc.setFontSize(size);doc.text(String(text??"-"),x,y);}
+function exportReportPdf(){
+  if(!currentReportRows.length){msg("reportMsg","Belum ada data untuk diekspor.");return;}
+  if(!window.jspdf?.jsPDF){msg("reportMsg","PDF belum siap. Muat ulang halaman lalu coba lagi.");return;}
+  const doc=new window.jspdf.jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
+  const W=297,H=210; const rows=currentReportRows; const k=reportKpiSet(rows);
+  const from=$("reportDateFrom")?.value||"-", to=$("reportDateTo")?.value||"-";
+  const title="LAPORAN AKTIVITAS KURIR";
+  const header=()=>{doc.setFillColor(22,48,84);doc.rect(0,0,W,18,"F");doc.setFillColor(255,255,255);doc.circle(17,9,6,"F");pdfText(doc,"G",14.5,11.2,9,"bold");doc.setTextColor(255,255,255);pdfText(doc,"PT Gamamed",28,8,10,"bold");pdfText(doc,"Kurir & Logistik",28,13,6,"normal");doc.setTextColor(23,48,80);};
+  const footer=(page)=>{doc.setDrawColor(220,226,234);doc.line(10,198,287,198);pdfText(doc,"PT Gamamed | Laporan Aktivitas Kurir",10,204,6);pdfText(doc,`Halaman ${page}`,270,204,6);};
+  header(); pdfText(doc,title,12,31,18,"bold"); pdfText(doc,`Periode ${from} s/d ${to}`,12,38,9); pdfText(doc,"Rekapitulasi seluruh aktivitas kurir sesuai filter laporan.",12,44,7);
+  const cards=[["Total Aktivitas",k.total],["Total Kunjungan RS",k.visits],["Total Waktu OTW",reportDurationLabel(k.otw)],["Total Waktu di RS",reportDurationLabel(k.rs)],["Total Jarak","-"],["Total Kurir",k.couriers]];
+  cards.forEach((c,i)=>{const x=12+i*45.5;doc.setFillColor(247,250,253);doc.roundedRect(x,50,42,25,3,3,"F");pdfText(doc,c[0],x+4,57,6);pdfText(doc,c[1],x+4,68,12,"bold");});
+  pdfText(doc,"Aktivitas Berdasarkan Jenis Kegiatan",12,86,10,"bold");
+  const tasks=reportTaskEntries(rows), tm=Math.max(...tasks.map(x=>x[1]),1); tasks.slice(0,8).forEach(([n,v],i)=>{const x=15+i*32;const h=Math.max(4,v/tm*42);doc.setFillColor(77,143,238);doc.roundedRect(x,134-h,20,h,1.5,1.5,"F");pdfText(doc,v,x+7,130-h,7,"bold");pdfText(doc,n.length>11?n.slice(0,10)+"…":n,x+10,139,5);});
+  pdfText(doc,"Rekap Aktivitas per Kurir",12,154,10,"bold");
+  const courier=reportCourierEntries(rows); doc.autoTable({startY:158,head:[["No","Kurir","Aktivitas"]],body:courier.map((x,i)=>[i+1,x[0],x[1]]),theme:"grid",styles:{fontSize:7,cellPadding:2},headStyles:{fillColor:[231,241,251],textColor:[35,60,90]}}); footer(1);
+  doc.addPage(); header(); pdfText(doc,"Detail Aktivitas Kurir",12,29,15,"bold"); pdfText(doc,`Periode ${from} s/d ${to}`,12,36,7);
+  const body=rows.map((a,i)=>[i+1,displayIndonesiaDateOnly(a.berangkat),a.nama||a.kurir||"-",a.tujuan||"-",a.jenisTugas||a.pekerjaan||"-",a.hasil||"-",displayIndonesiaTime(a.berangkat),displayIndonesiaTime(a.datang),displayDuration(a.durasiMengemudi),a.status||"-"]);
+  doc.autoTable({startY:42,head:[["No","Tanggal","Kurir","RS / Tujuan","Jenis Kegiatan","Hasil","Berangkat","Tiba","OTW","Status"]],body,theme:"grid",styles:{fontSize:6.5,cellPadding:2,overflow:"linebreak"},headStyles:{fillColor:[231,241,251],textColor:[35,60,90]},alternateRowStyles:{fillColor:[250,252,254]}}); footer(2);
+  let page=2; const byCourier={}; rows.forEach(a=>{const n=String(a.nama||a.kurir||"Tidak diketahui");(byCourier[n]??=[]).push(a);});
+  Object.entries(byCourier).forEach(([name,cr])=>{doc.addPage();page++;header();pdfText(doc,"Detail Aktivitas Kurir",12,29,15,"bold");pdfText(doc,name,12,37,12,"bold");pdfText(doc,`${cr.length} aktivitas`,12,43,7);
+    const ct=reportTaskEntries(cr);pdfText(doc,`Rekap Jenis Kegiatan (${name})`,12,51,9,"bold");doc.autoTable({startY:54,head:[["Jenis Kegiatan","Jumlah"]],body:ct.map(x=>[x[0],x[1]]),theme:"grid",tableWidth:70,styles:{fontSize:7,cellPadding:2},headStyles:{fillColor:[231,241,251],textColor:[35,60,90]}});
+    const start=(doc.lastAutoTable?.finalY||54)+7;doc.autoTable({startY:start,head:[["No","Tanggal","RS / Tujuan","Jenis Kegiatan","Hasil","Berangkat","Tiba","OTW","Di RS"]],body:cr.map((a,i)=>[i+1,displayIndonesiaDateOnly(a.berangkat),a.tujuan||"-",a.jenisTugas||a.pekerjaan||"-",a.hasil||"-",displayIndonesiaTime(a.berangkat),displayIndonesiaTime(a.datang),displayDuration(a.durasiMengemudi),reportDurationLabel(Math.max(0,reportDurationMinutes(a.durasiTugas)-reportDurationMinutes(a.durasiMengemudi)))]),theme:"grid",styles:{fontSize:6.2,cellPadding:2,overflow:"linebreak"},headStyles:{fillColor:[231,241,251],textColor:[35,60,90]}});footer(page);});
+  const stamp=new Date();doc.save(`Laporan_Aktivitas_Kurir_${String(stamp.getDate()).padStart(2,"0")}-${String(stamp.getMonth()+1).padStart(2,"0")}-${String(stamp.getFullYear()).slice(-2)}.pdf`);msg("reportMsg","File PDF siap.");
 }
 
 function getReportFilterValues(){
@@ -1475,6 +1550,8 @@ $("journeyPanel").addEventListener("click",e=>{
 });
 $("refreshReportBtn").addEventListener("click",async()=>{await loadReportOptions();msg("reportMsg","");updateReportApplyState();});
 $("exportReportBtn").addEventListener("click",exportReportExcel);
+$("exportPdfBtn")?.addEventListener("click",exportReportPdf);
+document.querySelectorAll("[data-report-nav]").forEach(btn=>btn.addEventListener("click",()=>{const id=btn.dataset.reportNav;if($(id))$(id).click();}));
 $("applyReportBtn").addEventListener("click",loadReport);
 $("resetReportBtn").addEventListener("click",resetReportFilters);
 ["reportDateFrom","reportDateTo","reportStatus","reportCourier","reportOrigin","reportDestination"].forEach(id=>{
