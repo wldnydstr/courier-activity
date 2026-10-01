@@ -2236,3 +2236,160 @@ td{color:#4d5865}
 /* V82 performance/status polish — no flow or API behavior changes. */
 #dashboardView .dashboard-detail-table td:nth-child(8){white-space:nowrap !important;vertical-align:middle;}
 #dashboardView .dashboard-detail-table td:nth-child(8) .dashboard-status-pill{white-space:nowrap !important;display:inline-flex;flex-wrap:nowrap;min-width:max-content;}
+
+/* =========================================================
+   FINAL UI/UX IMPLEMENTATION
+   Based on Courier Activity UI/UX Code Review
+   Presentation layer only — no business/API/data-flow changes.
+   ========================================================= */
+:root{
+  --bg:#F6F8FA;
+  --surface:#FFFFFF;
+  --surface-soft:#F8FAFC;
+  --text:#17202A;
+  --muted:#6F7A86;
+  --line:#E5E9EE;
+  --line-strong:#D6DDE5;
+  --primary:#1769D5;
+  --primary-hover:#1259B7;
+  --success:#16845B;
+  --warning:#B7791F;
+  --info:#1769D5;
+  --danger:#C2414B;
+  --radius-lg:18px;
+  --radius-md:12px;
+  --radius-sm:10px;
+  --shadow-card:0 6px 22px rgba(23,32,42,.055);
+}
+
+html,body{background:var(--bg);color:var(--text)}
+body{font-weight:400}
+
+.app{max-width:1440px;margin:0 auto;padding:28px 20px 48px}
+
+/* Global hierarchy */
+h1{font-size:28px;line-height:1.15;font-weight:700;letter-spacing:-.035em}
+.section-title{font-size:18px;line-height:1.25;font-weight:700;letter-spacing:-.02em}
+.muted{color:var(--muted)}
+.small{font-size:12px;line-height:1.5}
+.eyebrow{font-size:10px;font-weight:600;letter-spacing:.12em;color:var(--muted)}
+
+.card,#loginView.login-card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-card);
+}
+.card{padding:20px}
+
+/* Header / navigation */
+#appView .topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:0 0 16px;margin:0;background:transparent}
+#appView .topbar h1{margin:2px 0 0;font-size:26px;line-height:1.12}
+#appView .topbar-actions{display:flex;align-items:center;gap:8px}
+.nav{display:flex;align-items:center;gap:8px;margin:0 0 20px;padding:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
+.nav-btn{height:42px;min-height:42px;padding:0 15px;border:1px solid var(--line);border-radius:11px;background:#fff;color:#44505C;font-size:13px;font-weight:600;white-space:nowrap;flex:0 0 auto}
+.nav-btn:hover{border-color:var(--line-strong);background:var(--surface-soft)}
+.nav-btn.active{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:none}
+#logoutBtn{height:42px;min-height:42px;padding:0 15px;border-radius:11px;font-size:13px;font-weight:600}
+
+/* Login */
+#loginView.login-card{max-width:430px;margin:9vh auto 0;padding:30px}
+#loginView h1{font-size:30px;margin:0 0 8px}
+#loginView form{gap:15px}
+#loginView label{font-size:13px;font-weight:600;color:#4D5865}
+#loginView input{height:44px}
+#loginView button{height:44px;min-height:44px;width:100%;margin-top:2px}
+
+/* Inputs / buttons */
+input,select,textarea{border-color:var(--line-strong);border-radius:var(--radius-sm);min-height:44px;color:var(--text);background:#fff}
+input:focus,select:focus,textarea:focus{outline:2px solid rgba(23,105,213,.18);outline-offset:1px;border-color:var(--primary)}
+button{min-height:42px;font-weight:600}
+.primary{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:none;border-radius:var(--radius-sm)}
+.primary:not(:disabled):hover{background:var(--primary-hover);box-shadow:none}
+.ghost{background:#fff;border:1px solid var(--line-strong);color:#43505D;border-radius:var(--radius-sm);box-shadow:none}
+.ghost:not(:disabled):hover{background:var(--surface-soft);border-color:#C8D1DB}
+.primary:disabled{opacity:.48;color:#fff}
+
+/* Courier / forms */
+.section-title-row{align-items:flex-start;margin-bottom:18px}
+.jenis-tugas-group{gap:10px}
+.jenis-tugas-option{min-height:46px;border-color:var(--line);border-radius:var(--radius-md);font-weight:500!important}
+.jenis-tugas-option:has(input:checked){border-color:var(--primary);background:#F1F6FF;box-shadow:0 0 0 1px rgba(23,105,213,.08)}
+
+/* Status / badges */
+.badge{min-height:28px;padding:5px 10px;border-radius:999px;background:var(--surface-soft);border-color:var(--line);font-size:11px;font-weight:600}
+
+/* Dashboard summary */
+.dashboard-summary{gap:12px}
+.dashboard-stat{border:1px solid var(--line);border-radius:16px;box-shadow:none;background:#fff}
+.dashboard-stat-icon{width:34px;height:34px;border-radius:10px;font-size:15px}
+.stat-value{font-size:28px;font-weight:700;line-height:1.05;letter-spacing:-.035em}
+.stat-label{font-size:12px;font-weight:600;color:#55616D}
+.stat-foot,.stat-percent{font-size:11px;color:var(--muted)}
+
+/* Dashboard filter / actions */
+.dashboard-filter,.report-filter{gap:10px}
+.dashboard-filter button,.report-filter button{height:42px;min-height:42px}
+
+/* Charts */
+.activity-chart{gap:12px}
+.chart-label{font-size:11px;color:#53606C}
+.chart-active{font-size:13px;font-weight:700}
+
+/* Tables: compact operational density */
+.table-wrap{border:1px solid var(--line);border-radius:14px;background:#fff;overflow:auto}
+table{border-collapse:separate;border-spacing:0}
+th{background:#F3F6F9;color:#4C5865;font-size:10px;font-weight:700;letter-spacing:.02em;text-transform:none}
+th,td{border-bottom:1px solid var(--line);padding:10px 9px;vertical-align:middle}
+td{font-size:12px;color:#26313C}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:#FBFCFD}
+
+/* Status remains readable without relying on color alone */
+.status-badge,.journey-status{font-weight:600;border-radius:999px}
+
+/* Journey accordion */
+.journey-group-toggle,.dashboard-courier-group-toggle{min-height:44px;border-radius:10px}
+.journey-group-toggle:focus-visible,.dashboard-courier-group-toggle:focus-visible,.nav-btn:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid rgba(23,105,213,.35);outline-offset:2px}
+.journey-group-body[hidden]{display:none}
+
+/* Proof links */
+.proof-link{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:5px 9px;border:1px solid var(--line-strong);border-radius:8px;background:#fff;color:var(--primary);font-size:11px;font-weight:600;text-decoration:none}
+.proof-link:hover{background:#F1F6FF;border-color:#BFD3F2}
+
+/* Report */
+#reportView .table-wrap{overflow-x:auto}
+#reportView .table-wrap table{min-width:1180px}
+#reportView .report-note{font-size:12px;color:var(--muted)}
+
+/* Footer */
+.app > .app-footer .developer-credit{color:#8A949F;font-size:11px;font-weight:400}
+
+/* Responsive: one clear desktop/tablet/mobile system */
+@media (max-width:900px){
+  .app{padding:22px 16px 40px}
+  #appView .topbar h1{font-size:24px}
+  .dashboard-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media (max-width:600px){
+  .app{padding:18px 12px 32px}
+  #appView .topbar{align-items:flex-start}
+  #appView .topbar h1{font-size:22px}
+  #logoutBtn{height:40px;min-height:40px;padding:0 12px}
+  .nav{margin-bottom:14px;padding-bottom:2px;flex-wrap:nowrap}
+  .nav-btn{height:42px;min-height:42px;padding:0 13px}
+  .card{padding:16px;border-radius:16px}
+  .dashboard-summary{grid-template-columns:1fr 1fr;gap:8px}
+  .dashboard-stat{padding:14px}
+  .stat-value{font-size:24px}
+  .two{grid-template-columns:1fr}
+  .jenis-tugas-group{grid-template-columns:1fr}
+  .section-title{font-size:17px}
+  #reportView .table-wrap{margin-right:-1px}
+}
+
+@media (max-width:430px){
+  .dashboard-summary{grid-template-columns:1fr}
+  #loginView.login-card{margin-top:5vh;padding:22px}
+}
