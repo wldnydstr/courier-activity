@@ -501,6 +501,7 @@ function setWelcome(name){
   else if(hour >= 11 && hour < 15){ greeting = "Selamat siang"; emoji = "🌤️"; }
   else if(hour >= 15 && hour < 18){ greeting = "Selamat sore"; emoji = "🌤️"; }
   $("welcomeName").innerHTML = `<span class="greeting-text">${escapeHtml(greeting)} ${emoji}</span><span class="welcome-user">${escapeHtml(name)}</span>`;
+  if($("sidebarUserName"))$("sidebarUserName").textContent=name;
 }
 
 async function restoreSession(){

@@ -3,346 +3,285 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Aktivitas Kurir</title>
-  <link rel="preconnect" href="https://fonts.cdnfonts.com">
-  <link href="https://fonts.cdnfonts.com/css/gilroy" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=690">
+  <title>Aktivitas Kurir — PT Gamamed</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=900">
 </head>
 <body>
-<main class="app">
-  <section id="loginView" class="login-card">
-    <h1>Masuk</h1>
-    <p class="muted">Masukkan ID dan password untuk melanjutkan.</p>
-    <form id="loginForm">
-      <label>ID Pengguna<input id="loginId" autocomplete="username" required></label>
-      <label>Password<input id="loginPin" type="password" inputmode="numeric" autocomplete="current-password" required></label>
-      <button class="primary" type="submit">Masuk</button>
-      <p id="loginMsg" class="message"></p>
-    </form>
-  </section>
-
-  <section id="appView" class="hidden">
-    <div id="dashboardStickyTop" class="dashboard-sticky-top">
-    <header class="topbar">
-      <div>
-        <div class="eyebrow">AKTIVITAS KURIR</div>
-        <h1 id="welcomeName"><span class="greeting-text">Selamat pagi ☀️</span><span class="welcome-user">-</span></h1>
+  <section id="loginView" class="login-screen">
+    <div class="login-shell">
+      <div class="login-brand">
+        <div class="brand-mark big">G</div>
+        <div><strong>PT Gamamed</strong><span>Kurir &amp; Logistik</span></div>
       </div>
-      <div class="topbar-actions">
-        <button id="logoutBtn" class="ghost" type="button">Keluar</button>
-        
+      <div class="login-copy">
+        <span class="eyebrow">AKTIVITAS KURIR</span>
+        <h1>Masuk ke aktivitas operasional</h1>
+        <p>Masukkan ID pengguna dan password untuk melanjutkan.</p>
       </div>
-    </header>
-
-    <nav id="nav" class="nav hidden">
-      <button id="navActivity" class="nav-btn" type="button">Buat Tugas</button>
-      <button id="navConfirm" class="nav-btn hidden" type="button">Konfirmasi Tugas</button>
-      <button id="navHistory" class="nav-btn hidden" type="button">Riwayat Tugas</button>
-      <button id="navDashboard" class="nav-btn hidden" type="button">Dashboard</button>
-      <button id="navReport" class="nav-btn hidden" type="button">Laporan</button>
-      <button id="navUsers" class="nav-btn hidden" type="button">Manajemen Pengguna</button>
-    </nav>
+      <form id="loginForm" class="login-form">
+        <label>ID Pengguna<input id="loginId" autocomplete="username" required placeholder="Masukkan ID pengguna"></label>
+        <label>Password<input id="loginPin" type="password" inputmode="numeric" autocomplete="current-password" required placeholder="Masukkan password"></label>
+        <button class="primary full" type="submit">Masuk</button>
+        <p id="loginMsg" class="message"></p>
+      </form>
     </div>
-    <div id="dashboardStickySpacer" class="dashboard-sticky-spacer" aria-hidden="true"></div>
-
-    <section id="courierView" class="hidden">
-      <div id="activityCard" class="card">
-        <div class="section-title-row">
-          <div>
-            <div class="section-title">Buat Tugas</div>
-            <div class="muted small">Lengkapi detail tugas sebelum mulai perjalanan.</div>
-          </div>
-        </div>
-        <form id="activityForm">
-          <fieldset class="jenis-tugas-fieldset">
-            <legend>Jenis Tugas <span class="required-mark">*</span></legend>
-            <div id="jenisTugasGroup" class="jenis-tugas-group" aria-label="Pilih satu atau lebih jenis tugas" aria-required="true">
-              <label class="jenis-tugas-option"><input type="checkbox" name="jenisTugas" value="Penagihan"><span>Penagihan</span></label>
-              <label class="jenis-tugas-option"><input type="checkbox" name="jenisTugas" value="Kirim PO"><span>Kirim PO</span></label>
-              <label class="jenis-tugas-option"><input type="checkbox" name="jenisTugas" value="Ambil BA/PO"><span>Ambil BA/PO</span></label>
-              <label class="jenis-tugas-option"><input type="checkbox" name="jenisTugas" value="Tukar Faktur"><span>Tukar Faktur</span></label>
-            </div>
-            <div id="jenisTugasHint" class="muted small">Bisa pilih lebih dari satu.</div>
-          </fieldset>
-          <div class="two">
-            <div class="combo-wrap">
-              <label for="asalSearch"><span class="label-title">Berangkat Dari <span class="required-mark">*</span></span></label>
-              <input id="asalSearch" autocomplete="off" placeholder="Cari lokasi keberangkatan..." required>
-              <div id="asalList" class="combo-list hidden"></div>
-            </div>
-            <div class="combo-wrap">
-              <label for="tujuanSearch"><span class="label-title">Menuju <span class="required-mark">*</span></span></label>
-              <input id="tujuanSearch" autocomplete="off" placeholder="Cari lokasi tujuan..." required>
-              <div id="tujuanList" class="combo-list hidden"></div>
-            </div>
-          </div>
-          <label><span class="label-title">Foto Dokumen <span class="required-mark">*</span></span>
-            <input id="fotoDokumen" type="file" accept="image/*" required>
-            <p id="fotoDokumenDraft" class="draft-file-message"></p>
-          </label>
-          <label><span class="label-title">Foto Saat Berangkat <span class="required-mark">*</span></span>
-            <input id="fotoBerangkat" type="file" accept="image/*" required>
-            <p id="fotoBerangkatDraft" class="draft-file-message"></p>
-          </label>
-          <button id="startBtn" class="primary" type="submit" disabled>Buat Tugas</button>
-          <p id="activityMsg" class="message"></p>
-        </form>
-      </div>
-
-      <div id="pendingDepartureCard" class="card hidden">
-        <div class="section-title-row">
-          <div>
-            <div class="section-title">Tugas Menunggu Berangkat</div>
-            <div class="muted small">Langkah 1 dari 3 · Konfirmasi keberangkatan saat kamu siap jalan.</div>
-          </div>
-          <span class="badge">Menunggu Berangkat</span>
-        </div>
-        <div id="pendingDepartureInfo" class="info-grid"></div>
-        <button id="pendingDepartureBtn" class="primary" type="button">Konfirmasi Berangkat</button>
-        <p id="pendingDepartureMsg" class="message"></p>
-      </div>
-    </section>
-
-    <section id="confirmationView" class="hidden">
-      <div class="page-heading">
-        <div class="section-title">Konfirmasi Tugas</div>
-        <div class="muted small">Selesaikan setiap langkah konfirmasi sampai tugas selesai.</div>
-      </div>
-      <div id="confirmationEmpty" class="card empty hidden">Belum ada tugas yang perlu dikonfirmasi.</div>
-      <div id="confirmationList" class="courier-task-list"></div>
-    </section>
-
-    <section id="historyView" class="hidden">
-      <div class="page-heading">
-        <div class="section-title">Riwayat Tugas</div>
-        <div class="muted small">Semua tugas yang sudah kamu selesaikan.</div>
-      </div>
-      <div id="historyEmpty" class="card empty hidden">Belum ada riwayat tugas.</div>
-      <div id="historyList" class="courier-task-list"></div>
-    </section>
-
-    <section id="dashboardView" class="hidden dashboard-page">
-      <div class="dashboard-summary">
-        <div class="dashboard-stat stat-total-card"><div class="dashboard-stat-icon">▣</div><div><div class="stat-label">Total Aktivitas</div><div id="statTotal" class="stat-value">0</div><div class="stat-foot"><span class="stat-trend">↗ <span id="statTotalTrend">12%</span></span><span>dari kemarin</span></div></div></div>
-        <div class="dashboard-stat stat-wait-card"><div class="dashboard-stat-icon">◷</div><div><div class="stat-label">Menunggu Berangkat</div><div id="statMenunggu" class="stat-value">0</div><div class="stat-progress"><span id="statMenungguProgress"></span></div><div class="stat-percent" id="statMenungguPercent">0%</div></div></div>
-        <div class="dashboard-stat stat-road-card"><div class="dashboard-stat-icon">▰</div><div><div class="stat-label">Lagi Jalan</div><div id="statJalan" class="stat-value">0</div><div class="stat-progress"><span id="statJalanProgress"></span></div><div class="stat-percent" id="statJalanPercent">0%</div></div></div>
-        <div class="dashboard-stat stat-proses-card"><div class="dashboard-stat-icon">◔</div><div><div class="stat-label">Lagi Diproses</div><div id="statProses" class="stat-value">0</div><div class="stat-progress"><span id="statProsesProgress"></span></div><div class="stat-percent" id="statProsesPercent">0%</div></div></div>
-        <div class="dashboard-stat stat-done-card"><div class="dashboard-stat-icon">✓</div><div><div class="stat-label">Selesai</div><div id="statSelesai" class="stat-value">0</div><div class="stat-progress"><span id="statSelesaiProgress"></span></div><div class="stat-percent" id="statSelesaiPercent">0%</div></div></div>
-      </div>
-
-      <div class="card dashboard-filters dashboard-filter-compact">
-        <div class="dashboard-filter-head">
-          <div><div class="section-title">Filter aktivitas</div><div class="muted small">Gunakan filter untuk melihat data yang lebih spesifik.</div></div>
-        </div>
-        <div class="filters-grid dashboard-filter-grid">
-          <label>Hari<input id="dashboardDate" type="date"></label>
-          <label>Kurir<select id="dashboardCourier"><option value="">Semua kurir</option></select></label>
-          <div class="dashboard-filter-actions"><button id="applyDashboardFilterBtn" class="primary" type="button">Terapkan</button><button id="resetDashboardFilterBtn" class="ghost" type="button">Reset</button></div>
-        </div>
-      </div>
-
-      <div class="dashboard-bottom-grid">
-        <div class="card dashboard-type-card">
-          <div class="section-title-row dashboard-section-head"><div><div class="section-title">Rekap Jenis Tugas</div><div class="muted small">Distribusi jenis tugas pada aktivitas yang tampil.</div></div></div>
-          <div class="type-summary-layout"><div id="activityTypeChart" class="type-donut"></div><div id="activityTypeLegend" class="type-legend"></div></div>
-        </div>
-
-      </div>
-
-      <div class="dashboard-main-grid">
-        <div class="card dashboard-detail-card">
-          <div class="section-title-row dashboard-section-head dashboard-detail-head">
-            <div><div class="section-title">Detail Aktivitas Kurir</div><div class="muted small">Pantau aktivitas kurir berdasarkan filter yang dipilih.</div></div>
-            <div id="dashboardDetailDate" class="dashboard-detail-date" aria-label="Tanggal data">Semua tanggal</div>
-          </div>
-          <div class="table-wrap dashboard-detail-wrap">
-            <table class="dashboard-detail-table">
-              <thead><tr><th>Jam<br>Berangkat</th><th>Jam<br>Tiba</th><th>Durasi<br>Perjalanan</th><th>Kurir</th><th>Rumah Sakit/Tujuan</th><th>Jenis Kegiatan</th><th>Keterangan</th><th>Status</th><th>Foto Bukti</th></tr></thead>
-              <tbody id="dashboardTable"></tbody>
-            </table>
-          </div>
-          <div id="dashboardEmpty" class="empty hidden">Belum ada aktivitas.</div>
-        </div>
-
-        <div class="card dashboard-journey-card">
-          <div class="section-title-row dashboard-section-head">
-            <div><div class="section-title">Perjalanan Kurir</div><div class="muted small">Lihat urutan perjalanan tiap kurir berdasarkan Trip.</div></div>
-          </div>
-          <div id="journeyPanel" class="journey-panel"></div>
-        </div>
-      </div>
-
-    </section>
-
-    <section id="reportView" class="hidden report-page">
-      <div class="report-layout">
-      <aside class="report-sidebar">
-        <div class="report-brand"><div class="report-brand-mark">G</div><div><strong>PT Gamamed</strong><small>Kurir & Logistik</small></div></div>
-        <nav class="report-side-nav">
-          <button type="button" data-report-nav="navDashboard">⌂ <span>Dashboard</span></button>
-          <button type="button" data-report-nav="navActivity">▣ <span>Aktivitas Kurir</span></button>
-          <button type="button" class="active">▤ <span>Laporan Bulanan</span></button>
-          <button type="button" data-report-nav="navUsers">♙ <span>Manajemen Pengguna</span></button>
-        </nav>
-        <div class="report-side-user"><div class="report-user-avatar">●</div><div><strong id="reportSideUserName">Admin</strong><small>Pengguna</small></div></div>
-      </aside>
-      <div class="report-content">
-
-      <div class="report-hero">
-        <div>
-          <div class="eyebrow report-eyebrow">LAPORAN AKTIVITAS</div>
-          <div class="section-title report-hero-title">Laporan Aktivitas Kurir</div>
-          <div class="muted report-hero-subtitle">Rekap seluruh aktivitas kurir selama periode tertentu.</div>
-        </div>
-        <div class="report-hero-actions">
-          <button id="refreshReportBtn" class="ghost" type="button">↻ Muat Ulang</button>
-          <button id="exportReportBtn" class="report-excel-btn" type="button">▣ Export Excel</button>
-          <button id="exportPdfBtn" class="report-pdf-btn" type="button">▤ Export PDF</button>
-        </div>
-      </div>
-
-      <div class="card report-filter-card">
-        <div class="report-filter-title-row">
-          <div>
-            <div class="section-title">Filter laporan</div>
-            <div class="muted small">Gunakan filter di bawah untuk menampilkan data yang kamu butuhkan.</div>
-          </div>
-          
-        </div>
-        <div class="filters-grid report-filters-grid">
-          <label>Dari tanggal
-            <input id="reportDateFrom" type="date">
-          </label>
-          <label>Sampai tanggal
-            <input id="reportDateTo" type="date">
-          </label>
-          <label>Status
-            <select id="reportStatus">
-              <option value="" selected disabled>Pilih status</option>
-              <option value="__ALL__">Semua status</option>
-              <option>Menunggu Berangkat</option>
-              <option>Lagi Jalan</option>
-              <option>Lagi Diproses</option>
-              <option>Selesai</option>
-            </select>
-          </label>
-          <label>Kurir
-            <select id="reportCourier">
-              <option value="" selected disabled>Pilih kurir</option>
-              <option value="__ALL__">Semua kurir</option>
-            </select>
-          </label>
-          <label>Asal
-            <select id="reportOrigin">
-              <option value="" selected disabled>Pilih asal</option>
-              <option value="__ALL__">Semua asal</option>
-            </select>
-          </label>
-          <label>Tujuan
-            <select id="reportDestination">
-              <option value="" selected disabled>Pilih tujuan</option>
-              <option value="__ALL__">Semua tujuan</option>
-            </select>
-          </label>
-        </div>
-        <div class="filter-actions">
-          <button id="applyReportBtn" class="primary" type="button">Terapkan</button>
-          <button id="resetReportBtn" class="ghost" type="button">Reset</button>
-        </div>
-        <p id="reportMsg" class="message"></p>
-      </div>
-
-      <div id="reportKpiGrid" class="report-kpi-grid">
-        <div class="report-kpi kpi-blue"><span class="kpi-icon">▣</span><div><div class="kpi-label">Total Aktivitas</div><strong id="reportKpiTotal">0</strong><small id="reportKpiTotalSub">periode terpilih</small></div></div>
-        <div class="report-kpi kpi-green"><span class="kpi-icon">●</span><div><div class="kpi-label">Total Kunjungan RS</div><strong id="reportKpiVisits">0</strong><small>tujuan unik</small></div></div>
-        <div class="report-kpi kpi-purple"><span class="kpi-icon">◷</span><div><div class="kpi-label">Total Waktu OTW</div><strong id="reportKpiOtw">00j 00m</strong><small>durasi mengemudi</small></div></div>
-        <div class="report-kpi kpi-red"><span class="kpi-icon">◷</span><div><div class="kpi-label">Total Waktu di RS</div><strong id="reportKpiRs">00j 00m</strong><small>estimasi dari durasi tugas</small></div></div>
-        <div class="report-kpi kpi-orange"><span class="kpi-icon">↗</span><div><div class="kpi-label">Total Jarak</div><strong id="reportKpiDistance">-</strong><small>data jarak belum tersedia</small></div></div>
-        <div class="report-kpi kpi-indigo"><span class="kpi-icon">●</span><div><div class="kpi-label">Total Kurir</div><strong id="reportKpiCouriers">0</strong><small>kurir aktif di hasil</small></div></div>
-      </div>
-
-      <div class="report-analytics-grid">
-        <div class="card report-chart-card"><div class="section-title">Aktivitas Berdasarkan Jenis Kegiatan</div><div id="reportActivityChart" class="report-bar-chart"></div></div>
-        <div class="card report-chart-card"><div class="section-title">Rekap Hasil Penagihan</div><div id="reportCollectionChart" class="report-donut-layout"></div></div>
-        <div class="card report-chart-card"><div class="section-title">Total Aktivitas per Kurir</div><div id="reportCourierChart" class="report-courier-bars"></div></div>
-      </div>
-
-      <div class="card report-data-card">
-        <div class="section-title-row report-data-head">
-          <div>
-            <div class="eyebrow report-data-eyebrow">HASIL LAPORAN</div>
-            <div class="section-title">Data Aktivitas</div>
-            <div class="muted small">Daftar aktivitas sesuai filter laporan yang diterapkan.</div>
-          </div>
-          <div id="reportCount" class="report-count-badge">0 aktivitas</div>
-        </div>
-        <div class="report-table-frame">
-          <div class="table-wrap">
-            <table>
-              <thead>
-              <tr>
-                <th>ID Aktivitas</th>
-                <th>Status</th>
-                <th>ID Pengguna</th>
-                <th>Nama</th>
-                <th>Trip</th>
-                <th>Jenis Tugas</th>
-                <th>Asal</th>
-                <th>Tujuan</th>
-                <th>Foto Dokumen</th>
-                <th><span class="report-head-line">Foto</span><span class="report-head-line">Saat Berangkat</span></th>
-                <th><span class="report-head-single">Waktu Berangkat</span></th>
-                <th><span class="report-head-single">Waktu Datang</span></th>
-                <th><span class="report-head-line">Foto</span><span class="report-head-line">Saat Datang</span></th>
-                <th>Hasil</th>
-                <th>Keterangan</th>
-                <th>Waktu Selsai</th>
-                <th>Durasi Mengemudi</th>
-                <th>Durasi Tugas</th>
-              </tr>
-            </thead>
-            <tbody id="reportTable"></tbody>
-            </table>
-          </div>
-        </div>
-        <div id="reportEmpty" class="empty hidden">Data aktivitas tidak ditemukan.</div>
-      </div>
-      </div>
-    </section>
-    <section id="usersView" class="hidden">
-      <div class="card">
-        <div class="section-title-row">
-          <div>
-            <div class="section-title">Manajemen Pengguna</div>
-            <div class="muted small">Tambah, hapus, atau ubah status pengguna.</div>
-          </div>
-          <button id="refreshUsersBtn" class="ghost" type="button">Muat Ulang</button>
-        </div>
-        <form id="userForm" class="user-form">
-          <div class="two">
-            <label>ID Pengguna<input id="userId" required></label>
-            <label>Nama<input id="userName" required></label>
-          </div>
-          <div class="two">
-            <label>Password<input id="userPin" inputmode="numeric" required></label>
-            <label>Peran<select id="userRole" required><option value="">Pilih peran</option><option>Kurir</option><option>Admin</option><option>Super User</option></select></label>
-          </div>
-          <button class="primary" type="submit">Tambah Pengguna</button>
-          <p id="userMsg" class="message"></p>
-        </form>
-      </div>
-      <div class="card">
-        <div class="section-title">Daftar Pengguna</div>
-        <div id="usersList" class="users-list"></div>
-      </div>
-    </section>
   </section>
 
-    <footer class="app-footer"><div class="developer-credit">Developed by Rizkya Andini Putri</div></footer>
-</main>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="script.js?v=721"></script>
+  <section id="appView" class="app-shell hidden">
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <div class="brand-block">
+          <div class="brand-mark">G</div>
+          <div class="brand-text"><strong>PT Gamamed</strong><span>Kurir &amp; Logistik</span></div>
+        </div>
+        <div class="sidebar-rule"></div>
+        <nav id="nav" class="side-nav hidden" aria-label="Navigasi utama">
+          <button id="navActivity" class="nav-btn" type="button"><span class="nav-icon">▣</span><span>Buat Tugas</span></button>
+          <button id="navConfirm" class="nav-btn hidden" type="button"><span class="nav-icon">✓</span><span>Konfirmasi Tugas</span></button>
+          <button id="navHistory" class="nav-btn hidden" type="button"><span class="nav-icon">◫</span><span>Riwayat Tugas</span></button>
+          <button id="navDashboard" class="nav-btn hidden" type="button"><span class="nav-icon">⌂</span><span>Dashboard</span></button>
+          <button id="navReport" class="nav-btn hidden" type="button"><span class="nav-icon">▤</span><span>Laporan</span></button>
+          <button id="navUsers" class="nav-btn hidden" type="button"><span class="nav-icon">♙</span><span>Manajemen Pengguna</span></button>
+        </nav>
+      </div>
+      <div class="sidebar-bottom">
+        <div class="sidebar-user">
+          <div class="avatar">W</div>
+          <div><strong id="sidebarUserName">Pengguna</strong><span>Aktivitas operasional</span></div>
+        </div>
+        <button id="logoutBtn" class="sidebar-logout ghost" type="button">Keluar</button>
+      </div>
+    </aside>
+
+    <div class="main-shell">
+      <div id="dashboardStickyTop" class="page-topbar">
+        <div class="page-topbar-inner">
+          <div class="page-heading-main">
+            <span class="eyebrow">AKTIVITAS KURIR</span>
+            <h1 id="welcomeName"><span class="greeting-text">Selamat siang 🌤️</span><span class="welcome-user">-</span></h1>
+          </div>
+          <div class="page-topbar-actions">
+            <div class="live-dot"><i></i>Operasional aktif</div>
+          </div>
+        </div>
+      </div>
+      <div id="dashboardStickySpacer" class="dashboard-sticky-spacer" aria-hidden="true"></div>
+
+      <main class="content">
+        <!-- COURIER FLOW -->
+        <section id="courierView" class="hidden view-section courier-view">
+          <div class="section-hero">
+            <div>
+              <span class="eyebrow">AKTIVITAS KURIR</span>
+              <h2>Buat Tugas</h2>
+              <p>Lengkapi detail tugas sebelum mulai perjalanan.</p>
+            </div>
+            <div class="step-strip compact">
+              <span class="step active"><b>1</b> Buat</span>
+              <span class="step"><b>2</b> Datang</span>
+              <span class="step"><b>3</b> Selesai</span>
+            </div>
+          </div>
+
+          <div id="activityCard" class="surface flow-card">
+            <div class="surface-head">
+              <div><h3>Detail Tugas</h3><p>Pilih jenis tugas, rute, dan foto pendukung.</p></div>
+              <span class="state-chip neutral">Draft</span>
+            </div>
+            <form id="activityForm" class="flow-form">
+              <fieldset class="jenis-tugas-fieldset">
+                <legend>Jenis Tugas <span class="required-mark">*</span></legend>
+                <div id="jenisTugasGroup" class="jenis-tugas-group" aria-label="Pilih satu atau lebih jenis tugas" aria-required="true">
+                  <label class="jenis-tugas-option"><input type="checkbox" name="jenisTugas" value="Penagihan"><span>Penagihan</span></label>
+                  <label class="jenis-tugas-option"><input type="checkbox" name="jenisTugas" value="Kirim PO"><span>Kirim PO</span></label>
+                  <label class="jenis-tugas-option"><input type="checkbox" name="jenisTugas" value="Ambil BA/PO"><span>Ambil BA/PO</span></label>
+                  <label class="jenis-tugas-option"><input type="checkbox" name="jenisTugas" value="Tukar Faktur"><span>Tukar Faktur</span></label>
+                </div>
+                <div id="jenisTugasHint" class="helper">Bisa pilih lebih dari satu.</div>
+              </fieldset>
+
+              <div class="form-grid two-col">
+                <div class="field combo-wrap">
+                  <label for="asalSearch">Berangkat Dari <span class="required-mark">*</span></label>
+                  <input id="asalSearch" autocomplete="off" placeholder="Cari lokasi keberangkatan..." required>
+                  <div id="asalList" class="combo-list hidden"></div>
+                </div>
+                <div class="field combo-wrap">
+                  <label for="tujuanSearch">Menuju <span class="required-mark">*</span></label>
+                  <input id="tujuanSearch" autocomplete="off" placeholder="Cari lokasi tujuan..." required>
+                  <div id="tujuanList" class="combo-list hidden"></div>
+                </div>
+              </div>
+
+              <div class="upload-grid">
+                <label class="upload-box">
+                  <span class="upload-head"><span>Foto Dokumen</span><b>*</b></span>
+                  <span class="upload-copy">Upload foto dokumen tugas.</span>
+                  <input id="fotoDokumen" type="file" accept="image/*" required>
+                  <span class="upload-button">Pilih Foto</span>
+                  <p id="fotoDokumenDraft" class="draft-file-message"></p>
+                </label>
+                <label class="upload-box">
+                  <span class="upload-head"><span>Foto Saat Berangkat</span><b>*</b></span>
+                  <span class="upload-copy">Upload foto sebelum perjalanan.</span>
+                  <input id="fotoBerangkat" type="file" accept="image/*" required>
+                  <span class="upload-button">Pilih Foto</span>
+                  <p id="fotoBerangkatDraft" class="draft-file-message"></p>
+                </label>
+              </div>
+
+              <button id="startBtn" class="primary large full" type="submit" disabled>Buat Tugas</button>
+              <p id="activityMsg" class="message"></p>
+            </form>
+          </div>
+
+          <div id="pendingDepartureCard" class="surface flow-card hidden">
+            <div class="surface-head">
+              <div><h3>Tugas Menunggu Berangkat</h3><p>Langkah 1 dari 3 · Pastikan foto sudah lengkap sebelum jalan.</p></div>
+              <span class="state-chip warning">Menunggu Berangkat</span>
+            </div>
+            <div id="pendingDepartureInfo" class="info-grid flow-info-grid"></div>
+            <div class="action-row"><button id="pendingDepartureBtn" class="primary large" type="button">Konfirmasi Berangkat</button></div>
+            <p id="pendingDepartureMsg" class="message"></p>
+          </div>
+
+          <div id="activeCard" class="surface flow-card hidden">
+            <div class="surface-head">
+              <div><h3>Tugas Sedang Berjalan</h3><p>Langkah 2 dari 3 · Selesaikan perjalanan lalu konfirmasi kedatangan.</p></div>
+              <span id="activeStatus" class="state-chip info">Lagi Jalan</span>
+            </div>
+            <div id="activeInfo" class="info-grid flow-info-grid"></div>
+            <div class="action-row">
+              <button id="arrivalBtn" class="primary large" type="button">Konfirmasi Datang</button>
+            </div>
+            <p id="arrivalMsg" class="message"></p>
+          </div>
+
+          <div id="resultCard" class="surface flow-card hidden">
+            <div class="surface-head">
+              <div><h3>Selesaikan Tugas</h3><p>Langkah 3 dari 3 · Lengkapi hasil sebelum menutup tugas.</p></div>
+              <span id="resultStatus" class="state-chip purple">Lagi Diproses</span>
+            </div>
+            <div class="result-summary"><span id="arrivalTime">Sampai: -</span></div>
+            <form id="resultForm" class="flow-form" onsubmit="return false;">
+              <div class="form-grid two-col">
+                <div class="field"><label for="hasil">Hasil <span class="required-mark">*</span></label><select id="hasil"><option value="">Pilih hasil tugas</option><option>Berhasil</option><option>Sebagian Berhasil</option><option>Tidak Berhasil</option></select></div>
+                <div class="field"><label for="keterangan">Keterangan <span class="required-mark">*</span></label><textarea id="keterangan" rows="4" placeholder="Tulis keterangan hasil tugas..."></textarea></div>
+              </div>
+              <div class="action-row"><button id="saveResultBtn" class="primary large" type="submit">Konfirmasi Selesai</button><button id="completeBtn" class="secondary large hidden" type="button">Selesai</button></div>
+              <p id="resultMsg" class="message"></p>
+            </form>
+          </div>
+        </section>
+
+        <section id="confirmationView" class="hidden view-section">
+          <div class="section-hero"><div><span class="eyebrow">OPERASIONAL</span><h2>Konfirmasi Tugas</h2><p>Selesaikan setiap langkah konfirmasi sampai tugas selesai.</p></div></div>
+          <div id="confirmationEmpty" class="surface empty hidden">Belum ada tugas yang perlu dikonfirmasi.</div>
+          <div id="confirmationList" class="task-list"></div>
+        </section>
+
+        <section id="historyView" class="hidden view-section">
+          <div class="section-hero"><div><span class="eyebrow">OPERASIONAL</span><h2>Riwayat Tugas</h2><p>Semua tugas yang sudah kamu selesaikan.</p></div></div>
+          <div id="historyEmpty" class="surface empty hidden">Belum ada riwayat tugas.</div>
+          <div id="historyList" class="task-list"></div>
+        </section>
+
+        <!-- DASHBOARD -->
+        <section id="dashboardView" class="hidden view-section dashboard-page">
+          <div class="section-hero dashboard-hero">
+            <div><span class="eyebrow">MONITORING</span><h2>Dashboard Aktivitas</h2><p>Pantau aktivitas kurir, status tugas, dan perjalanan hari ini.</p></div>
+            <div class="hero-meta"><span class="hero-date">Data operasional</span></div>
+          </div>
+
+          <div class="kpi-grid dashboard-kpis">
+            <div class="kpi-card kpi-blue"><div class="kpi-icon">▣</div><div><span>Total Aktivitas</span><strong id="statTotal">0</strong><small>aktivitas terpilih</small></div></div>
+            <div class="kpi-card kpi-amber"><div class="kpi-icon">◷</div><div><span>Menunggu Berangkat</span><strong id="statMenunggu">0</strong><div class="mini-progress"><i id="statMenungguProgress"></i></div><small id="statMenungguPercent">0%</small></div></div>
+            <div class="kpi-card kpi-cyan"><div class="kpi-icon">▰</div><div><span>Lagi Jalan</span><strong id="statJalan">0</strong><div class="mini-progress"><i id="statJalanProgress"></i></div><small id="statJalanPercent">0%</small></div></div>
+            <div class="kpi-card kpi-purple"><div class="kpi-icon">◔</div><div><span>Lagi Diproses</span><strong id="statProses">0</strong><div class="mini-progress"><i id="statProsesProgress"></i></div><small id="statProsesPercent">0%</small></div></div>
+            <div class="kpi-card kpi-green"><div class="kpi-icon">✓</div><div><span>Selesai</span><strong id="statSelesai">0</strong><div class="mini-progress"><i id="statSelesaiProgress"></i></div><small id="statSelesaiPercent">0%</small></div></div>
+          </div>
+
+          <div class="surface filter-strip dashboard-filters">
+            <div class="filter-title"><span class="eyebrow">FILTER</span><strong>Aktivitas</strong><small>Pilih tanggal dan kurir yang ingin dipantau.</small></div>
+            <div class="filter-field"><label>Hari</label><input id="dashboardDate" type="date"></div>
+            <div class="filter-field"><label>Kurir</label><select id="dashboardCourier"><option value="">Semua kurir</option></select></div>
+            <div class="filter-actions"><button id="applyDashboardFilterBtn" class="primary" type="button">Terapkan</button><button id="resetDashboardFilterBtn" class="ghost" type="button">Reset</button></div>
+          </div>
+
+          <div class="analytics-grid dashboard-analytics">
+            <div class="surface analytics-card large"><div class="surface-head compact"><div><h3>Aktivitas Berdasarkan Jenis Tugas</h3><p>Distribusi jenis tugas pada aktivitas yang tampil.</p></div></div><div id="activityTypeChart" class="chart-area bar-area"></div><div id="activityTypeLegend" class="legend-row"></div></div>
+            <div class="surface analytics-card"><div class="surface-head compact"><div><h3>Status Aktivitas</h3><p>Komposisi status saat ini.</p></div></div><div id="statusChart" class="donut-wrap"></div><div id="statusLegend" class="legend-list"></div><div id="activityChart" class="hidden" aria-hidden="true"></div></div>
+            <div class="surface analytics-card"><div class="surface-head compact"><div><h3>Total Aktivitas per Kurir</h3><p>Jumlah aktivitas pada filter aktif.</p></div></div><div id="courierChart" class="courier-chart"></div><div id="courierLegend" class="legend-row"></div></div>
+          </div>
+
+          <div class="dashboard-main-grid">
+            <div class="surface table-card">
+              <div class="surface-head"><div><h3>Detail Aktivitas Kurir</h3><p>Pantau aktivitas berdasarkan tanggal dan kurir.</p></div><span id="dashboardDetailDate" class="data-badge">Semua tanggal</span></div>
+              <div class="table-scroll"><table class="ops-table dashboard-detail-table"><thead><tr><th>Jam Berangkat</th><th>Jam Tiba</th><th>Durasi</th><th>Kurir</th><th>RS / Tujuan</th><th>Jenis Tugas</th><th>Keterangan</th><th>Status</th><th>Foto</th></tr></thead><tbody id="dashboardTable"></tbody></table></div>
+              <div id="dashboardEmpty" class="empty hidden">Belum ada aktivitas.</div>
+            </div>
+            <div class="surface journey-card"><div class="surface-head"><div><h3>Perjalanan Kurir</h3><p>Urutan perjalanan berdasarkan Trip.</p></div></div><div id="journeyPanel" class="journey-panel"></div></div>
+          </div>
+
+          <div class="surface proof-card"><div class="surface-head"><div><h3>Foto Bukti Aktivitas</h3><p>Foto terbaru dari aktivitas yang sedang tampil.</p></div></div><div id="proofGallery" class="proof-gallery"></div></div>
+        </section>
+
+        <!-- REPORT -->
+        <section id="reportView" class="hidden view-section report-page">
+          <div class="report-headline"><div><span class="eyebrow">LAPORAN AKTIVITAS KURIR</span><h2>Laporan Aktivitas Kurir</h2><p>Rekap seluruh aktivitas kurir selama periode tertentu.</p></div><div class="report-head-actions"><button id="refreshReportBtn" class="ghost" type="button">↻ Muat Ulang</button><button id="exportReportBtn" class="excel-btn" type="button">▣ Export Excel</button><button id="exportPdfBtn" class="pdf-btn" type="button">▤ Export PDF</button></div></div>
+
+          <div class="surface report-filter-panel">
+            <div class="report-filter-grid">
+              <div class="filter-field"><label>Periode</label><div class="date-range"><input id="reportDateFrom" type="date"><span>s/d</span><input id="reportDateTo" type="date"></div></div>
+              <div class="filter-field"><label>Status</label><select id="reportStatus"><option value="" selected disabled>Pilih status</option><option value="__ALL__">Semua status</option><option>Menunggu Berangkat</option><option>Lagi Jalan</option><option>Lagi Diproses</option><option>Selesai</option></select></div>
+              <div class="filter-field"><label>Kurir</label><select id="reportCourier"><option value="" selected disabled>Pilih kurir</option><option value="__ALL__">Semua kurir</option></select></div>
+              <div class="filter-field"><label>Rumah Sakit / Asal</label><select id="reportOrigin"><option value="" selected disabled>Pilih asal</option><option value="__ALL__">Semua asal</option></select></div>
+              <div class="filter-field"><label>Rumah Sakit / Tujuan</label><select id="reportDestination"><option value="" selected disabled>Pilih tujuan</option><option value="__ALL__">Semua tujuan</option></select></div>
+              <div class="filter-actions"><button id="applyReportBtn" class="primary" type="button">⌕ Terapkan</button><button id="resetReportBtn" class="ghost" type="button">↻ Reset</button></div>
+            </div>
+            <p id="reportMsg" class="message"></p>
+          </div>
+
+          <div id="reportKpiGrid" class="kpi-grid report-kpis">
+            <div class="kpi-card kpi-blue"><div class="kpi-icon">▣</div><div><span>Total Aktivitas</span><strong id="reportKpiTotal">0</strong><small id="reportKpiTotalSub">periode terpilih</small></div></div>
+            <div class="kpi-card kpi-green"><div class="kpi-icon">●</div><div><span>Total Kunjungan RS</span><strong id="reportKpiVisits">0</strong><small>tujuan unik</small></div></div>
+            <div class="kpi-card kpi-purple"><div class="kpi-icon">◷</div><div><span>Total Waktu OTW</span><strong id="reportKpiOtw">0j 0m</strong><small>durasi mengemudi</small></div></div>
+            <div class="kpi-card kpi-red"><div class="kpi-icon">◷</div><div><span>Total Waktu di RS</span><strong id="reportKpiRs">0j 0m</strong><small>estimasi dari durasi tugas</small></div></div>
+            <div class="kpi-card kpi-orange"><div class="kpi-icon">↗</div><div><span>Total Jarak</span><strong id="reportKpiDistance">-</strong><small>data jarak</small></div></div>
+            <div class="kpi-card kpi-indigo"><div class="kpi-icon">●</div><div><span>Total Kurir</span><strong id="reportKpiCouriers">0</strong><small>kurir aktif di hasil</small></div></div>
+          </div>
+
+          <div class="report-analytics-grid">
+            <div class="surface report-chart-card"><div class="surface-head compact"><div><h3>Aktivitas Berdasarkan Jenis Kegiatan</h3><p>Jumlah tugas per kategori.</p></div></div><div id="reportActivityChart" class="report-bar-chart"></div></div>
+            <div class="surface report-chart-card"><div class="surface-head compact"><div><h3>Rekap Hasil Penagihan</h3><p>Distribusi hasil aktivitas.</p></div></div><div id="reportCollectionChart" class="report-donut-layout"></div></div>
+            <div class="surface report-chart-card"><div class="surface-head compact"><div><h3>Total Aktivitas per Kurir</h3><p>Perbandingan beban aktivitas.</p></div></div><div id="reportCourierChart" class="report-courier-bars"></div></div>
+          </div>
+
+          <div class="surface report-table-card">
+            <div class="surface-head"><div><span class="eyebrow">HASIL LAPORAN</span><h3>Detail Aktivitas</h3><p>Data sesuai filter laporan yang diterapkan.</p></div><span id="reportCount" class="data-badge">0 aktivitas</span></div>
+            <div class="table-scroll"><table class="ops-table report-table"><thead><tr><th>ID Aktivitas</th><th>Status</th><th>ID Pengguna</th><th>Nama</th><th>Trip</th><th>Jenis Tugas</th><th>Asal</th><th>Tujuan</th><th>Foto Dokumen</th><th>Foto Berangkat</th><th>Waktu Berangkat</th><th>Waktu Datang</th><th>Foto Datang</th><th>Hasil</th><th>Keterangan</th><th>Waktu Selesai</th><th>Durasi Mengemudi</th><th>Durasi Tugas</th></tr></thead><tbody id="reportTable"></tbody></table></div>
+            <div id="reportEmpty" class="empty hidden">Data aktivitas tidak ditemukan.</div>
+          </div>
+        </section>
+
+        <!-- USERS -->
+        <section id="usersView" class="hidden view-section">
+          <div class="section-hero"><div><span class="eyebrow">ADMINISTRASI</span><h2>Manajemen Pengguna</h2><p>Tambah, ubah status, atau hapus pengguna.</p></div><button id="refreshUsersBtn" class="ghost" type="button">↻ Muat Ulang</button></div>
+          <div class="admin-grid">
+            <div class="surface admin-form-card"><div class="surface-head"><div><h3>Tambah Pengguna</h3><p>Lengkapi data pengguna baru.</p></div></div><form id="userForm" class="flow-form"><div class="form-grid two-col"><div class="field"><label>ID Pengguna</label><input id="userId" required></div><div class="field"><label>Nama</label><input id="userName" required></div></div><div class="form-grid two-col"><div class="field"><label>Password</label><input id="userPin" inputmode="numeric" required></div><div class="field"><label>Peran</label><select id="userRole" required><option value="">Pilih peran</option><option>Kurir</option><option>Admin</option><option>Super User</option></select></div></div><button class="primary" type="submit">Tambah Pengguna</button><p id="userMsg" class="message"></p></form></div>
+            <div class="surface admin-list-card"><div class="surface-head"><div><h3>Daftar Pengguna</h3><p>Pengguna dan status akun.</p></div></div><div id="usersList" class="users-list"></div></div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </section>
+
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="script.js?v=900"></script>
 </body>
 </html>
