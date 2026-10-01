@@ -1389,11 +1389,29 @@ function pdfText(doc,text,x,y,size=9,style="normal",color=[23,48,80],opts={}){
   doc.setTextColor(...color);
   doc.text(String(text??"-"),x,y,opts);
 }
+
+function pdfSafeRoundedRect(doc,x,y,w,h,rx,ry,style="F") {
+  const nums=[x,y,w,h,rx,ry].map(Number);
+  if(!nums.every(Number.isFinite) || nums[2] < 0 || nums[3] < 0){
+    const xx=Number.isFinite(nums[0])?nums[0]:0;
+    const yy=Number.isFinite(nums[1])?nums[1]:0;
+    const ww=Number.isFinite(nums[2]) && nums[2] > 0 ? nums[2] : 0;
+    const hh=Number.isFinite(nums[3]) && nums[3] > 0 ? nums[3] : 0;
+    if(ww>0 && hh>0) doc.rect(xx,yy,ww,hh,style);
+    return;
+  }
+  const xx=nums[0], yy=nums[1], ww=nums[2], hh=nums[3];
+  const maxR=Math.max(0,Math.min(ww/2,hh/2));
+  const rrX=Math.max(0,Math.min(nums[4],maxR));
+  const rrY=Math.max(0,Math.min(nums[5],maxR));
+  doc.roundedRect(xx,yy,ww,hh,rrX,rrY,style);
+}
+
 function pdfRoundRect(doc,x,y,w,h,r,fill,border=null){
   doc.setFillColor(...fill);
   if(border)doc.setDrawColor(...border);
-  doc.roundedRect(x,y,w,h,r,r,"F");
-  if(border){doc.roundedRect(x,y,w,h,r,r,"S");}
+  pdfSafeRoundedRect(doc,x,y,w,h,r,r,"F");
+  if(border){pdfSafeRoundedRect(doc,x,y,w,h,r,r,"S");}
 }
 function pdfMetricCard(doc,x,y,w,h,accent,title,value,sub=""){
   const soft={blue:[242,248,255],green:[242,251,245],purple:[249,246,255],orange:[255,249,239]};
@@ -1406,7 +1424,7 @@ function pdfMetricCard(doc,x,y,w,h,accent,title,value,sub=""){
   if(sub)pdfText(doc,sub,x+22,y+27,5.6,"normal",[93,112,140]);
 }
 function pdfSectionTitle(doc,x,y,title,sub=""){
-  doc.setFillColor(34,132,238);doc.roundedRect(x,y-8,2.2,14,1.1,1.1,"F");
+  doc.setFillColor(34,132,238);pdfSafeRoundedRect(doc,x,y-8,2.2,14,1.1,1.1,"F");
   pdfText(doc,title,x+7,y,11.5,"bold",[18,45,79]);
   if(sub)pdfText(doc,sub,x+7,y+6,6.6,"normal",[90,112,143]);
 }
@@ -1456,7 +1474,7 @@ function pdfDrawBarChart(doc,x,y,w,h,entries,color=[37,125,236],labelColor=[63,8
   vals.forEach(([label,val],i)=>{
     const bh=Math.max(5,chartH*(Number(val)/max));
     const bx=left+i*slot+slot*0.17,bw=slot*0.56;
-    doc.setFillColor(...color);doc.roundedRect(bx,base-bh,bw,bh,1.2,1.2,"F");
+    doc.setFillColor(...color);pdfSafeRoundedRect(doc,bx,base-bh,bw,bh,1.2,1.2,"F");
     pdfText(doc,String(val),bx+bw/2,base-bh-3,7,"bold",[23,48,80],{align:"center"});
     const lab=String(label).length>12?String(label).slice(0,11)+"...":String(label);
     pdfText(doc,lab,bx+bw/2,base+8,5.4,"normal",labelColor,{align:"center"});
@@ -1469,9 +1487,9 @@ function pdfDrawHorizontalBars(doc,x,y,w,h,entries,colors=[37,125,236,72,185,116
   vals.forEach(([label,val],i)=>{
     const yy=top+i*rowH;
     pdfText(doc,String(label),x,yy+4,6.3,"normal",labelColor);
-    doc.setFillColor(231,238,246);doc.roundedRect(trackX,yy-1,trackW,6,2,2,"F");
+    doc.setFillColor(231,238,246);pdfSafeRoundedRect(doc,trackX,yy-1,trackW,6,2,2,"F");
     const bw=Math.max(6,trackW*(Number(val)/max));
-    doc.setFillColor(...colors[i%colors.length]);doc.roundedRect(trackX,yy-1,bw,6,2,2,"F");
+    doc.setFillColor(...colors[i%colors.length]);pdfSafeRoundedRect(doc,trackX,yy-1,bw,6,2,2,"F");
     pdfText(doc,String(val),trackX+trackW+4,yy+4,6.4,"bold",[23,48,80]);
   });
 }
@@ -1573,7 +1591,7 @@ async function buildActivityPdf(doc,rows){
   const typeColor=[[37,125,236],[53,183,89],[241,157,48],[141,96,222],[70,184,200],[157,168,183]];
   let page=1;
   const drawMainHeader=()=>{
-    doc.setFillColor(...BLUE);doc.roundedRect(M,18,2.3,18,1.1,1.1,'F');
+    doc.setFillColor(...BLUE);pdfSafeRoundedRect(doc,M,18,2.3,18,1.1,1.1,'F');
     pdfText(doc,'Laporan Bulanan Aktivitas Kurir',M+7,28,17,'bold',NAVY);
     pdfText(doc,`Periode: ${dashboardPeriodLabel()}`,M+7,35,10.5,'normal',MUTED);
     pdfRoundRect(doc,151,17,45,20,5,[240,247,253],null);
@@ -1581,7 +1599,7 @@ async function buildActivityPdf(doc,rows){
     pdfText(doc,dashboardPeriodLabel(),173,31,8.2,'bold',NAVY,{align:'center'});
   };
   const drawCourierHeader=(name,count,pageLabel='')=>{
-    doc.setFillColor(...BLUE);doc.roundedRect(M,18,2.3,18,1.1,1.1,'F');
+    doc.setFillColor(...BLUE);pdfSafeRoundedRect(doc,M,18,2.3,18,1.1,1.1,'F');
     pdfText(doc,'Detail Aktivitas Kurir',M+7,28,17,'bold',NAVY);
     pdfText(doc,`Periode: ${dashboardPeriodLabel()}`,M+7,35,10.5,'normal',MUTED);
     pdfRoundRect(doc,151,17,45,20,5,blueSoft,null);
