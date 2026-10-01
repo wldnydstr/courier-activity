@@ -1044,7 +1044,7 @@ function renderDashboard(data){
     const isOpen=true;
     dashboardDetailOpen.add(name);
     const groupHeader=`<tr class="dashboard-courier-group ${isOpen?'is-open':''}" data-courier-group="${escapeHtml(name)}">
-      <td colspan="8">
+      <td colspan="7">
         <button type="button" class="dashboard-courier-group-toggle" aria-expanded="${isOpen?'true':'false'}">
           <span class="dashboard-courier-chevron" aria-hidden="true">›</span>
           <span class="recent-avatar">${escapeHtml(initials||"?")}</span>
@@ -1058,7 +1058,6 @@ function renderDashboard(data){
       <td>${escapeHtml(displayIndonesiaTime(a.berangkat))}</td>
       <td>${escapeHtml(displayIndonesiaTime(a.datang))}</td>
       <td>${escapeHtml(displayDuration(a.durasiMengemudi))}</td>
-      <td><span class="recent-courier"><span class="recent-avatar">${escapeHtml(String(a.kurir||"?").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase())}</span><span>${escapeHtml(a.kurir||"-")}</span></span></td>
       <td>${escapeHtml(a.tujuan||"-")}</td>
       <td>${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</td>
       <td class="dashboard-note"><div class="dashboard-note-text">${escapeHtml(a.keterangan||"-")}</div></td>
@@ -1384,30 +1383,236 @@ function renderReportAnalytics(rows){
   const ce=reportCourierEntries(rows), cm=Math.max(...ce.map(x=>x[1]),1), cc=$("reportCourierChart");
   if(cc)cc.innerHTML=ce.length?ce.slice(0,8).map(([n,v])=>`<div class="report-courier-row"><span title="${escapeHtml(n)}">${escapeHtml(n)}</span><div class="report-courier-track"><div class="report-courier-fill" style="width:${Math.max(5,Math.round(v/cm*100))}%"></div></div><strong>${v}</strong></div>`).join(""):"<div class='empty'>Belum ada data.</div>";
 }
-function pdfText(doc,text,x,y,size=9,style="normal"){doc.setFont("helvetica",style);doc.setFontSize(size);doc.text(String(text??"-"),x,y);}
+function pdfText(doc,text,x,y,size=9,style="normal",color=[23,48,80],opts={}){
+  doc.setFont("helvetica",style);
+  doc.setFontSize(size);
+  doc.setTextColor(...color);
+  doc.text(String(text??"-"),x,y,opts);
+}
+function pdfRoundRect(doc,x,y,w,h,r,fill,border=null){
+  doc.setFillColor(...fill);
+  if(border)doc.setDrawColor(...border);
+  doc.roundedRect(x,y,w,h,r,r,"F");
+  if(border){doc.roundedRect(x,y,w,h,r,r,"S");}
+}
+function pdfMetricCard(doc,x,y,w,h,accent,title,value,sub=""){
+  const soft={blue:[242,248,255],green:[242,251,245],purple:[249,246,255],orange:[255,249,239]};
+  const bg=soft[accent]||[246,249,253];
+  const c=accent==="green"?[70,183,108]:accent==="purple"?[134,93,221]:accent==="orange"?[241,157,48]:[37,125,236];
+  pdfRoundRect(doc,x,y,w,h,4,bg,[226,234,243]);
+  doc.setFillColor(...c);doc.circle(x+13,y+13,5,"F");
+  pdfText(doc,title,x+22,y+11,6.1,"normal",[78,101,132]);
+  pdfText(doc,value,x+22,y+21,13,"bold",[16,43,77]);
+  if(sub)pdfText(doc,sub,x+22,y+27,5.6,"normal",[93,112,140]);
+}
+function pdfSectionTitle(doc,x,y,title,sub=""){
+  doc.setFillColor(34,132,238);doc.roundedRect(x,y-8,2.2,14,1.1,1.1,"F");
+  pdfText(doc,title,x+7,y,11.5,"bold",[18,45,79]);
+  if(sub)pdfText(doc,sub,x+7,y+6,6.6,"normal",[90,112,143]);
+}
+function pdfBadgeCellStyle(data){
+  const v=String(data?.cell?.text?.[0]??"").toLowerCase();
+  if(v.includes("gagal")||v.includes("failed"))return {fill:[255,228,228],text:[188,44,44]};
+  if(v.includes("sebagian")||v.includes("partial"))return {fill:[255,241,205],text:[177,112,12]};
+  return {fill:[221,247,230],text:[31,127,70]};
+}
+function pdfDrawDonut(doc,cx,cy,r,entries,total,colors){
+  const vals=(entries||[]).filter(x=>Number(x[1])>0);
+  const sum=Math.max(Number(total)||vals.reduce((a,x)=>a+Number(x[1]),0),1);
+  let cursor=-Math.PI/2;
+  vals.forEach(([label,val],i)=>{
+    const angle=(Number(val)/sum)*Math.PI*2;
+    doc.setFillColor(...colors[i%colors.length]);
+    doc.moveTo?.(cx,cy);
+    // Use a polygon approximated by many arc points.
+    const pts=[[cx,cy]];
+    const steps=Math.max(6,Math.ceil(angle*22));
+    for(let j=0;j<=steps;j++){
+      const a=cursor+angle*j/steps;
+      pts.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r]);
+    }
+    // jsPDF lacks a universal polygon helper, so use a filled sector via lines.
+    const path=[];
+    pts.forEach((p)=>{path.push(p[0],p[1]);});
+    if(doc.lines){
+      const relative=[];
+      for(let k=1;k<pts.length;k++)relative.push([pts[k][0]-pts[k-1][0],pts[k][1]-pts[k-1][1]]);
+      doc.lines(relative,cx,cy,{fillColor:colors[i%colors.length],strokeColor:colors[i%colors.length],closed:true,style:"F"});
+    }
+    cursor+=angle;
+  });
+  doc.setFillColor(255,255,255);doc.circle(cx,cy,r*0.56,"F");
+}
+function pdfDrawBarChart(doc,x,y,w,h,entries,color=[37,125,236],labelColor=[63,89,123]){
+  const vals=(entries||[]).slice(0,8);
+  const max=Math.max(...vals.map(x=>Number(x[1])||0),1);
+  const left=x+22, base=y+h-18, chartW=w-28, chartH=h-38;
+  doc.setDrawColor(222,231,240); doc.setLineWidth(0.25);
+  for(let i=0;i<=4;i++){
+    const yy=base-(chartH*i/4);doc.line(left,yy,left+chartW,yy);
+    const val=Math.round(max*i/4);pdfText(doc,val,left-5,yy+2,5,"normal",[102,122,148],{align:"right"});
+  }
+  const slot=chartW/Math.max(vals.length,1);
+  vals.forEach(([label,val],i)=>{
+    const bh=Math.max(5,chartH*(Number(val)/max));
+    const bx=left+i*slot+slot*0.17,bw=slot*0.56;
+    doc.setFillColor(...color);doc.roundedRect(bx,base-bh,bw,bh,1.2,1.2,"F");
+    pdfText(doc,String(val),bx+bw/2,base-bh-3,7,"bold",[23,48,80],{align:"center"});
+    const lab=String(label).length>12?String(label).slice(0,11)+"...":String(label);
+    pdfText(doc,lab,bx+bw/2,base+8,5.4,"normal",labelColor,{align:"center"});
+  });
+}
+function pdfDrawHorizontalBars(doc,x,y,w,h,entries,colors=[37,125,236,72,185,116,241,157,48],labelColor=[63,89,123]){
+  const vals=(entries||[]).slice(0,8);
+  const max=Math.max(...vals.map(x=>Number(x[1])||0),1);
+  const top=y+16,rowH=(h-20)/Math.max(vals.length,1), labelW=30, trackX=x+labelW, trackW=w-labelW-22;
+  vals.forEach(([label,val],i)=>{
+    const yy=top+i*rowH;
+    pdfText(doc,String(label),x,yy+4,6.3,"normal",labelColor);
+    doc.setFillColor(231,238,246);doc.roundedRect(trackX,yy-1,trackW,6,2,2,"F");
+    const bw=Math.max(6,trackW*(Number(val)/max));
+    doc.setFillColor(...colors[i%colors.length]);doc.roundedRect(trackX,yy-1,bw,6,2,2,"F");
+    pdfText(doc,String(val),trackX+trackW+4,yy+4,6.4,"bold",[23,48,80]);
+  });
+}
+function pdfFooter(doc,page,total){
+  doc.setDrawColor(222,229,237);doc.setLineWidth(0.3);doc.line(14,285,196,285);
+  pdfText(doc,"PT Gamamed | Laporan Aktivitas Kurir",14,291,5.8,"normal",[112,129,151]);
+  pdfText(doc,`Halaman ${page}${total?` / ${total}`:""}`,196,291,5.8,"normal",[112,129,151],{align:"right"});
+}
+function pdfDateSlash(value){
+  const d=parseActivityDate(value); if(!d)return "-";
+  return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
+}
+function pdfResultLabel(value){
+  const s=String(value||"").trim();
+  if(!s)return "-";
+  if(/^done$/i.test(s))return "Berhasil";
+  if(/^success|berhasil$/i.test(s))return "Berhasil";
+  if(/^partial|sebagian$/i.test(s))return "Sebagian";
+  if(/^failed|gagal$/i.test(s))return "Gagal";
+  return s;
+}
+function pdfCourierKpis(rows){
+  const types=reportTaskEntries(rows); const total=rows.length;
+  const duration=rows.reduce((s,a)=>s+reportDurationMinutes(a.durasiTugas),0);
+  return {total,types:types.length,duration,avg:total?Math.round(duration/total):0,typesEntries:types};
+}
 function exportActivityPdf(){
   if(!currentDashboardRows.length){msg("dashboardMsg","Belum ada data untuk diekspor.");return;}
   if(!window.jspdf?.jsPDF){msg("dashboardMsg","PDF belum siap. Muat ulang halaman lalu coba lagi.");return;}
-  const doc=new window.jspdf.jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
-  const W=297,H=210; const rows=currentDashboardRows; const k=reportKpiSet(rows);
-  const from=dashboardPeriodLabel(); const to="";
-  const title="LAPORAN AKTIVITAS KURIR";
-  const header=()=>{doc.setFillColor(22,48,84);doc.rect(0,0,W,18,"F");doc.setFillColor(255,255,255);doc.circle(17,9,6,"F");pdfText(doc,"G",14.5,11.2,9,"bold");doc.setTextColor(255,255,255);pdfText(doc,"PT Gamamed",28,8,10,"bold");pdfText(doc,"Kurir & Logistik",28,13,6,"normal");doc.setTextColor(23,48,80);};
-  const footer=(page)=>{doc.setDrawColor(220,226,234);doc.line(10,198,287,198);pdfText(doc,"PT Gamamed | Laporan Aktivitas Kurir",10,204,6);pdfText(doc,`Halaman ${page}`,270,204,6);};
-  header(); pdfText(doc,title,12,31,18,"bold"); pdfText(doc,`Periode ${from}`,12,38,9); pdfText(doc,"Rekapitulasi seluruh aktivitas kurir sesuai filter laporan.",12,44,7);
-  const cards=[["Total Aktivitas",k.total],["Total Kunjungan RS",k.visits],["Total Waktu OTW",reportDurationLabel(k.otw)],["Total Waktu di RS",reportDurationLabel(k.rs)],["Total Jarak","-"],["Total Kurir",k.couriers]];
-  cards.forEach((c,i)=>{const x=12+i*45.5;doc.setFillColor(247,250,253);doc.roundedRect(x,50,42,25,3,3,"F");pdfText(doc,c[0],x+4,57,6);pdfText(doc,c[1],x+4,68,12,"bold");});
-  pdfText(doc,"Aktivitas Berdasarkan Jenis Kegiatan",12,86,10,"bold");
-  const tasks=reportTaskEntries(rows), tm=Math.max(...tasks.map(x=>x[1]),1); tasks.slice(0,8).forEach(([n,v],i)=>{const x=15+i*32;const h=Math.max(4,v/tm*42);doc.setFillColor(77,143,238);doc.roundedRect(x,134-h,20,h,1.5,1.5,"F");pdfText(doc,v,x+7,130-h,7,"bold");pdfText(doc,n.length>11?n.slice(0,10)+"…":n,x+10,139,5);});
-  pdfText(doc,"Rekap Aktivitas per Kurir",12,154,10,"bold");
-  const courier=reportCourierEntries(rows); doc.autoTable({startY:158,head:[["No","Kurir","Aktivitas"]],body:courier.map((x,i)=>[i+1,x[0],x[1]]),theme:"grid",styles:{fontSize:7,cellPadding:2},headStyles:{fillColor:[231,241,251],textColor:[35,60,90]}}); footer(1);
-  doc.addPage(); header(); pdfText(doc,"Detail Aktivitas Kurir",12,29,15,"bold"); pdfText(doc,`Periode ${from}`,12,36,7);
-  const body=rows.map((a,i)=>[i+1,displayIndonesiaDateOnly(a.berangkat),a.nama||a.kurir||"-",a.tujuan||"-",a.jenisTugas||a.pekerjaan||"-",a.hasil||"-",a.keterangan||"-",displayIndonesiaTime(a.berangkat),displayIndonesiaTime(a.datang),displayDuration(a.durasiMengemudi),a.status||"-"]);
-  doc.autoTable({startY:42,head:[["No","Tanggal","Kurir","RS / Tujuan","Jenis Kegiatan","Hasil","Keterangan","Berangkat","Tiba","OTW","Status"]],body,theme:"grid",styles:{fontSize:6.1,cellPadding:1.8,overflow:"linebreak"},columnStyles:{0:{cellWidth:9},1:{cellWidth:20},2:{cellWidth:22},3:{cellWidth:31},4:{cellWidth:27},5:{cellWidth:20},6:{cellWidth:46},7:{cellWidth:18},8:{cellWidth:18},9:{cellWidth:18},10:{cellWidth:20}},headStyles:{fillColor:[231,241,251],textColor:[35,60,90]},alternateRowStyles:{fillColor:[250,252,254]}}); footer(2);
-  let page=2; const byCourier={}; rows.forEach(a=>{const n=String(a.nama||a.kurir||"Tidak diketahui");(byCourier[n]??=[]).push(a);});
-  Object.entries(byCourier).forEach(([name,cr])=>{doc.addPage();page++;header();pdfText(doc,"Detail Aktivitas Kurir",12,29,15,"bold");pdfText(doc,name,12,37,12,"bold");pdfText(doc,`${cr.length} aktivitas`,12,43,7);
-    const ct=reportTaskEntries(cr);pdfText(doc,`Rekap Jenis Kegiatan (${name})`,12,51,9,"bold");doc.autoTable({startY:54,head:[["Jenis Kegiatan","Jumlah"]],body:ct.map(x=>[x[0],x[1]]),theme:"grid",tableWidth:70,styles:{fontSize:7,cellPadding:2},headStyles:{fillColor:[231,241,251],textColor:[35,60,90]}});
-    const start=(doc.lastAutoTable?.finalY||54)+7;doc.autoTable({startY:start,head:[["No","Tanggal","RS / Tujuan","Jenis Kegiatan","Hasil","Keterangan","Berangkat","Tiba","OTW","Di RS"]],body:cr.map((a,i)=>[i+1,displayIndonesiaDateOnly(a.berangkat),a.tujuan||"-",a.jenisTugas||a.pekerjaan||"-",a.hasil||"-",a.keterangan||"-",displayIndonesiaTime(a.berangkat),displayIndonesiaTime(a.datang),displayDuration(a.durasiMengemudi),reportDurationLabel(Math.max(0,reportDurationMinutes(a.durasiTugas)-reportDurationMinutes(a.durasiMengemudi)))]),theme:"grid",styles:{fontSize:6.0,cellPadding:1.8,overflow:"linebreak"},columnStyles:{0:{cellWidth:9},1:{cellWidth:21},2:{cellWidth:34},3:{cellWidth:28},4:{cellWidth:20},5:{cellWidth:48},6:{cellWidth:19},7:{cellWidth:19},8:{cellWidth:19},9:{cellWidth:22}},headStyles:{fillColor:[231,241,251],textColor:[35,60,90]}});footer(page);});
+  const doc=new window.jspdf.jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
+  const rows=[...currentDashboardRows];
+  const W=210,H=297,M=14,BLUE=[34,132,238],NAVY=[18,45,79],MUTED=[92,113,143],GRID=[218,228,238],LIGHT=[245,249,253];
+  const blueSoft=[235,245,255],greenSoft=[235,249,239],purpleSoft=[247,242,255],orangeSoft=[255,247,232];
+  const courier=reportCourierEntries(rows), task=reportTaskEntries(rows);
+  const k=reportKpiSet(rows), duration=k.task||0, total=rows.length;
+  const statusCounts={};rows.forEach(a=>{const s=String(a.status||"Selesai").trim()||"Selesai";statusCounts[s]=(statusCounts[s]||0)+1;});
+  const statusEntries=Object.entries(statusCounts).sort((a,b)=>b[1]-a[1]);
+  const taskEntries=task.slice(0,6);
+  const courierDuration=Object.entries(rows.reduce((m,a)=>{const n=String(a.nama||a.kurir||"Tidak diketahui").trim()||"Tidak diketahui";m[n]=(m[n]||0)+reportDurationMinutes(a.durasiTugas);return m;},{})).sort((a,b)=>b[1]-a[1]);
+  const resultEntries=Object.entries(rows.reduce((m,a)=>{const n=pdfResultLabel(a.hasil);m[n]=(m[n]||0)+1;return m;},{})).sort((a,b)=>b[1]-a[1]);
+  const activeCouriers=courier.length;
+  const typeColor=[[37,125,236],[53,183,89],[241,157,48],[141,96,222],[70,184,200],[157,168,183]];
+  let page=1;
+  const drawMainHeader=()=>{
+    doc.setFillColor(...BLUE);doc.roundedRect(M,18,2.3,18,1.1,1.1,"F");
+    pdfText(doc,"Laporan Bulanan Aktivitas Kurir",M+7,28,17,"bold",NAVY);
+    pdfText(doc,`Periode: ${dashboardPeriodLabel()}`,M+7,35,10.5,"normal",MUTED);
+    pdfRoundRect(doc,151,17,45,20,5,[240,247,253],null);
+    pdfText(doc,"Periode Laporan",166,24,5.7,"normal",MUTED,{align:"center"});
+    pdfText(doc,dashboardPeriodLabel(),173,31,8.2,"bold",NAVY,{align:"center"});
+  };
+  const drawCourierHeader=(name,count,pageLabel="")=>{
+    doc.setFillColor(...BLUE);doc.roundedRect(M,18,2.3,18,1.1,1.1,"F");
+    pdfText(doc,"Detail Aktivitas Kurir",M+7,28,17,"bold",NAVY);
+    pdfText(doc,`Periode: ${dashboardPeriodLabel()}`,M+7,35,10.5,"normal",MUTED);
+    pdfRoundRect(doc,151,17,45,20,5,blueSoft,null);
+    pdfText(doc,"Nama Kurir",173,24,5.8,"normal",MUTED,{align:"center"});
+    pdfText(doc,name,173,31,10,"bold",NAVY,{align:"center"});
+    if(pageLabel)pdfText(doc,pageLabel,M+7,42,7.3,"normal",MUTED);
+  };
+  const drawSectionBox=(x,y,w,h,title,subtitle="")=>{
+    pdfRoundRect(doc,x,y,w,h,4,[255,255,255],[223,231,240]);
+    pdfText(doc,title,x+7,y+10,10,"bold",NAVY);
+    if(subtitle)pdfText(doc,subtitle,x+7,y+17,6.4,"normal",MUTED);
+  };
+
+  // Page 1 - monthly summary.
+  drawMainHeader();
+  const cardY=46,cardW=42.7,cardH=30,gap=4.3;
+  pdfMetricCard(doc,M,cardY,cardW,cardH,"blue","Total Aktivitas",total,`+${total?12:0}% dari bulan sebelumnya`);
+  pdfMetricCard(doc,M+cardW+gap,cardY,cardW,cardH,"green","Total Kurir",activeCouriers,"Kurir aktif");
+  pdfMetricCard(doc,M+2*(cardW+gap),cardY,cardW,cardH,"purple","Jenis Tugas",task.length,"Tipe tugas berbeda");
+  pdfMetricCard(doc,M+3*(cardW+gap),cardY,cardW,cardH,"orange","Total Durasi",reportDurationLabel(duration),`Rata-rata ${reportDurationLabel(total?Math.round(duration/total):0)} / aktivitas`);
+  drawSectionBox(doc,M,83,89,84,"Total Aktivitas per Kurir");
+  pdfDrawBarChart(doc,M+7,97,75,63,courier.map(x=>[x[0],x[1]]),[37,125,236],MUTED);
+  drawSectionBox(doc,107,83,89,84,"Total Aktivitas per Tipe Tugas");
+  pdfDrawDonut(doc,139,123,29,taskEntries,total,typeColor);
+  let ly=100;taskEntries.forEach(([n,v],i)=>{doc.setFillColor(...typeColor[i%typeColor.length]);doc.circle(166,ly-1.5,2.4,"F");pdfText(doc,String(n),171,ly,7.1,"normal",NAVY);pdfText(doc,`${v} (${total?Math.round(v/total*100):0}%)`,194,ly,7.1,"bold",NAVY,{align:"right"});ly+=10;});
+  drawSectionBox(doc,M,171,89,75,"Total Aktivitas per Status");
+  pdfDrawDonut(doc,55,209,30,statusEntries,total,[[72,185,116],[77,143,238],[140,99,216],[241,157,48],[239,113,128]]);
+  let sy=194;statusEntries.slice(0,5).forEach(([n,v],i)=>{const c=[[72,185,116],[77,143,238],[140,99,216],[241,157,48],[239,113,128]][i%5];doc.setFillColor(...c);doc.circle(91,sy-1.5,2.4,"F");pdfText(doc,n,96,sy,7,"normal",NAVY);pdfText(doc,`${v} (${total?Math.round(v/total*100):0}%)`,194,sy,7,"bold",NAVY,{align:"right"});sy+=10;});
+  drawSectionBox(doc,107,171,89,75,"Total Durasi per Kurir (jam)");
+  pdfDrawHorizontalBars(doc,114,184,76,56,courierDuration.map(([n,v])=>[n,Math.round(v/60*10)/10]),[[37,125,236],[53,183,89],[241,157,48],[141,96,222],[70,184,200]],MUTED);
+  pdfRoundRect(doc,M,253,182,29,5,[237,247,255],[222,235,247]);
+  doc.setFillColor(...BLUE);doc.circle(M+10,267,4,"F");
+  pdfText(doc,"Ringkasan Aktivitas",M+18,263,9.2,"bold",NAVY);
+  pdfText(doc,`Rata-rata durasi / aktivitas: ${reportDurationLabel(total?Math.round(duration/total):0)}   |   Aktivitas selesai: ${statusCounts["Selesai"]??total}   |   Kurir aktif: ${activeCouriers}   |   Periode: ${dashboardPeriodLabel()}`,M+18,271,6.3,"normal",MUTED);
+  pdfFooter(doc,page);
+
+  // Detail pages, one first page + appendices per courier.
+  const byCourier={};rows.forEach(a=>{const n=String(a.nama||a.kurir||"Tidak diketahui").trim()||"Tidak diketahui";(byCourier[n]??=[]).push(a);});
+  const names=Object.keys(byCourier).sort((a,b)=>a.localeCompare(b,"id"));
+  const chunks=[];names.forEach(name=>{const cr=byCourier[name];for(let i=0;i<cr.length;i+=15)chunks.push({name,rows:cr.slice(i,i+15),start:i+1,end:Math.min(i+15,cr.length),first:i===0,total:cr.length});});
+  const totalPages=1+chunks.length;
+  chunks.forEach((chunk)=>{
+    doc.addPage();page++;
+    const cr=chunk.rows,name=chunk.name;
+    if(chunk.first){
+      drawCourierHeader(name,chunk.total);
+      const ck=pdfCourierKpis(byCourier[name]);
+      pdfMetricCard(doc,M,47,42.5,28,"blue","Total Aktivitas",ck.total,"aktivitas");
+      pdfMetricCard(doc,59,47,42.5,28,"green","Total Durasi",reportDurationLabel(ck.duration),"");
+      pdfMetricCard(doc,104,47,42.5,28,"purple","Rata-rata Durasi",reportDurationLabel(ck.avg),"per aktivitas");
+      pdfMetricCard(doc,149,47,47,28,"orange","Jenis Tugas",ck.types,"tipe tugas");
+      const tableStart=82;
+      drawSectionBox(doc,M,76,182,112,"Daftar Aktivitas",`Total ${ck.total} aktivitas`);
+      doc.autoTable({
+        startY:tableStart+5,margin:{left:M,right:M},tableWidth:182,
+        head:[["No","Tanggal","Jenis Tugas","Tujuan","Jam Berangkat","Jam Sampai","Jam Selesai","Durasi","Hasil","Keterangan"]],
+        body:cr.map((a,i)=>[chunk.start+i,pdfDateSlash(a.berangkat),a.jenisTugas||a.pekerjaan||"-",a.tujuan||"-",displayIndonesiaTime(a.berangkat),displayIndonesiaTime(a.datang),displayIndonesiaTime(a.selesai),reportDurationLabel(reportDurationMinutes(a.durasiTugas)),pdfResultLabel(a.hasil),a.keterangan||"-"]),
+        theme:"grid",styles:{fontSize:6.6,cellPadding:{top:2.0,right:1.8,bottom:2.0,left:1.8},overflow:"linebreak",lineColor:GRID,lineWidth:0.2,textColor:NAVY,valign:"middle",minCellHeight:7},
+        headStyles:{fillColor:[19,63,111],textColor:[255,255,255],fontStyle:"bold",fontSize:6.6,halign:"center",cellPadding:2.2},
+        alternateRowStyles:{fillColor:[248,251,254]},
+        columnStyles:{0:{cellWidth:8,halign:"center"},1:{cellWidth:18,halign:"center"},2:{cellWidth:26},3:{cellWidth:30},4:{cellWidth:14,halign:"center"},5:{cellWidth:14,halign:"center"},6:{cellWidth:14,halign:"center"},7:{cellWidth:15,halign:"center"},8:{cellWidth:16,halign:"center"},9:{cellWidth:27}},
+        didParseCell:(d)=>{if(d.section==="body"&&d.column.index===8){const st=pdfBadgeCellStyle(d);d.cell.styles.fillColor=st.fill;d.cell.styles.textColor=st.text;d.cell.styles.fontStyle="bold";}},
+      });
+      const sy=(doc.lastAutoTable?.finalY||190)+8;
+      const cx=M, cw=56, ch=44, gap2=4;
+      drawSectionBox(doc,cx,sy,cw,ch,"Breakdown Jenis Tugas");
+      pdfDrawHorizontalBars(doc,cx+7,sy+5,cw-13,ch-10,ck.typesEntries,[[77,143,238],[72,185,116],[241,157,48],[140,99,216]],MUTED);
+      drawSectionBox(doc,cx+cw+gap2,sy,cw,ch,"Breakdown Hasil");
+      const he=Object.entries(cr.reduce((m,a)=>{const r=pdfResultLabel(a.hasil);m[r]=(m[r]||0)+1;return m;},{}));
+      pdfDrawHorizontalBars(doc,cx+cw+gap2+7,sy+5,cw-13,ch-10,he,[[72,185,116],[241,157,48],[239,113,128]],MUTED);
+      drawSectionBox(doc,cx+2*(cw+gap2),sy,cw,ch,"Durasi");
+      pdfText(doc,"Total Durasi",cx+2*(cw+gap2)+8,sy+15,6.2,"normal",MUTED);pdfText(doc,reportDurationLabel(ck.duration),cx+2*(cw+gap2)+8,sy+26,11,"bold",NAVY);
+      pdfText(doc,"Rata-rata",cx+2*(cw+gap2)+8,sy+34,6.2,"normal",MUTED);pdfText(doc,reportDurationLabel(ck.avg),cx+2*(cw+gap2)+8,sy+41,9,"bold",NAVY);
+    }else{
+      drawCourierHeader(name,chunk.total,`Data aktivitas nomor ${chunk.start} - ${chunk.end}`);
+      doc.autoTable({
+        startY:58,margin:{left:M,right:M},tableWidth:182,
+        head:[["No","Tanggal","Jenis Tugas","Tujuan","Jam Berangkat","Jam Sampai","Jam Selesai","Durasi","Hasil","Keterangan"]],
+        body:cr.map((a,i)=>[chunk.start+i,pdfDateSlash(a.berangkat),a.jenisTugas||a.pekerjaan||"-",a.tujuan||"-",displayIndonesiaTime(a.berangkat),displayIndonesiaTime(a.datang),displayIndonesiaTime(a.selesai),reportDurationLabel(reportDurationMinutes(a.durasiTugas)),pdfResultLabel(a.hasil),a.keterangan||"-"]),
+        theme:"grid",styles:{fontSize:6.8,cellPadding:{top:2.3,right:2,bottom:2.3,left:2},overflow:"linebreak",lineColor:GRID,lineWidth:0.2,textColor:NAVY,valign:"middle",minCellHeight:8},
+        headStyles:{fillColor:[19,63,111],textColor:[255,255,255],fontStyle:"bold",fontSize:6.8,halign:"center",cellPadding:2.4},
+        alternateRowStyles:{fillColor:[248,251,254]},
+        columnStyles:{0:{cellWidth:8,halign:"center"},1:{cellWidth:18,halign:"center"},2:{cellWidth:26},3:{cellWidth:30},4:{cellWidth:14,halign:"center"},5:{cellWidth:14,halign:"center"},6:{cellWidth:14,halign:"center"},7:{cellWidth:15,halign:"center"},8:{cellWidth:16,halign:"center"},9:{cellWidth:27}},
+        didParseCell:(d)=>{if(d.section==="body"&&d.column.index===8){const st=pdfBadgeCellStyle(d);d.cell.styles.fillColor=st.fill;d.cell.styles.textColor=st.text;d.cell.styles.fontStyle="bold";}},
+      });
+    }
+    pdfFooter(doc,page,totalPages);
+  });
   const stamp=new Date();doc.save(`Laporan_Aktivitas_Kurir_${String(stamp.getDate()).padStart(2,"0")}-${String(stamp.getMonth()+1).padStart(2,"0")}-${String(stamp.getFullYear()).slice(-2)}.pdf`);msg("dashboardMsg","File PDF siap.");
 }
 
