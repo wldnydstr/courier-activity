@@ -755,11 +755,13 @@ function renderCourierChart(rows){
   const counts={};
   rows.forEach(a=>{const name=String(a.kurir||a.nama||"Tidak diketahui").trim()||"Tidak diketahui";counts[name]=(counts[name]||0)+1;});
   const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"id"));
-  if(!entries.length){chart.innerHTML='<div class="chart-empty">Belum ada aktivitas.</div>';return;}
-  const max=Math.max(...entries.map(([,v])=>v),1), total=entries.reduce((s,[,v])=>s+v,0);
+  if(!entries.length){chart.innerHTML='<div class="chart-empty">Belum ada aktivitas pada periode ini.</div>';return;}
+  const max=entries[0][1]||1, total=rows.length;
   chart.innerHTML=entries.slice(0,8).map(([name,value],i)=>{
-    const pct=Math.round(value/max*100); const share=Math.round(value/total*100); const initials=name.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase();
-    return `<div class="courier-rank-row"><div class="courier-rank-person"><span class="courier-rank-avatar">${escapeHtml(initials||'?')}</span><div><strong>${escapeHtml(name)}</strong><small>${value} aktivitas · ${share}%</small></div></div><div class="courier-rank-track"><i style="width:${Math.max(8,pct)}%"></i></div><b>${value}</b></div>`;
+    const initials=name.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase();
+    const width=Math.max(8,Math.round(value/max*100));
+    const share=total?Math.round(value/total*100):0;
+    return `<div class="courier-rank-row"><div class="courier-rank-person"><span class="courier-rank-index">${i+1}</span><span class="courier-rank-avatar">${escapeHtml(initials||'?')}</span><div><strong>${escapeHtml(name)}</strong><small>${value} aktivitas · ${share}%</small></div></div><div class="courier-rank-track"><i style="width:${width}%"></i></div><b>${value}</b></div>`;
   }).join('');
 }
 
@@ -907,14 +909,14 @@ function renderActivityTypeSummary(rows){
   rows.forEach(a=>String(a.jenisTugas||a.pekerjaan||"Tidak diketahui").split("|").map(v=>v.trim()).filter(Boolean).forEach(label=>counts[label]=(counts[label]||0)+1));
   const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"id"));
   const total=entries.reduce((s,[,v])=>s+v,0);
-  if(!entries.length){chart.innerHTML='<div class="chart-empty">Belum ada aktivitas.</div>';if(legend)legend.innerHTML='';return;}
-  const palette=["#2f80ed","#4dbb7c","#8c65dc","#ec9c48","#3aaec9","#e46b73"];
+  if(!entries.length){chart.innerHTML='<div class="chart-empty">Belum ada aktivitas pada periode ini.</div>';if(legend)legend.innerHTML='';return;}
+  const palette=["#2f80ed","#4dbb7c","#8c65dc","#ec9c48","#3aaec9","#e46b73","#8091a8"];
   const max=Math.max(...entries.map(([,v])=>v),1);
   chart.innerHTML=entries.slice(0,8).map(([label,value],i)=>{
-    const pct=Math.round(value/total*100); const width=Math.round(value/max*100); const color=palette[i%palette.length];
-    return `<div class="activity-type-row"><div class="activity-type-meta"><span><i class="activity-type-dot" style="background:${color}"></i>${escapeHtml(label)}</span><strong>${value}</strong></div><div class="activity-type-track"><i style="width:${width}%;background:${color}"></i></div><small>${pct}%</small></div>`;
+    const pct=Math.round(value/total*100); const width=Math.max(7,Math.round(value/max*100)); const color=palette[i%palette.length];
+    return `<div class="activity-type-row"><div class="activity-type-name"><i class="activity-type-dot" style="background:${color}"></i><span title="${escapeHtml(label)}">${escapeHtml(label)}</span></div><div class="activity-type-track"><i style="width:${width}%;background:${color}"></i></div><div class="activity-type-count"><strong>${value}</strong><small>${pct}%</small></div></div>`;
   }).join('');
-  if(legend)legend.innerHTML=`<span>${total} aktivitas</span><span>Top: ${escapeHtml(entries[0][0])}</span>`;
+  if(legend)legend.innerHTML=`<span>${total} aktivitas</span><span>Terbanyak: <b>${escapeHtml(entries[0][0])}</b></span>`;
 }
 
 let dashboardJourneyOpen = new Set();
@@ -1001,8 +1003,8 @@ function renderDashboard(data){
   syncDashboardPeriodControls();
   const detailDateEl=$("dashboardDetailDate");
   if(detailDateEl) detailDateEl.textContent=dashboardPeriodLabel();
-  const stats={total:rows.length,menungguBerangkat:rows.filter(a=>a.status==="Menunggu Berangkat").length,lagiJalan:rows.filter(a=>a.status==="Lagi Jalan").length,lagiDiproses:rows.filter(a=>a.status==="Lagi Diproses").length,selesai:rows.filter(a=>a.status==="Selesai").length};
-  $("statTotal").textContent=stats.total||0; $("statMenunggu").textContent=stats.menungguBerangkat||0; $("statJalan").textContent=stats.lagiJalan||0; $("statSelesai").textContent=stats.selesai||0;
+  const stats={total:rows.length,menungguBerangkat:rows.filter(a=>a.status==="Menunggu Berangkat").length,lagiJalan:rows.filter(a=>a.status==="Lagi Jalan").length,lagiDiproses:rows.filter(a=>a.status==="Lagi Diproses").length,selesai:rows.filter(a=>a.status==="Selesai").length,couriers:new Set(rows.map(a=>String(a.kurir||a.nama||"").trim()).filter(Boolean)).size};
+  $("statTotal").textContent=stats.total||0; $("statMenunggu").textContent=stats.menungguBerangkat||0; $("statJalan").textContent=stats.lagiJalan||0; $("statSelesai").textContent=stats.selesai||0; if($("statKurir"))$("statKurir").textContent=stats.couriers||0;
   const prosesEl=$("statProses"); if(prosesEl)prosesEl.textContent=stats.lagiDiproses||0;
   const pct=n=>stats.total?Math.round(n/stats.total*100):0;
   [["Menunggu",stats.menungguBerangkat],["Jalan",stats.lagiJalan],["Proses",stats.lagiDiproses],["Selesai",stats.selesai]].forEach(([key,n])=>{const p=pct(n),el=$("stat"+key+"Progress"),tx=$("stat"+key+"Percent");if(el)el.style.width=p+"%";if(tx)tx.textContent=p+"%";});
@@ -1183,6 +1185,7 @@ function setDashboardDefaultPeriod(){
   if($("dashboardDate"))$("dashboardDate").value=dashboardTodayKey();
   if($("dashboardMonth"))$("dashboardMonth").value=dashboardMonthKey();
   if($("dashboardPeriodType"))$("dashboardPeriodType").value="day";
+  document.querySelectorAll("[data-period-mode]").forEach(b=>b.classList.toggle("is-active",b.dataset.periodMode==="day"));
   syncDashboardPeriodControls();
 }
 function resetDashboardFilters(){
@@ -1512,6 +1515,12 @@ $("pendingDepartureBtn").addEventListener("click",handlePendingDeparture);
 $("applyDashboardFilterBtn").addEventListener("click",applyDashboardFilters);
 $("resetDashboardFilterBtn").addEventListener("click",resetDashboardFilters);
 $("dashboardPeriodType")?.addEventListener("change",()=>{syncDashboardPeriodControls();});
+document.querySelectorAll("[data-period-mode]").forEach(btn=>btn.addEventListener("click",()=>{
+  const mode=btn.dataset.periodMode;
+  if($("dashboardPeriodType"))$("dashboardPeriodType").value=mode;
+  document.querySelectorAll("[data-period-mode]").forEach(b=>b.classList.toggle("is-active",b===btn));
+  syncDashboardPeriodControls();
+}));
 $("dashboardDate")?.addEventListener("change",syncDashboardPeriodControls);
 $("dashboardMonth")?.addEventListener("change",syncDashboardPeriodControls);
 $("dashboardYear")?.addEventListener("change",syncDashboardPeriodControls);
