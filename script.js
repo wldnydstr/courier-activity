@@ -1559,6 +1559,18 @@ async function exportActivityPdf(){
     }
 
     const doc=new JsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+
+    // Compatibility patch: some AutoTable/jsPDF combinations call roundedRect
+    // with arguments that trigger jsPDF's own validation error. Override it
+    // on this document instance and draw a normal rectangle instead.
+    doc.roundedRect=function(x,y,w,h,rx,ry,style){
+      const nx=Number(x), ny=Number(y), nw=Number(w), nh=Number(h);
+      if(!Number.isFinite(nx)||!Number.isFinite(ny)||!Number.isFinite(nw)||!Number.isFinite(nh)||nw<=0||nh<=0)return this;
+      const drawStyle=(style==='S'||style==='FD'||style==='DF')?style:'F';
+      this.rect(nx,ny,nw,nh,drawStyle);
+      return this;
+    };
+
     if(typeof doc.autoTable!=='function')throw new Error('Modul tabel PDF belum siap. Muat ulang halaman lalu coba lagi.');
 
     await buildActivityPdf(doc,rows);
