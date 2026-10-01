@@ -1498,72 +1498,129 @@ function pdfCourierKpis(rows){
   const duration=rows.reduce((s,a)=>s+reportDurationMinutes(a.durasiTugas),0);
   return {total,types:types.length,duration,avg:total?Math.round(duration/total):0,typesEntries:types};
 }
-function exportActivityPdf(){
-  if(!currentDashboardRows.length){msg("dashboardMsg","Belum ada data untuk diekspor.");return;}
-  if(!window.jspdf?.jsPDF){msg("dashboardMsg","PDF belum siap. Muat ulang halaman lalu coba lagi.");return;}
-  const doc=new window.jspdf.jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
-  const rows=[...currentDashboardRows];
+async function ensurePdfDependencies(){
+  const loadScript=(src,ready)=>new Promise((resolve,reject)=>{
+    if(ready())return resolve();
+    const existing=[...document.scripts].find(s=>s.src===src);
+    if(existing){
+      existing.addEventListener('load',()=>ready()?resolve():reject(new Error('Library PDF tidak siap.')),{once:true});
+      existing.addEventListener('error',()=>reject(new Error('Gagal memuat library PDF.')),{once:true});
+      return;
+    }
+    const script=document.createElement('script');
+    script.src=src;
+    script.onload=()=>ready()?resolve():reject(new Error('Library PDF tidak siap.'));
+    script.onerror=()=>reject(new Error('Gagal memuat library PDF.'));
+    document.head.appendChild(script);
+  });
+
+  await loadScript(
+    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+    ()=>Boolean(window.jspdf?.jsPDF||window.jsPDF)
+  );
+
+  await loadScript(
+    'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js',
+    ()=>Boolean((window.jspdf?.jsPDF?.API?.autoTable)||(window.jsPDF?.API?.autoTable))
+  );
+}
+
+async function exportActivityPdf(){
+  const btn=$('exportDashboardPdfBtn');
+  const originalText=btn?.textContent||'Export PDF';
+  try{
+    if(btn){btn.disabled=true;btn.textContent='Membuat PDF...';}
+    msg('dashboardMsg','Menyiapkan PDF...');
+
+    await ensurePdfDependencies();
+
+    const JsPDF=window.jspdf?.jsPDF||window.jsPDF;
+    if(typeof JsPDF!=='function')throw new Error('Library PDF belum siap. Coba lagi.');
+
+    let rows=Array.isArray(currentDashboardRows)?currentDashboardRows.slice():[];
+    if(!rows.length && Array.isArray(state.dashboardActivities)){
+      const courier=$('dashboardCourier')?.value||'';
+      rows=state.dashboardActivities.filter(a=>(!courier||a.kurir===courier)&&activityMatchesDashboardPeriod(a));
+    }
+    if(!rows.length){
+      msg('dashboardMsg','Belum ada data pada periode yang dipilih untuk diekspor.');
+      return;
+    }
+
+    const doc=new JsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    if(typeof doc.autoTable!=='function')throw new Error('Modul tabel PDF belum siap. Muat ulang halaman lalu coba lagi.');
+
+    await buildActivityPdf(doc,rows);
+    msg('dashboardMsg','File PDF siap.');
+  }catch(err){
+    console.error('Export PDF error:',err);
+    msg('dashboardMsg',`Export PDF gagal: ${err?.message||err}`);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent=originalText;}
+  }
+}
+
+async function buildActivityPdf(doc,rows){
   const W=210,H=297,M=14,BLUE=[34,132,238],NAVY=[18,45,79],MUTED=[92,113,143],GRID=[218,228,238],LIGHT=[245,249,253];
   const blueSoft=[235,245,255],greenSoft=[235,249,239],purpleSoft=[247,242,255],orangeSoft=[255,247,232];
   const courier=reportCourierEntries(rows), task=reportTaskEntries(rows);
   const k=reportKpiSet(rows), duration=k.task||0, total=rows.length;
-  const statusCounts={};rows.forEach(a=>{const s=String(a.status||"Selesai").trim()||"Selesai";statusCounts[s]=(statusCounts[s]||0)+1;});
+  const statusCounts={};rows.forEach(a=>{const s=String(a.status||'Selesai').trim()||'Selesai';statusCounts[s]=(statusCounts[s]||0)+1;});
   const statusEntries=Object.entries(statusCounts).sort((a,b)=>b[1]-a[1]);
   const taskEntries=task.slice(0,6);
-  const courierDuration=Object.entries(rows.reduce((m,a)=>{const n=String(a.nama||a.kurir||"Tidak diketahui").trim()||"Tidak diketahui";m[n]=(m[n]||0)+reportDurationMinutes(a.durasiTugas);return m;},{})).sort((a,b)=>b[1]-a[1]);
-  const resultEntries=Object.entries(rows.reduce((m,a)=>{const n=pdfResultLabel(a.hasil);m[n]=(m[n]||0)+1;return m;},{})).sort((a,b)=>b[1]-a[1]);
+  const courierDuration=Object.entries(rows.reduce((m,a)=>{const n=String(a.nama||a.kurir||'Tidak diketahui').trim()||'Tidak diketahui';m[n]=(m[n]||0)+reportDurationMinutes(a.durasiTugas);return m;},{})).sort((a,b)=>b[1]-a[1]);
   const activeCouriers=courier.length;
   const typeColor=[[37,125,236],[53,183,89],[241,157,48],[141,96,222],[70,184,200],[157,168,183]];
   let page=1;
   const drawMainHeader=()=>{
-    doc.setFillColor(...BLUE);doc.roundedRect(M,18,2.3,18,1.1,1.1,"F");
-    pdfText(doc,"Laporan Bulanan Aktivitas Kurir",M+7,28,17,"bold",NAVY);
-    pdfText(doc,`Periode: ${dashboardPeriodLabel()}`,M+7,35,10.5,"normal",MUTED);
+    doc.setFillColor(...BLUE);doc.roundedRect(M,18,2.3,18,1.1,1.1,'F');
+    pdfText(doc,'Laporan Bulanan Aktivitas Kurir',M+7,28,17,'bold',NAVY);
+    pdfText(doc,`Periode: ${dashboardPeriodLabel()}`,M+7,35,10.5,'normal',MUTED);
     pdfRoundRect(doc,151,17,45,20,5,[240,247,253],null);
-    pdfText(doc,"Periode Laporan",166,24,5.7,"normal",MUTED,{align:"center"});
-    pdfText(doc,dashboardPeriodLabel(),173,31,8.2,"bold",NAVY,{align:"center"});
+    pdfText(doc,'Periode Laporan',166,24,5.7,'normal',MUTED,{align:'center'});
+    pdfText(doc,dashboardPeriodLabel(),173,31,8.2,'bold',NAVY,{align:'center'});
   };
-  const drawCourierHeader=(name,count,pageLabel="")=>{
-    doc.setFillColor(...BLUE);doc.roundedRect(M,18,2.3,18,1.1,1.1,"F");
-    pdfText(doc,"Detail Aktivitas Kurir",M+7,28,17,"bold",NAVY);
-    pdfText(doc,`Periode: ${dashboardPeriodLabel()}`,M+7,35,10.5,"normal",MUTED);
+  const drawCourierHeader=(name,count,pageLabel='')=>{
+    doc.setFillColor(...BLUE);doc.roundedRect(M,18,2.3,18,1.1,1.1,'F');
+    pdfText(doc,'Detail Aktivitas Kurir',M+7,28,17,'bold',NAVY);
+    pdfText(doc,`Periode: ${dashboardPeriodLabel()}`,M+7,35,10.5,'normal',MUTED);
     pdfRoundRect(doc,151,17,45,20,5,blueSoft,null);
-    pdfText(doc,"Nama Kurir",173,24,5.8,"normal",MUTED,{align:"center"});
-    pdfText(doc,name,173,31,10,"bold",NAVY,{align:"center"});
-    if(pageLabel)pdfText(doc,pageLabel,M+7,42,7.3,"normal",MUTED);
+    pdfText(doc,'Nama Kurir',173,24,5.8,'normal',MUTED,{align:'center'});
+    pdfText(doc,name,173,31,10,'bold',NAVY,{align:'center'});
+    if(pageLabel)pdfText(doc,pageLabel,M+7,42,7.3,'normal',MUTED);
   };
-  const drawSectionBox=(x,y,w,h,title,subtitle="")=>{
+  const drawSectionBox=(x,y,w,h,title,subtitle='')=>{
     pdfRoundRect(doc,x,y,w,h,4,[255,255,255],[223,231,240]);
-    pdfText(doc,title,x+7,y+10,10,"bold",NAVY);
-    if(subtitle)pdfText(doc,subtitle,x+7,y+17,6.4,"normal",MUTED);
+    pdfText(doc,title,x+7,y+10,10,'bold',NAVY);
+    if(subtitle)pdfText(doc,subtitle,x+7,y+17,6.4,'normal',MUTED);
   };
 
   // Page 1 - monthly summary.
   drawMainHeader();
   const cardY=46,cardW=42.7,cardH=30,gap=4.3;
-  pdfMetricCard(doc,M,cardY,cardW,cardH,"blue","Total Aktivitas",total,`+${total?12:0}% dari bulan sebelumnya`);
-  pdfMetricCard(doc,M+cardW+gap,cardY,cardW,cardH,"green","Total Kurir",activeCouriers,"Kurir aktif");
-  pdfMetricCard(doc,M+2*(cardW+gap),cardY,cardW,cardH,"purple","Jenis Tugas",task.length,"Tipe tugas berbeda");
-  pdfMetricCard(doc,M+3*(cardW+gap),cardY,cardW,cardH,"orange","Total Durasi",reportDurationLabel(duration),`Rata-rata ${reportDurationLabel(total?Math.round(duration/total):0)} / aktivitas`);
-  drawSectionBox(doc,M,83,89,84,"Total Aktivitas per Kurir");
+  pdfMetricCard(doc,M,cardY,cardW,cardH,'blue','Total Aktivitas',total,`+${total?12:0}% dari bulan sebelumnya`);
+  pdfMetricCard(doc,M+cardW+gap,cardY,cardW,cardH,'green','Total Kurir',activeCouriers,'Kurir aktif');
+  pdfMetricCard(doc,M+2*(cardW+gap),cardY,cardW,cardH,'purple','Jenis Tugas',task.length,'Tipe tugas berbeda');
+  pdfMetricCard(doc,M+3*(cardW+gap),cardY,cardW,cardH,'orange','Total Durasi',reportDurationLabel(duration),`Rata-rata ${reportDurationLabel(total?Math.round(duration/total):0)} / aktivitas`);
+  drawSectionBox(doc,M,83,89,84,'Total Aktivitas per Kurir');
   pdfDrawBarChart(doc,M+7,97,75,63,courier.map(x=>[x[0],x[1]]),[37,125,236],MUTED);
-  drawSectionBox(doc,107,83,89,84,"Total Aktivitas per Tipe Tugas");
+  drawSectionBox(doc,107,83,89,84,'Total Aktivitas per Tipe Tugas');
   pdfDrawDonut(doc,139,123,29,taskEntries,total,typeColor);
-  let ly=100;taskEntries.forEach(([n,v],i)=>{doc.setFillColor(...typeColor[i%typeColor.length]);doc.circle(166,ly-1.5,2.4,"F");pdfText(doc,String(n),171,ly,7.1,"normal",NAVY);pdfText(doc,`${v} (${total?Math.round(v/total*100):0}%)`,194,ly,7.1,"bold",NAVY,{align:"right"});ly+=10;});
-  drawSectionBox(doc,M,171,89,75,"Total Aktivitas per Status");
+  let ly=100;taskEntries.forEach(([n,v],i)=>{doc.setFillColor(...typeColor[i%typeColor.length]);doc.circle(166,ly-1.5,2.4,'F');pdfText(doc,String(n),171,ly,7.1,'normal',NAVY);pdfText(doc,`${v} (${total?Math.round(v/total*100):0}%)`,194,ly,7.1,'bold',NAVY,{align:'right'});ly+=10;});
+  drawSectionBox(doc,M,171,89,75,'Total Aktivitas per Status');
   pdfDrawDonut(doc,55,209,30,statusEntries,total,[[72,185,116],[77,143,238],[140,99,216],[241,157,48],[239,113,128]]);
-  let sy=194;statusEntries.slice(0,5).forEach(([n,v],i)=>{const c=[[72,185,116],[77,143,238],[140,99,216],[241,157,48],[239,113,128]][i%5];doc.setFillColor(...c);doc.circle(91,sy-1.5,2.4,"F");pdfText(doc,n,96,sy,7,"normal",NAVY);pdfText(doc,`${v} (${total?Math.round(v/total*100):0}%)`,194,sy,7,"bold",NAVY,{align:"right"});sy+=10;});
-  drawSectionBox(doc,107,171,89,75,"Total Durasi per Kurir (jam)");
+  let sy=194;statusEntries.slice(0,5).forEach(([n,v],i)=>{const c=[[72,185,116],[77,143,238],[140,99,216],[241,157,48],[239,113,128]][i%5];doc.setFillColor(...c);doc.circle(91,sy-1.5,2.4,'F');pdfText(doc,n,96,sy,7,'normal',NAVY);pdfText(doc,`${v} (${total?Math.round(v/total*100):0}%)`,194,sy,7,'bold',NAVY,{align:'right'});sy+=10;});
+  drawSectionBox(doc,107,171,89,75,'Total Durasi per Kurir (jam)');
   pdfDrawHorizontalBars(doc,114,184,76,56,courierDuration.map(([n,v])=>[n,Math.round(v/60*10)/10]),[[37,125,236],[53,183,89],[241,157,48],[141,96,222],[70,184,200]],MUTED);
   pdfRoundRect(doc,M,253,182,29,5,[237,247,255],[222,235,247]);
-  doc.setFillColor(...BLUE);doc.circle(M+10,267,4,"F");
-  pdfText(doc,"Ringkasan Aktivitas",M+18,263,9.2,"bold",NAVY);
-  pdfText(doc,`Rata-rata durasi / aktivitas: ${reportDurationLabel(total?Math.round(duration/total):0)}   |   Aktivitas selesai: ${statusCounts["Selesai"]??total}   |   Kurir aktif: ${activeCouriers}   |   Periode: ${dashboardPeriodLabel()}`,M+18,271,6.3,"normal",MUTED);
+  doc.setFillColor(...BLUE);doc.circle(M+10,267,4,'F');
+  pdfText(doc,'Ringkasan Aktivitas',M+18,263,9.2,'bold',NAVY);
+  pdfText(doc,`Rata-rata durasi / aktivitas: ${reportDurationLabel(total?Math.round(duration/total):0)}   |   Aktivitas selesai: ${statusCounts['Selesai']??total}   |   Kurir aktif: ${activeCouriers}   |   Periode: ${dashboardPeriodLabel()}`,M+18,271,6.3,'normal',MUTED);
   pdfFooter(doc,page);
 
   // Detail pages, one first page + appendices per courier.
-  const byCourier={};rows.forEach(a=>{const n=String(a.nama||a.kurir||"Tidak diketahui").trim()||"Tidak diketahui";(byCourier[n]??=[]).push(a);});
-  const names=Object.keys(byCourier).sort((a,b)=>a.localeCompare(b,"id"));
+  const byCourier={};rows.forEach(a=>{const n=String(a.nama||a.kurir||'Tidak diketahui').trim()||'Tidak diketahui';(byCourier[n]??=[]).push(a);});
+  const names=Object.keys(byCourier).sort((a,b)=>a.localeCompare(b,'id'));
   const chunks=[];names.forEach(name=>{const cr=byCourier[name];for(let i=0;i<cr.length;i+=15)chunks.push({name,rows:cr.slice(i,i+15),start:i+1,end:Math.min(i+15,cr.length),first:i===0,total:cr.length});});
   const totalPages=1+chunks.length;
   chunks.forEach((chunk)=>{
@@ -1572,48 +1629,50 @@ function exportActivityPdf(){
     if(chunk.first){
       drawCourierHeader(name,chunk.total);
       const ck=pdfCourierKpis(byCourier[name]);
-      pdfMetricCard(doc,M,47,42.5,28,"blue","Total Aktivitas",ck.total,"aktivitas");
-      pdfMetricCard(doc,59,47,42.5,28,"green","Total Durasi",reportDurationLabel(ck.duration),"");
-      pdfMetricCard(doc,104,47,42.5,28,"purple","Rata-rata Durasi",reportDurationLabel(ck.avg),"per aktivitas");
-      pdfMetricCard(doc,149,47,47,28,"orange","Jenis Tugas",ck.types,"tipe tugas");
+      pdfMetricCard(doc,M,47,42.5,28,'blue','Total Aktivitas',ck.total,'aktivitas');
+      pdfMetricCard(doc,59,47,42.5,28,'green','Total Durasi',reportDurationLabel(ck.duration),'');
+      pdfMetricCard(doc,104,47,42.5,28,'purple','Rata-rata Durasi',reportDurationLabel(ck.avg),'per aktivitas');
+      pdfMetricCard(doc,149,47,47,28,'orange','Jenis Tugas',ck.types,'tipe tugas');
       const tableStart=82;
-      drawSectionBox(doc,M,76,182,112,"Daftar Aktivitas",`Total ${ck.total} aktivitas`);
+      drawSectionBox(doc,M,76,182,112,'Daftar Aktivitas',`Total ${ck.total} aktivitas`);
       doc.autoTable({
         startY:tableStart+5,margin:{left:M,right:M},tableWidth:182,
-        head:[["No","Tanggal","Jenis Tugas","Tujuan","Jam Berangkat","Jam Sampai","Jam Selesai","Durasi","Hasil","Keterangan"]],
-        body:cr.map((a,i)=>[chunk.start+i,pdfDateSlash(a.berangkat),a.jenisTugas||a.pekerjaan||"-",a.tujuan||"-",displayIndonesiaTime(a.berangkat),displayIndonesiaTime(a.datang),displayIndonesiaTime(a.selesai),reportDurationLabel(reportDurationMinutes(a.durasiTugas)),pdfResultLabel(a.hasil),a.keterangan||"-"]),
-        theme:"grid",styles:{fontSize:6.6,cellPadding:{top:2.0,right:1.8,bottom:2.0,left:1.8},overflow:"linebreak",lineColor:GRID,lineWidth:0.2,textColor:NAVY,valign:"middle",minCellHeight:7},
-        headStyles:{fillColor:[19,63,111],textColor:[255,255,255],fontStyle:"bold",fontSize:6.6,halign:"center",cellPadding:2.2},
+        head:[['No','Tanggal','Jenis Tugas','Tujuan','Jam Berangkat','Jam Sampai','Jam Selesai','Durasi','Hasil','Keterangan']],
+        body:cr.map((a,i)=>[chunk.start+i,pdfDateSlash(a.berangkat),a.jenisTugas||a.pekerjaan||'-',a.tujuan||'-',displayIndonesiaTime(a.berangkat),displayIndonesiaTime(a.datang),displayIndonesiaTime(a.selesai),reportDurationLabel(reportDurationMinutes(a.durasiTugas)),pdfResultLabel(a.hasil),a.keterangan||'-']),
+        theme:'grid',styles:{fontSize:6.6,cellPadding:{top:2.0,right:1.8,bottom:2.0,left:1.8},overflow:'linebreak',lineColor:GRID,lineWidth:0.2,textColor:NAVY,valign:'middle',minCellHeight:7},
+        headStyles:{fillColor:[19,63,111],textColor:[255,255,255],fontStyle:'bold',fontSize:6.6,halign:'center',cellPadding:2.2},
         alternateRowStyles:{fillColor:[248,251,254]},
-        columnStyles:{0:{cellWidth:8,halign:"center"},1:{cellWidth:18,halign:"center"},2:{cellWidth:26},3:{cellWidth:30},4:{cellWidth:14,halign:"center"},5:{cellWidth:14,halign:"center"},6:{cellWidth:14,halign:"center"},7:{cellWidth:15,halign:"center"},8:{cellWidth:16,halign:"center"},9:{cellWidth:27}},
-        didParseCell:(d)=>{if(d.section==="body"&&d.column.index===8){const st=pdfBadgeCellStyle(d);d.cell.styles.fillColor=st.fill;d.cell.styles.textColor=st.text;d.cell.styles.fontStyle="bold";}},
+        columnStyles:{0:{cellWidth:8,halign:'center'},1:{cellWidth:18,halign:'center'},2:{cellWidth:26},3:{cellWidth:30},4:{cellWidth:14,halign:'center'},5:{cellWidth:14,halign:'center'},6:{cellWidth:14,halign:'center'},7:{cellWidth:15,halign:'center'},8:{cellWidth:16,halign:'center'},9:{cellWidth:27}},
+        didParseCell:(d)=>{if(d.section==='body'&&d.column.index===8){const st=pdfBadgeCellStyle(d);d.cell.styles.fillColor=st.fill;d.cell.styles.textColor=st.text;d.cell.styles.fontStyle='bold';}},
       });
       const sy=(doc.lastAutoTable?.finalY||190)+8;
       const cx=M, cw=56, ch=44, gap2=4;
-      drawSectionBox(doc,cx,sy,cw,ch,"Breakdown Jenis Tugas");
+      drawSectionBox(doc,cx,sy,cw,ch,'Breakdown Jenis Tugas');
       pdfDrawHorizontalBars(doc,cx+7,sy+5,cw-13,ch-10,ck.typesEntries,[[77,143,238],[72,185,116],[241,157,48],[140,99,216]],MUTED);
-      drawSectionBox(doc,cx+cw+gap2,sy,cw,ch,"Breakdown Hasil");
+      drawSectionBox(doc,cx+cw+gap2,sy,cw,ch,'Breakdown Hasil');
       const he=Object.entries(cr.reduce((m,a)=>{const r=pdfResultLabel(a.hasil);m[r]=(m[r]||0)+1;return m;},{}));
       pdfDrawHorizontalBars(doc,cx+cw+gap2+7,sy+5,cw-13,ch-10,he,[[72,185,116],[241,157,48],[239,113,128]],MUTED);
-      drawSectionBox(doc,cx+2*(cw+gap2),sy,cw,ch,"Durasi");
-      pdfText(doc,"Total Durasi",cx+2*(cw+gap2)+8,sy+15,6.2,"normal",MUTED);pdfText(doc,reportDurationLabel(ck.duration),cx+2*(cw+gap2)+8,sy+26,11,"bold",NAVY);
-      pdfText(doc,"Rata-rata",cx+2*(cw+gap2)+8,sy+34,6.2,"normal",MUTED);pdfText(doc,reportDurationLabel(ck.avg),cx+2*(cw+gap2)+8,sy+41,9,"bold",NAVY);
+      drawSectionBox(doc,cx+2*(cw+gap2),sy,cw,ch,'Durasi');
+      pdfText(doc,'Total Durasi',cx+2*(cw+gap2)+8,sy+15,6.2,'normal',MUTED);pdfText(doc,reportDurationLabel(ck.duration),cx+2*(cw+gap2)+8,sy+26,11,'bold',NAVY);
+      pdfText(doc,'Rata-rata',cx+2*(cw+gap2)+8,sy+34,6.2,'normal',MUTED);pdfText(doc,reportDurationLabel(ck.avg),cx+2*(cw+gap2)+8,sy+41,9,'bold',NAVY);
     }else{
       drawCourierHeader(name,chunk.total,`Data aktivitas nomor ${chunk.start} - ${chunk.end}`);
       doc.autoTable({
         startY:58,margin:{left:M,right:M},tableWidth:182,
-        head:[["No","Tanggal","Jenis Tugas","Tujuan","Jam Berangkat","Jam Sampai","Jam Selesai","Durasi","Hasil","Keterangan"]],
-        body:cr.map((a,i)=>[chunk.start+i,pdfDateSlash(a.berangkat),a.jenisTugas||a.pekerjaan||"-",a.tujuan||"-",displayIndonesiaTime(a.berangkat),displayIndonesiaTime(a.datang),displayIndonesiaTime(a.selesai),reportDurationLabel(reportDurationMinutes(a.durasiTugas)),pdfResultLabel(a.hasil),a.keterangan||"-"]),
-        theme:"grid",styles:{fontSize:6.8,cellPadding:{top:2.3,right:2,bottom:2.3,left:2},overflow:"linebreak",lineColor:GRID,lineWidth:0.2,textColor:NAVY,valign:"middle",minCellHeight:8},
-        headStyles:{fillColor:[19,63,111],textColor:[255,255,255],fontStyle:"bold",fontSize:6.8,halign:"center",cellPadding:2.4},
+        head:[['No','Tanggal','Jenis Tugas','Tujuan','Jam Berangkat','Jam Sampai','Jam Selesai','Durasi','Hasil','Keterangan']],
+        body:cr.map((a,i)=>[chunk.start+i,pdfDateSlash(a.berangkat),a.jenisTugas||a.pekerjaan||'-',a.tujuan||'-',displayIndonesiaTime(a.berangkat),displayIndonesiaTime(a.datang),displayIndonesiaTime(a.selesai),reportDurationLabel(reportDurationMinutes(a.durasiTugas)),pdfResultLabel(a.hasil),a.keterangan||'-']),
+        theme:'grid',styles:{fontSize:6.8,cellPadding:2.2,overflow:'linebreak',lineColor:GRID,lineWidth:0.2,textColor:NAVY,valign:'middle'},
+        headStyles:{fillColor:[19,63,111],textColor:[255,255,255],fontStyle:'bold',fontSize:6.8,halign:'center'},
         alternateRowStyles:{fillColor:[248,251,254]},
-        columnStyles:{0:{cellWidth:8,halign:"center"},1:{cellWidth:18,halign:"center"},2:{cellWidth:26},3:{cellWidth:30},4:{cellWidth:14,halign:"center"},5:{cellWidth:14,halign:"center"},6:{cellWidth:14,halign:"center"},7:{cellWidth:15,halign:"center"},8:{cellWidth:16,halign:"center"},9:{cellWidth:27}},
-        didParseCell:(d)=>{if(d.section==="body"&&d.column.index===8){const st=pdfBadgeCellStyle(d);d.cell.styles.fillColor=st.fill;d.cell.styles.textColor=st.text;d.cell.styles.fontStyle="bold";}},
+        columnStyles:{0:{cellWidth:8,halign:'center'},1:{cellWidth:18,halign:'center'},2:{cellWidth:25},3:{cellWidth:33},4:{cellWidth:14,halign:'center'},5:{cellWidth:14,halign:'center'},6:{cellWidth:14,halign:'center'},7:{cellWidth:15,halign:'center'},8:{cellWidth:16,halign:'center'},9:{cellWidth:25}},
+        didParseCell:(d)=>{if(d.section==='body'&&d.column.index===8){const st=pdfBadgeCellStyle(d);d.cell.styles.fillColor=st.fill;d.cell.styles.textColor=st.text;d.cell.styles.fontStyle='bold';}},
       });
     }
     pdfFooter(doc,page,totalPages);
   });
-  const stamp=new Date();doc.save(`Laporan_Aktivitas_Kurir_${String(stamp.getDate()).padStart(2,"0")}-${String(stamp.getMonth()+1).padStart(2,"0")}-${String(stamp.getFullYear()).slice(-2)}.pdf`);msg("dashboardMsg","File PDF siap.");
+
+  const stamp=new Date();
+  doc.save(`Laporan_Aktivitas_Kurir_${String(stamp.getDate()).padStart(2,'0')}-${String(stamp.getMonth()+1).padStart(2,'0')}-${String(stamp.getFullYear()).slice(-2)}.pdf`);
 }
 
 function getReportFilterValues(){
