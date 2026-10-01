@@ -750,61 +750,33 @@ function renderCategoryBarChart(elementId, legendId, rows, key, emptyText, palet
 }
 
 function renderCourierChart(rows){
-  const chart=$("courierChart"), legend=$("courierLegend");
-  const colors={"Menunggu Berangkat":"#FBC64D","Lagi Jalan":"#5B8FE8","Lagi Diproses":"#9B7BDE","Selesai":"#54B978"};
-  const statuses=["Menunggu Berangkat","Lagi Jalan","Lagi Diproses","Selesai"];
+  const chart=$("courierChart");
   if(!chart)return;
-  if(!rows.length){
-    chart.innerHTML='<div class="category-chart-empty">Belum ada aktivitas.</div>';
-    if(legend)legend.innerHTML='';
-    return;
-  }
-  const byCourier={};
-  rows.forEach(a=>{
-    const name=String(a.kurir||"Tidak diketahui").trim()||"Tidak diketahui";
-    if(!byCourier[name])byCourier[name]={total:0,counts:{}};
-    byCourier[name].total++;
-    const status=String(a.status||"Tidak diketahui").trim()||"Tidak diketahui";
-    byCourier[name].counts[status]=(byCourier[name].counts[status]||0)+1;
-  });
-  const entries=Object.entries(byCourier).sort((a,b)=>a[0].localeCompare(b[0],"id",{sensitivity:"base"})||b[1].total-a[1].total);
-  const max=Math.max(...entries.map(([,v])=>v.total),1);
-  chart.innerHTML=entries.map(([name,data])=>{
-    const initials=name.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase();
-    const segments=statuses.filter(st=>data.counts[st]).map(st=>{
-      const pct=(data.counts[st]/data.total)*100;
-      return `<span class="courier-stack-segment" style="width:${pct}%;background:${colors[st]||'#94A3B8'}">${data.counts[st] >= 2 ? data.counts[st] : ''}</span>`;
-    }).join('');
-    const fallback=Object.entries(data.counts).filter(([st])=>!statuses.includes(st)).map(([st,v])=>`<span class="courier-stack-segment" style="width:${v/data.total*100}%;background:#94A3B8">${v}</span>`).join('');
-    return `<div class="courier-chart-row">
-      <div class="courier-person"><div class="courier-avatar">${escapeHtml(initials)}</div><div><div class="courier-name">${escapeHtml(name)}</div><div class="courier-sub">${data.total} aktivitas</div></div></div>
-      <div class="courier-stack-wrap"><div class="courier-stack" style="width:${Math.max(34,Math.round(data.total/max*100))}%">${segments}${fallback}</div></div>
-      <div class="courier-total">${data.total}</div>
-    </div>`;
+  const counts={};
+  rows.forEach(a=>{const name=String(a.kurir||a.nama||"Tidak diketahui").trim()||"Tidak diketahui";counts[name]=(counts[name]||0)+1;});
+  const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"id"));
+  if(!entries.length){chart.innerHTML='<div class="chart-empty">Belum ada aktivitas.</div>';return;}
+  const max=Math.max(...entries.map(([,v])=>v),1), total=entries.reduce((s,[,v])=>s+v,0);
+  chart.innerHTML=entries.slice(0,8).map(([name,value],i)=>{
+    const pct=Math.round(value/max*100); const share=Math.round(value/total*100); const initials=name.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase();
+    return `<div class="courier-rank-row"><div class="courier-rank-person"><span class="courier-rank-avatar">${escapeHtml(initials||'?')}</span><div><strong>${escapeHtml(name)}</strong><small>${value} aktivitas · ${share}%</small></div></div><div class="courier-rank-track"><i style="width:${Math.max(8,pct)}%"></i></div><b>${value}</b></div>`;
   }).join('');
-  if(legend)legend.innerHTML=statuses.map(st=>`<span><i class="legend-dot" style="background:${colors[st]}"></i>${escapeHtml(st)}</span>`).join('');
 }
+
 function renderStatusChart(rows){
   const chart=$("statusChart"), legend=$("statusLegend");
-  const statusOrder=["Menunggu Berangkat","Lagi Jalan","Lagi Diproses","Selesai"];
-  const colors={"Menunggu Berangkat":"#FBC64D","Lagi Jalan":"#5B8FE8","Lagi Diproses":"#9B7BDE","Selesai":"#54B978"};
   if(!chart)return;
-  if(!rows.length){
-    chart.innerHTML='<div class="category-chart-empty">Belum ada aktivitas.</div>';
-    if(legend)legend.innerHTML='';
-    return;
-  }
-  const counts={};
-  rows.forEach(a=>{const st=String(a.status||"Tidak diketahui").trim()||"Tidak diketahui";counts[st]=(counts[st]||0)+1;});
-  const ordered=[];
-  statusOrder.forEach(st=>{if(counts[st])ordered.push([st,counts[st]]);});
-  Object.entries(counts).filter(([st])=>!statusOrder.includes(st)).forEach(x=>ordered.push(x));
+  const statusOrder=["Selesai","Lagi Diproses","Lagi Jalan","Menunggu Berangkat"];
+  const colors={"Selesai":"#4dbb7c","Lagi Diproses":"#8c65dc","Lagi Jalan":"#3aaec9","Menunggu Berangkat":"#f0b43c","Tidak diketahui":"#aab6c3"};
+  const counts={}; rows.forEach(a=>{const st=String(a.status||"Tidak diketahui").trim()||"Tidak diketahui";counts[st]=(counts[st]||0)+1;});
+  const ordered=statusOrder.filter(st=>counts[st]).map(st=>[st,counts[st]]).concat(Object.entries(counts).filter(([st])=>!statusOrder.includes(st)));
   const total=rows.length;
-  const gradient=[]; let cursor=0;
-  ordered.forEach(([st,v])=>{const end=cursor+(v/total)*360;gradient.push(`${colors[st]||'#94A3B8'} ${cursor}deg ${end}deg`);cursor=end;});
-  chart.innerHTML=`<div class="donut-ring" style="background:conic-gradient(${gradient.join(',')})"><div class="donut-hole"><strong>${total}</strong><span>Total<br>Aktivitas</span></div></div>`;
-  if(legend)legend.innerHTML=ordered.map(([st,v])=>`<div class="status-summary-row"><div><i class="legend-dot" style="background:${colors[st]||'#94A3B8'}"></i><span>${escapeHtml(st)}</span></div><strong>${v}</strong><small>${Math.round(v/total*100)}%</small></div>`).join('');
+  if(!total){chart.innerHTML='<div class="chart-empty">Belum ada aktivitas.</div>';if(legend)legend.innerHTML='';return;}
+  let cursor=0; const gradient=ordered.map(([st,v])=>{const start=cursor,end=cursor+v/total*360;cursor=end;return `${colors[st]||colors["Tidak diketahui"]} ${start}deg ${end}deg`;}).join(',');
+  chart.innerHTML=`<div class="status-donut" style="background:conic-gradient(${gradient})"><div class="status-donut-hole"><strong>${total}</strong><span>Total<br>Aktivitas</span></div></div>`;
+  if(legend)legend.innerHTML=ordered.map(([st,v])=>`<div class="status-summary-row"><span><i class="legend-dot" style="background:${colors[st]||colors["Tidak diketahui"]}"></i>${escapeHtml(st)}</span><strong>${v}</strong><small>${Math.round(v/total*100)}%</small></div>`).join('');
 }
+
 function renderActivityChart(rows){
   const chart=$("activityChart");
   if(!chart)return;
@@ -931,48 +903,18 @@ function displayDuration(value){
 function renderActivityTypeSummary(rows){
   const chart=$("activityTypeChart"), legend=$("activityTypeLegend");
   if(!chart)return;
-
   const counts={};
-  rows.forEach(a=>{
-    String(a.jenisTugas||a.pekerjaan||"Tidak diketahui")
-      .split("|").map(v=>v.trim()).filter(Boolean)
-      .forEach(label=>counts[label]=(counts[label]||0)+1);
-  });
-
-  const entries=Object.entries(counts)
-    .sort((a,b)=>a[0].localeCompare(b[0],"id",{sensitivity:"base"}));
-
-  if(!entries.length){
-    chart.innerHTML='<div class="type-empty">Belum ada data</div>';
-    if(legend)legend.innerHTML='';
-    return;
-  }
-
-  const colors=["#B7D5F2","#B9E2CC","#F2C8B8","#CFC1EA","#B9D9D7","#E8C2C8","#E6D4A8","#D9C2DD","#C5CBEA","#BFDCCF"];
-  const total=entries.reduce((sum,[,v])=>sum+v,0);
-
-  chart.innerHTML=`
-    <div class="type-vertical-chart">
-      <div class="type-chart-axis">
-        ${entries.map(([label,value],i)=>{
-          const color=colors[i%colors.length];
-          const height=Math.round(value/total*100);
-          const pct=Math.round(value/total*100);
-          return `<div class="type-column">
-            <div class="type-column-value">${value}</div>
-            <div class="type-column-track"><div class="type-column-bar" style="height:${height}%;background:${color}"></div></div>
-            <div class="type-column-label" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
-            <div class="type-column-percent">${pct}%</div>
-          </div>`;
-        }).join("")}
-      </div>
-    </div>`;
-
-  if(legend){
-    legend.innerHTML=`<div class="type-summary-legend">${entries.map(([label,value],i)=>
-      `<span><i class="legend-line" style="background:${colors[i%colors.length]}"></i>${escapeHtml(label)} <b>${Math.round(value/total*100)}%</b></span>`
-    ).join("")}</div>`;
-  }
+  rows.forEach(a=>String(a.jenisTugas||a.pekerjaan||"Tidak diketahui").split("|").map(v=>v.trim()).filter(Boolean).forEach(label=>counts[label]=(counts[label]||0)+1));
+  const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"id"));
+  const total=entries.reduce((s,[,v])=>s+v,0);
+  if(!entries.length){chart.innerHTML='<div class="chart-empty">Belum ada aktivitas.</div>';if(legend)legend.innerHTML='';return;}
+  const palette=["#2f80ed","#4dbb7c","#8c65dc","#ec9c48","#3aaec9","#e46b73"];
+  const max=Math.max(...entries.map(([,v])=>v),1);
+  chart.innerHTML=entries.slice(0,8).map(([label,value],i)=>{
+    const pct=Math.round(value/total*100); const width=Math.round(value/max*100); const color=palette[i%palette.length];
+    return `<div class="activity-type-row"><div class="activity-type-meta"><span><i class="activity-type-dot" style="background:${color}"></i>${escapeHtml(label)}</span><strong>${value}</strong></div><div class="activity-type-track"><i style="width:${width}%;background:${color}"></i></div><small>${pct}%</small></div>`;
+  }).join('');
+  if(legend)legend.innerHTML=`<span>${total} aktivitas</span><span>Top: ${escapeHtml(entries[0][0])}</span>`;
 }
 
 let dashboardJourneyOpen = new Set();
@@ -1053,35 +995,24 @@ function renderDashboard(data){
   requestAnimationFrame(syncDashboardFreeze);
   const allRows=(data.activities||[]).filter(a=>String(a.idAktivitas||"").trim());
   populateDashboardCouriers(allRows);
-  const day=$("dashboardDate").value, courier=$("dashboardCourier").value;
-  const rows=allRows.filter(a=>(!courier||a.kurir===courier)&&activityMatchesDay(a,day));
+  const courier=$("dashboardCourier").value;
+  const rows=allRows.filter(a=>(!courier||a.kurir===courier)&&activityMatchesDashboardPeriod(a));
+  currentDashboardRows=rows.slice();
+  syncDashboardPeriodControls();
   const detailDateEl=$("dashboardDetailDate");
-  if(detailDateEl){
-    let detailDateLabel="Semua tanggal";
-    if(day){
-      const d=parseActivityDate(day);
-      if(d) detailDateLabel=displayIndonesiaDateOnly(d);
-    }else{
-      const uniqueDays=[...new Set(rows.map(a=>{const d=parseActivityDate(a.berangkat||a.datang||a.selesai);return d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`:null;}).filter(Boolean))];
-      if(uniqueDays.length===1){
-        const d=parseActivityDate(uniqueDays[0]);
-        if(d) detailDateLabel=displayIndonesiaDateOnly(d);
-      }
-    }
-    detailDateEl.textContent="Data: "+detailDateLabel;
-  }
+  if(detailDateEl) detailDateEl.textContent=dashboardPeriodLabel();
   const stats={total:rows.length,menungguBerangkat:rows.filter(a=>a.status==="Menunggu Berangkat").length,lagiJalan:rows.filter(a=>a.status==="Lagi Jalan").length,lagiDiproses:rows.filter(a=>a.status==="Lagi Diproses").length,selesai:rows.filter(a=>a.status==="Selesai").length};
   $("statTotal").textContent=stats.total||0; $("statMenunggu").textContent=stats.menungguBerangkat||0; $("statJalan").textContent=stats.lagiJalan||0; $("statSelesai").textContent=stats.selesai||0;
   const prosesEl=$("statProses"); if(prosesEl)prosesEl.textContent=stats.lagiDiproses||0;
   const pct=n=>stats.total?Math.round(n/stats.total*100):0;
   [["Menunggu",stats.menungguBerangkat],["Jalan",stats.lagiJalan],["Proses",stats.lagiDiproses],["Selesai",stats.selesai]].forEach(([key,n])=>{const p=pct(n),el=$("stat"+key+"Progress"),tx=$("stat"+key+"Percent");if(el)el.style.width=p+"%";if(tx)tx.textContent=p+"%";});
-  renderCourierChart(rows); renderStatusChart(rows); renderActivityTypeSummary(rows); renderJourneyPanel(rows,day); renderProofGallery(rows);
+  renderCourierChart(rows); renderStatusChart(rows); renderActivityTypeSummary(rows);
   const statusClass=status=>{
     const value=String(status??"").trim();
     const cls=value==="Selesai"?"done":value==="Lagi Jalan"?"jalan":value==="Lagi Diproses"?"proses":value==="Menunggu Berangkat"?"waiting":"unknown";
     return `<span class="dashboard-status-pill ${cls}">${escapeHtml(value||"-")}</span>`;
   };
-  const recent=[...rows].sort((a,b)=>(parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0)-(parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0)).slice(0,12);
+  const recent=[...rows].sort((a,b)=>(parseActivityDate(b.berangkat||b.datang||b.selesai)?.getTime()||0)-(parseActivityDate(a.berangkat||a.datang||a.selesai)?.getTime()||0));
   // Group per kurir; kurir A-Z, then Trip A-Z within each kurir.
   const groupedByCourier={};
   recent.forEach(a=>{
@@ -1108,9 +1039,10 @@ function renderDashboard(data){
     const courierRows=groupedByCourier[name].slice().sort(compareTrip);
     const initials=name.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase();
 
-    const isOpen=dashboardDetailOpen.has(name);
+    const isOpen=true;
+    dashboardDetailOpen.add(name);
     const groupHeader=`<tr class="dashboard-courier-group ${isOpen?'is-open':''}" data-courier-group="${escapeHtml(name)}">
-      <td colspan="9">
+      <td colspan="8">
         <button type="button" class="dashboard-courier-group-toggle" aria-expanded="${isOpen?'true':'false'}">
           <span class="dashboard-courier-chevron" aria-hidden="true">›</span>
           <span class="recent-avatar">${escapeHtml(initials||"?")}</span>
@@ -1120,7 +1052,7 @@ function renderDashboard(data){
       </td>
     </tr>`;
 
-    const detailRows=courierRows.map(a=>`<tr class="dashboard-courier-detail-row" data-courier-owner="${escapeHtml(name)}" ${isOpen?'':'hidden'}>
+    const detailRows=courierRows.map(a=>`<tr class="dashboard-courier-detail-row" data-courier-owner="${escapeHtml(name)}">
       <td>${escapeHtml(displayIndonesiaTime(a.berangkat))}</td>
       <td>${escapeHtml(displayIndonesiaTime(a.datang))}</td>
       <td>${escapeHtml(displayDuration(a.durasiMengemudi))}</td>
@@ -1129,7 +1061,6 @@ function renderDashboard(data){
       <td>${escapeHtml(a.jenisTugas||a.pekerjaan||"-")}</td>
       <td class="dashboard-note"><div class="dashboard-note-text">${escapeHtml(a.keterangan||"-")}</div></td>
       <td>${statusClass(a.status||"-")}</td>
-      <td>${a.fotoDatang||a.fotoBerangkat||a.fotoDokumen?`<a class="proof-link" href="${escapeHtml(a.fotoDatang||a.fotoBerangkat||a.fotoDokumen)}" target="_blank" rel="noopener">Lihat Foto</a>`:"-"}</td>
     </tr>`).join("");
 
     return groupHeader+detailRows;
@@ -1182,16 +1113,83 @@ function renderDashboard(data){
     renderCollapsed();
   });;
 }
+function collapseAllDashboardDetails(){
+  document.querySelectorAll("#dashboardView .dashboard-courier-detail-row").forEach(row=>row.hidden=true);
+  document.querySelectorAll("#dashboardView .dashboard-courier-group").forEach(group=>group.classList.remove("is-open"));
+  document.querySelectorAll("#dashboardView .dashboard-courier-group-toggle").forEach(btn=>btn.setAttribute("aria-expanded","false"));
+  document.querySelectorAll("#dashboardView .dashboard-courier-group").forEach(group=>dashboardDetailOpen.delete(group.getAttribute("data-courier-group")));
+  const btn=$("collapseDashboardDetailsBtn"); if(btn)btn.textContent="Buka Semua";
+}
+function expandAllDashboardDetails(){
+  document.querySelectorAll("#dashboardView .dashboard-courier-detail-row").forEach(row=>row.hidden=false);
+  document.querySelectorAll("#dashboardView .dashboard-courier-group").forEach(group=>group.classList.add("is-open"));
+  document.querySelectorAll("#dashboardView .dashboard-courier-group-toggle").forEach(btn=>btn.setAttribute("aria-expanded","true"));
+  document.querySelectorAll("#dashboardView .dashboard-courier-chevron").forEach(el=>el.textContent="⌄");
+  document.querySelectorAll("#dashboardView .dashboard-courier-group").forEach(group=>dashboardDetailOpen.add(group.getAttribute("data-courier-group")));
+  const btn=$("collapseDashboardDetailsBtn"); if(btn)btn.textContent="Tutup Semua";
+}
+
 async function loadDashboard(){
   msg("dashboardMsg","Memuat data aktivitas...");
-  try{setDashboardDefaultDay();const data=await api("getDashboard",{idPengguna:state.user.id});state.dashboardActivities=data.activities||[];renderDashboard(data);msg("dashboardMsg","");}
+  try{setDashboardDefaultPeriod();const data=await api("getDashboard",{idPengguna:state.user.id});state.dashboardActivities=data.activities||[];renderDashboard(data);msg("dashboardMsg","");}
   catch(err){msg("dashboardMsg",err.message);}
 }
 
+function dashboardTodayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
+function dashboardMonthKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;}
+function dashboardYearKey(){return String(new Date().getFullYear());}
+function populateDashboardYears(){
+  const el=$("dashboardYear"); if(!el)return;
+  const current=Number(new Date().getFullYear());
+  el.innerHTML=Array.from({length:7},(_,i)=>current-3+i).map(y=>`<option value="${y}">${y}</option>`).join("");
+  el.value=String(current);
+}
+function syncDashboardPeriodControls(){
+  const mode=$("dashboardPeriodType")?.value||"day";
+  $("dashboardDayField")?.classList.toggle("hidden",mode!=="day");
+  $("dashboardMonthField")?.classList.toggle("hidden",mode!=="month");
+  $("dashboardYearField")?.classList.toggle("hidden",mode!=="year");
+  const summary=$("dashboardPeriodSummary");
+  if(summary) summary.textContent=dashboardPeriodLabel();
+}
+function dashboardPeriodValue(){
+  const mode=$("dashboardPeriodType")?.value||"day";
+  if(mode==="month") return $("dashboardMonth")?.value||dashboardMonthKey();
+  if(mode==="year") return $("dashboardYear")?.value||dashboardYearKey();
+  return $("dashboardDate")?.value||dashboardTodayKey();
+}
+function dashboardPeriodLabel(){
+  const mode=$("dashboardPeriodType")?.value||"day";
+  const value=dashboardPeriodValue();
+  if(mode==="month"){
+    const d=new Date(`${value}-01T00:00:00`);
+    return isNaN(d.getTime())?value:d.toLocaleDateString("id-ID",{month:"long",year:"numeric"});
+  }
+  if(mode==="year") return value;
+  const d=parseActivityDate(value); return d?displayIndonesiaDateOnly(d):value;
+}
+function activityMatchesDashboardPeriod(a){
+  const d=parseActivityDate(a?.berangkat||a?.datang||a?.selesai);
+  if(!d)return false;
+  const mode=$("dashboardPeriodType")?.value||"day";
+  const value=dashboardPeriodValue();
+  if(mode==="month") return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`===value;
+  if(mode==="year") return String(d.getFullYear())===value;
+  return formatDateKey(d)===value;
+}
 function applyDashboardFilters(){renderDashboard({activities:state.dashboardActivities||[]});}
-function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
-function setDashboardDefaultDay(){if(!$("dashboardDate").value)$("dashboardDate").value=todayKey();}
-function resetDashboardFilters(){$("dashboardDate").value=todayKey();$("dashboardCourier").value="";applyDashboardFilters();}
+function setDashboardDefaultPeriod(){
+  populateDashboardYears();
+  if($("dashboardDate"))$("dashboardDate").value=dashboardTodayKey();
+  if($("dashboardMonth"))$("dashboardMonth").value=dashboardMonthKey();
+  if($("dashboardPeriodType"))$("dashboardPeriodType").value="day";
+  syncDashboardPeriodControls();
+}
+function resetDashboardFilters(){
+  setDashboardDefaultPeriod();
+  if($("dashboardCourier"))$("dashboardCourier").value="";
+  applyDashboardFilters();
+}
 
 
 function populateReportOptions(data){
@@ -1235,6 +1233,7 @@ async function loadReportOptions(){
 }
 
 let currentReportRows=[];
+let currentDashboardRows=[];
 
 function displayReportTime(value){
   return displayIndonesiaDateTime(value);
@@ -1242,31 +1241,7 @@ function displayReportTime(value){
 
 function renderReport(rows){
   currentReportRows=Array.isArray(rows)?rows:[];
-  const photoLink=(url)=>url?`<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Lihat Foto</a>`:"-";
-  $("reportTable").innerHTML = currentReportRows.map(a=>`<tr>
-    <td>${escapeHtml(a.idAktivitas||"")}</td>
-    <td>${statusClass(a.status)}</td>
-    <td>${escapeHtml(a.idPengguna||"")}</td>
-    <td>${escapeHtml(a.nama||a.kurir||"")}</td>
-    <td>${escapeHtml(a.trip||"")}</td>
-    <td>${escapeHtml(a.jenisTugas||a.pekerjaan||"")}</td>
-    <td>${escapeHtml(a.asal||"")}</td>
-    <td>${escapeHtml(a.tujuan||"")}</td>
-    <td>${photoLink(a.fotoDokumen)}</td>
-    <td>${photoLink(a.fotoBerangkat)}</td>
-    <td>${escapeHtml(displayReportTime(a.berangkat))}</td>
-    <td>${escapeHtml(displayReportTime(a.datang))}</td>
-    <td>${photoLink(a.fotoDatang)}</td>
-    <td>${escapeHtml(a.hasil||"-")}</td>
-    <td class="report-note"><div class="report-note-text">${escapeHtml(a.keterangan||"-")}</div></td>
-    <td>${escapeHtml(displayReportTime(a.selesai))}</td>
-    <td>${escapeHtml(displayDuration(a.durasiMengemudi))}</td>
-    <td>${escapeHtml(displayDuration(a.durasiTugas))}</td>
-  </tr>`).join("");
-  $("reportEmpty").classList.toggle("hidden",currentReportRows.length>0);
-  $("reportCount").textContent = `${currentReportRows.length} aktivitas`;
-  setupReportNoteLoadMore();
-  renderReportAnalytics(currentReportRows);
+  const count=$("reportCount"); if(count)count.textContent=`${currentReportRows.length} aktivitas siap diekspor`;
 }
 
 function setupReportNoteLoadMore(){
@@ -1407,30 +1382,30 @@ function renderReportAnalytics(rows){
   if(cc)cc.innerHTML=ce.length?ce.slice(0,8).map(([n,v])=>`<div class="report-courier-row"><span title="${escapeHtml(n)}">${escapeHtml(n)}</span><div class="report-courier-track"><div class="report-courier-fill" style="width:${Math.max(5,Math.round(v/cm*100))}%"></div></div><strong>${v}</strong></div>`).join(""):"<div class='empty'>Belum ada data.</div>";
 }
 function pdfText(doc,text,x,y,size=9,style="normal"){doc.setFont("helvetica",style);doc.setFontSize(size);doc.text(String(text??"-"),x,y);}
-function exportReportPdf(){
-  if(!currentReportRows.length){msg("reportMsg","Belum ada data untuk diekspor.");return;}
-  if(!window.jspdf?.jsPDF){msg("reportMsg","PDF belum siap. Muat ulang halaman lalu coba lagi.");return;}
+function exportActivityPdf(){
+  if(!currentDashboardRows.length){msg("dashboardMsg","Belum ada data untuk diekspor.");return;}
+  if(!window.jspdf?.jsPDF){msg("dashboardMsg","PDF belum siap. Muat ulang halaman lalu coba lagi.");return;}
   const doc=new window.jspdf.jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
-  const W=297,H=210; const rows=currentReportRows; const k=reportKpiSet(rows);
-  const from=$("reportDateFrom")?.value||"-", to=$("reportDateTo")?.value||"-";
+  const W=297,H=210; const rows=currentDashboardRows; const k=reportKpiSet(rows);
+  const from=dashboardPeriodLabel(); const to="";
   const title="LAPORAN AKTIVITAS KURIR";
   const header=()=>{doc.setFillColor(22,48,84);doc.rect(0,0,W,18,"F");doc.setFillColor(255,255,255);doc.circle(17,9,6,"F");pdfText(doc,"G",14.5,11.2,9,"bold");doc.setTextColor(255,255,255);pdfText(doc,"PT Gamamed",28,8,10,"bold");pdfText(doc,"Kurir & Logistik",28,13,6,"normal");doc.setTextColor(23,48,80);};
   const footer=(page)=>{doc.setDrawColor(220,226,234);doc.line(10,198,287,198);pdfText(doc,"PT Gamamed | Laporan Aktivitas Kurir",10,204,6);pdfText(doc,`Halaman ${page}`,270,204,6);};
-  header(); pdfText(doc,title,12,31,18,"bold"); pdfText(doc,`Periode ${from} s/d ${to}`,12,38,9); pdfText(doc,"Rekapitulasi seluruh aktivitas kurir sesuai filter laporan.",12,44,7);
+  header(); pdfText(doc,title,12,31,18,"bold"); pdfText(doc,`Periode ${from}`,12,38,9); pdfText(doc,"Rekapitulasi seluruh aktivitas kurir sesuai filter laporan.",12,44,7);
   const cards=[["Total Aktivitas",k.total],["Total Kunjungan RS",k.visits],["Total Waktu OTW",reportDurationLabel(k.otw)],["Total Waktu di RS",reportDurationLabel(k.rs)],["Total Jarak","-"],["Total Kurir",k.couriers]];
   cards.forEach((c,i)=>{const x=12+i*45.5;doc.setFillColor(247,250,253);doc.roundedRect(x,50,42,25,3,3,"F");pdfText(doc,c[0],x+4,57,6);pdfText(doc,c[1],x+4,68,12,"bold");});
   pdfText(doc,"Aktivitas Berdasarkan Jenis Kegiatan",12,86,10,"bold");
   const tasks=reportTaskEntries(rows), tm=Math.max(...tasks.map(x=>x[1]),1); tasks.slice(0,8).forEach(([n,v],i)=>{const x=15+i*32;const h=Math.max(4,v/tm*42);doc.setFillColor(77,143,238);doc.roundedRect(x,134-h,20,h,1.5,1.5,"F");pdfText(doc,v,x+7,130-h,7,"bold");pdfText(doc,n.length>11?n.slice(0,10)+"…":n,x+10,139,5);});
   pdfText(doc,"Rekap Aktivitas per Kurir",12,154,10,"bold");
   const courier=reportCourierEntries(rows); doc.autoTable({startY:158,head:[["No","Kurir","Aktivitas"]],body:courier.map((x,i)=>[i+1,x[0],x[1]]),theme:"grid",styles:{fontSize:7,cellPadding:2},headStyles:{fillColor:[231,241,251],textColor:[35,60,90]}}); footer(1);
-  doc.addPage(); header(); pdfText(doc,"Detail Aktivitas Kurir",12,29,15,"bold"); pdfText(doc,`Periode ${from} s/d ${to}`,12,36,7);
+  doc.addPage(); header(); pdfText(doc,"Detail Aktivitas Kurir",12,29,15,"bold"); pdfText(doc,`Periode ${from}`,12,36,7);
   const body=rows.map((a,i)=>[i+1,displayIndonesiaDateOnly(a.berangkat),a.nama||a.kurir||"-",a.tujuan||"-",a.jenisTugas||a.pekerjaan||"-",a.hasil||"-",displayIndonesiaTime(a.berangkat),displayIndonesiaTime(a.datang),displayDuration(a.durasiMengemudi),a.status||"-"]);
   doc.autoTable({startY:42,head:[["No","Tanggal","Kurir","RS / Tujuan","Jenis Kegiatan","Hasil","Berangkat","Tiba","OTW","Status"]],body,theme:"grid",styles:{fontSize:6.5,cellPadding:2,overflow:"linebreak"},headStyles:{fillColor:[231,241,251],textColor:[35,60,90]},alternateRowStyles:{fillColor:[250,252,254]}}); footer(2);
   let page=2; const byCourier={}; rows.forEach(a=>{const n=String(a.nama||a.kurir||"Tidak diketahui");(byCourier[n]??=[]).push(a);});
   Object.entries(byCourier).forEach(([name,cr])=>{doc.addPage();page++;header();pdfText(doc,"Detail Aktivitas Kurir",12,29,15,"bold");pdfText(doc,name,12,37,12,"bold");pdfText(doc,`${cr.length} aktivitas`,12,43,7);
     const ct=reportTaskEntries(cr);pdfText(doc,`Rekap Jenis Kegiatan (${name})`,12,51,9,"bold");doc.autoTable({startY:54,head:[["Jenis Kegiatan","Jumlah"]],body:ct.map(x=>[x[0],x[1]]),theme:"grid",tableWidth:70,styles:{fontSize:7,cellPadding:2},headStyles:{fillColor:[231,241,251],textColor:[35,60,90]}});
     const start=(doc.lastAutoTable?.finalY||54)+7;doc.autoTable({startY:start,head:[["No","Tanggal","RS / Tujuan","Jenis Kegiatan","Hasil","Berangkat","Tiba","OTW","Di RS"]],body:cr.map((a,i)=>[i+1,displayIndonesiaDateOnly(a.berangkat),a.tujuan||"-",a.jenisTugas||a.pekerjaan||"-",a.hasil||"-",displayIndonesiaTime(a.berangkat),displayIndonesiaTime(a.datang),displayDuration(a.durasiMengemudi),reportDurationLabel(Math.max(0,reportDurationMinutes(a.durasiTugas)-reportDurationMinutes(a.durasiMengemudi)))]),theme:"grid",styles:{fontSize:6.2,cellPadding:2,overflow:"linebreak"},headStyles:{fillColor:[231,241,251],textColor:[35,60,90]}});footer(page);});
-  const stamp=new Date();doc.save(`Laporan_Aktivitas_Kurir_${String(stamp.getDate()).padStart(2,"0")}-${String(stamp.getMonth()+1).padStart(2,"0")}-${String(stamp.getFullYear()).slice(-2)}.pdf`);msg("reportMsg","File PDF siap.");
+  const stamp=new Date();doc.save(`Laporan_Aktivitas_Kurir_${String(stamp.getDate()).padStart(2,"0")}-${String(stamp.getMonth()+1).padStart(2,"0")}-${String(stamp.getFullYear()).slice(-2)}.pdf`);msg("dashboardMsg","File PDF siap.");
 }
 
 function getReportFilterValues(){
@@ -1536,22 +1511,16 @@ $("activityForm").addEventListener("submit",handleCreateActivity);
 $("pendingDepartureBtn").addEventListener("click",handlePendingDeparture);
 $("applyDashboardFilterBtn").addEventListener("click",applyDashboardFilters);
 $("resetDashboardFilterBtn").addEventListener("click",resetDashboardFilters);
-$("journeyPanel").addEventListener("click",e=>{
-  const toggle=e.target.closest(".journey-group-toggle");
-  if(!toggle)return;
-  const group=toggle.closest(".journey-group");
-  if(!group)return;
-  const name=group.dataset.journeyGroup;
-  if(dashboardJourneyOpen.has(name)){dashboardJourneyOpen.delete(name);}else{dashboardJourneyOpen.add(name);}
-  const open=dashboardJourneyOpen.has(name);
-  group.classList.toggle("is-open",open);
-  toggle.setAttribute("aria-expanded",open?"true":"false");
-  const body=group.querySelector(".journey-group-body");
-  if(body)body.hidden=!open;
+$("dashboardPeriodType")?.addEventListener("change",()=>{syncDashboardPeriodControls();});
+$("dashboardDate")?.addEventListener("change",syncDashboardPeriodControls);
+$("dashboardMonth")?.addEventListener("change",syncDashboardPeriodControls);
+$("dashboardYear")?.addEventListener("change",syncDashboardPeriodControls);
+$("collapseDashboardDetailsBtn")?.addEventListener("click",()=>{
+  const btn=$("collapseDashboardDetailsBtn");
+  if(btn?.textContent==="Tutup Semua") collapseAllDashboardDetails(); else expandAllDashboardDetails();
 });
-$("refreshReportBtn").addEventListener("click",async()=>{await loadReportOptions();msg("reportMsg","");updateReportApplyState();});
 $("exportReportBtn").addEventListener("click",exportReportExcel);
-$("exportPdfBtn")?.addEventListener("click",exportReportPdf);
+$("exportDashboardPdfBtn")?.addEventListener("click",exportActivityPdf);
 document.querySelectorAll("[data-report-nav]").forEach(btn=>btn.addEventListener("click",()=>{const id=btn.dataset.reportNav;if($(id))$(id).click();}));
 $("applyReportBtn").addEventListener("click",loadReport);
 $("resetReportBtn").addEventListener("click",resetReportFilters);

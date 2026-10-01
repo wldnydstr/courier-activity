@@ -192,12 +192,19 @@
         <!-- DASHBOARD -->
         <section id="dashboardView" class="hidden view-section dashboard-page">
           <div class="section-hero dashboard-hero">
-            <div><span class="eyebrow">MONITORING</span><h2>Dashboard Aktivitas</h2><p>Pantau aktivitas kurir, status tugas, dan perjalanan hari ini.</p></div>
-            <div class="hero-meta"><span class="hero-date">Data operasional</span></div>
+            <div>
+              <span class="eyebrow">MONITORING</span>
+              <h2>Dashboard Aktivitas</h2>
+              <p>Pantau aktivitas kurir berdasarkan periode yang kamu pilih.</p>
+            </div>
+            <div class="dashboard-hero-actions">
+              <span class="hero-date" id="dashboardPeriodSummary">Hari ini</span>
+              <button id="exportDashboardPdfBtn" class="pdf-btn" type="button">Export PDF</button><span id="dashboardMsg" class="message"></span>
+            </div>
           </div>
 
           <div class="kpi-grid dashboard-kpis">
-            <div class="kpi-card kpi-blue"><div class="kpi-icon">▣</div><div><span>Total Aktivitas</span><strong id="statTotal">0</strong><small>aktivitas terpilih</small></div></div>
+            <div class="kpi-card kpi-blue"><div class="kpi-icon">▣</div><div><span>Total Aktivitas</span><strong id="statTotal">0</strong><small>aktivitas sesuai periode</small></div></div>
             <div class="kpi-card kpi-amber"><div class="kpi-icon">◷</div><div><span>Menunggu Berangkat</span><strong id="statMenunggu">0</strong><div class="mini-progress"><i id="statMenungguProgress"></i></div><small id="statMenungguPercent">0%</small></div></div>
             <div class="kpi-card kpi-cyan"><div class="kpi-icon">▰</div><div><span>Lagi Jalan</span><strong id="statJalan">0</strong><div class="mini-progress"><i id="statJalanProgress"></i></div><small id="statJalanPercent">0%</small></div></div>
             <div class="kpi-card kpi-purple"><div class="kpi-icon">◔</div><div><span>Lagi Diproses</span><strong id="statProses">0</strong><div class="mini-progress"><i id="statProsesProgress"></i></div><small id="statProsesPercent">0%</small></div></div>
@@ -205,65 +212,48 @@
           </div>
 
           <div class="surface filter-strip dashboard-filters">
-            <div class="filter-title"><span class="eyebrow">FILTER</span><strong>Aktivitas</strong><small>Pilih tanggal dan kurir yang ingin dipantau.</small></div>
-            <div class="filter-field"><label>Hari</label><input id="dashboardDate" type="date"></div>
+            <div class="filter-title"><span class="eyebrow">PERIODE</span><strong>Filter Aktivitas</strong><small>Pilih tampilan 1 hari, 1 bulan, atau 1 tahun.</small></div>
+            <div class="filter-field"><label>Mode</label><select id="dashboardPeriodType"><option value="day">1 Hari</option><option value="month">1 Bulan</option><option value="year">1 Tahun</option></select></div>
+            <div class="filter-field" id="dashboardDayField"><label>Tanggal</label><input id="dashboardDate" type="date"></div>
+            <div class="filter-field hidden" id="dashboardMonthField"><label>Bulan</label><input id="dashboardMonth" type="month"></div>
+            <div class="filter-field hidden" id="dashboardYearField"><label>Tahun</label><select id="dashboardYear"></select></div>
             <div class="filter-field"><label>Kurir</label><select id="dashboardCourier"><option value="">Semua kurir</option></select></div>
             <div class="filter-actions"><button id="applyDashboardFilterBtn" class="primary" type="button">Terapkan</button><button id="resetDashboardFilterBtn" class="ghost" type="button">Reset</button></div>
           </div>
 
           <div class="analytics-grid dashboard-analytics">
-            <div class="surface analytics-card large"><div class="surface-head compact"><div><h3>Aktivitas Berdasarkan Jenis Tugas</h3><p>Distribusi jenis tugas pada aktivitas yang tampil.</p></div></div><div id="activityTypeChart" class="chart-area bar-area"></div><div id="activityTypeLegend" class="legend-row"></div></div>
+            <div class="surface analytics-card"><div class="surface-head compact"><div><h3>Aktivitas Berdasarkan Jenis Tugas</h3><p>Distribusi aktivitas dalam periode terpilih.</p></div></div><div id="activityTypeChart" class="chart-area activity-type-chart"></div><div id="activityTypeLegend" class="legend-row activity-type-legend"></div></div>
             <div class="surface analytics-card"><div class="surface-head compact"><div><h3>Status Aktivitas</h3><p>Komposisi status saat ini.</p></div></div><div id="statusChart" class="donut-wrap"></div><div id="statusLegend" class="legend-list"></div><div id="activityChart" class="hidden" aria-hidden="true"></div></div>
-            <div class="surface analytics-card"><div class="surface-head compact"><div><h3>Total Aktivitas per Kurir</h3><p>Jumlah aktivitas pada filter aktif.</p></div></div><div id="courierChart" class="courier-chart"></div><div id="courierLegend" class="legend-row"></div></div>
+            <div class="surface analytics-card"><div class="surface-head compact"><div><h3>Total Aktivitas per Kurir</h3><p>Urutan beban aktivitas pada periode ini.</p></div></div><div id="courierChart" class="courier-ranking"></div><div id="courierLegend" class="hidden"></div></div>
           </div>
 
-          <div class="dashboard-main-grid">
-            <div class="surface table-card">
-              <div class="surface-head"><div><h3>Detail Aktivitas Kurir</h3><p>Pantau aktivitas berdasarkan tanggal dan kurir.</p></div><span id="dashboardDetailDate" class="data-badge">Semua tanggal</span></div>
-              <div class="table-scroll"><table class="ops-table dashboard-detail-table"><thead><tr><th>Jam Berangkat</th><th>Jam Tiba</th><th>Durasi</th><th>Kurir</th><th>RS / Tujuan</th><th>Jenis Tugas</th><th>Keterangan</th><th>Status</th><th>Foto</th></tr></thead><tbody id="dashboardTable"></tbody></table></div>
-              <div id="dashboardEmpty" class="empty hidden">Belum ada aktivitas.</div>
+          <div class="surface table-card dashboard-detail-card">
+            <div class="surface-head dashboard-detail-head">
+              <div><span class="eyebrow">OPERASIONAL</span><h3>Detail Aktivitas Kurir</h3><p id="dashboardDetailSubtitle">Semua aktivitas ditampilkan dalam keadaan terbuka.</p></div>
+              <div class="detail-head-actions"><span id="dashboardDetailDate" class="data-badge">Semua tanggal</span><button id="collapseDashboardDetailsBtn" class="ghost compact-action" type="button">Tutup Semua</button></div>
             </div>
-            <div class="surface journey-card"><div class="surface-head"><div><h3>Perjalanan Kurir</h3><p>Urutan perjalanan berdasarkan Trip.</p></div></div><div id="journeyPanel" class="journey-panel"></div></div>
+            <div class="table-scroll"><table class="ops-table dashboard-detail-table"><thead><tr><th>Jam Berangkat</th><th>Jam Tiba</th><th>Durasi</th><th>Kurir</th><th>RS / Tujuan</th><th>Jenis Tugas</th><th>Keterangan</th><th>Status</th></tr></thead><tbody id="dashboardTable"></tbody></table></div>
+            <div id="dashboardEmpty" class="empty hidden">Belum ada aktivitas pada periode ini.</div>
           </div>
-
-          <div class="surface proof-card"><div class="surface-head"><div><h3>Foto Bukti Aktivitas</h3><p>Foto terbaru dari aktivitas yang sedang tampil.</p></div></div><div id="proofGallery" class="proof-gallery"></div></div>
         </section>
 
         <!-- REPORT -->
-        <section id="reportView" class="hidden view-section report-page">
-          <div class="report-headline"><div><span class="eyebrow">LAPORAN AKTIVITAS KURIR</span><h2>Laporan Aktivitas Kurir</h2><p>Rekap seluruh aktivitas kurir selama periode tertentu.</p></div><div class="report-head-actions"><button id="refreshReportBtn" class="ghost" type="button">↻ Muat Ulang</button><button id="exportReportBtn" class="excel-btn" type="button">▣ Export Excel</button><button id="exportPdfBtn" class="pdf-btn" type="button">▤ Export PDF</button></div></div>
+        <section id="reportView" class="hidden view-section report-page report-export-page">
+          <div class="report-headline">
+            <div><span class="eyebrow">LAPORAN AKTIVITAS KURIR</span><h2>Penarikan Excel</h2><p>Atur filter yang dibutuhkan, lalu tarik data aktivitas ke Excel.</p></div>
+          </div>
 
-          <div class="surface report-filter-panel">
+          <div class="report-export-panel">
             <div class="report-filter-grid">
               <div class="filter-field"><label>Periode</label><div class="date-range"><input id="reportDateFrom" type="date"><span>s/d</span><input id="reportDateTo" type="date"></div></div>
               <div class="filter-field"><label>Status</label><select id="reportStatus"><option value="" selected disabled>Pilih status</option><option value="__ALL__">Semua status</option><option>Menunggu Berangkat</option><option>Lagi Jalan</option><option>Lagi Diproses</option><option>Selesai</option></select></div>
               <div class="filter-field"><label>Kurir</label><select id="reportCourier"><option value="" selected disabled>Pilih kurir</option><option value="__ALL__">Semua kurir</option></select></div>
               <div class="filter-field"><label>Rumah Sakit / Asal</label><select id="reportOrigin"><option value="" selected disabled>Pilih asal</option><option value="__ALL__">Semua asal</option></select></div>
               <div class="filter-field"><label>Rumah Sakit / Tujuan</label><select id="reportDestination"><option value="" selected disabled>Pilih tujuan</option><option value="__ALL__">Semua tujuan</option></select></div>
-              <div class="filter-actions"><button id="applyReportBtn" class="primary" type="button">⌕ Terapkan</button><button id="resetReportBtn" class="ghost" type="button">↻ Reset</button></div>
+              <div class="filter-actions"><button id="applyReportBtn" class="primary" type="button">Terapkan</button><button id="resetReportBtn" class="ghost" type="button">Reset</button></div>
             </div>
+            <div class="report-export-bar"><div><strong>Siap tarik data?</strong><span id="reportCount">0 aktivitas siap diekspor</span></div><button id="exportReportBtn" class="excel-btn" type="button">Export Excel</button></div>
             <p id="reportMsg" class="message"></p>
-          </div>
-
-          <div id="reportKpiGrid" class="kpi-grid report-kpis">
-            <div class="kpi-card kpi-blue"><div class="kpi-icon">▣</div><div><span>Total Aktivitas</span><strong id="reportKpiTotal">0</strong><small id="reportKpiTotalSub">periode terpilih</small></div></div>
-            <div class="kpi-card kpi-green"><div class="kpi-icon">●</div><div><span>Total Kunjungan RS</span><strong id="reportKpiVisits">0</strong><small>tujuan unik</small></div></div>
-            <div class="kpi-card kpi-purple"><div class="kpi-icon">◷</div><div><span>Total Waktu OTW</span><strong id="reportKpiOtw">0j 0m</strong><small>durasi mengemudi</small></div></div>
-            <div class="kpi-card kpi-red"><div class="kpi-icon">◷</div><div><span>Total Waktu di RS</span><strong id="reportKpiRs">0j 0m</strong><small>estimasi dari durasi tugas</small></div></div>
-            <div class="kpi-card kpi-orange"><div class="kpi-icon">↗</div><div><span>Total Jarak</span><strong id="reportKpiDistance">-</strong><small>data jarak</small></div></div>
-            <div class="kpi-card kpi-indigo"><div class="kpi-icon">●</div><div><span>Total Kurir</span><strong id="reportKpiCouriers">0</strong><small>kurir aktif di hasil</small></div></div>
-          </div>
-
-          <div class="report-analytics-grid">
-            <div class="surface report-chart-card"><div class="surface-head compact"><div><h3>Aktivitas Berdasarkan Jenis Kegiatan</h3><p>Jumlah tugas per kategori.</p></div></div><div id="reportActivityChart" class="report-bar-chart"></div></div>
-            <div class="surface report-chart-card"><div class="surface-head compact"><div><h3>Rekap Hasil Penagihan</h3><p>Distribusi hasil aktivitas.</p></div></div><div id="reportCollectionChart" class="report-donut-layout"></div></div>
-            <div class="surface report-chart-card"><div class="surface-head compact"><div><h3>Total Aktivitas per Kurir</h3><p>Perbandingan beban aktivitas.</p></div></div><div id="reportCourierChart" class="report-courier-bars"></div></div>
-          </div>
-
-          <div class="surface report-table-card">
-            <div class="surface-head"><div><span class="eyebrow">HASIL LAPORAN</span><h3>Detail Aktivitas</h3><p>Data sesuai filter laporan yang diterapkan.</p></div><span id="reportCount" class="data-badge">0 aktivitas</span></div>
-            <div class="table-scroll"><table class="ops-table report-table"><thead><tr><th>ID Aktivitas</th><th>Status</th><th>ID Pengguna</th><th>Nama</th><th>Trip</th><th>Jenis Tugas</th><th>Asal</th><th>Tujuan</th><th>Foto Dokumen</th><th>Foto Berangkat</th><th>Waktu Berangkat</th><th>Waktu Datang</th><th>Foto Datang</th><th>Hasil</th><th>Keterangan</th><th>Waktu Selesai</th><th>Durasi Mengemudi</th><th>Durasi Tugas</th></tr></thead><tbody id="reportTable"></tbody></table></div>
-            <div id="reportEmpty" class="empty hidden">Data aktivitas tidak ditemukan.</div>
           </div>
         </section>
 
