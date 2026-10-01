@@ -1391,20 +1391,13 @@ function pdfText(doc,text,x,y,size=9,style="normal",color=[23,48,80],opts={}){
 }
 
 function pdfSafeRoundedRect(doc,x,y,w,h,rx,ry,style="F") {
-  const nums=[x,y,w,h,rx,ry].map(Number);
-  if(!nums.every(Number.isFinite) || nums[2] < 0 || nums[3] < 0){
-    const xx=Number.isFinite(nums[0])?nums[0]:0;
-    const yy=Number.isFinite(nums[1])?nums[1]:0;
-    const ww=Number.isFinite(nums[2]) && nums[2] > 0 ? nums[2] : 0;
-    const hh=Number.isFinite(nums[3]) && nums[3] > 0 ? nums[3] : 0;
-    if(ww>0 && hh>0) doc.rect(xx,yy,ww,hh,style);
-    return;
-  }
-  const xx=nums[0], yy=nums[1], ww=nums[2], hh=nums[3];
-  const maxR=Math.max(0,Math.min(ww/2,hh/2));
-  const rrX=Math.max(0,Math.min(nums[4],maxR));
-  const rrY=Math.max(0,Math.min(nums[5],maxR));
-  doc.roundedRect(xx,yy,ww,hh,rrX,rrY,style);
+  // Intentionally use plain rectangles for maximum jsPDF compatibility.
+  // Some jsPDF builds reject roundedRect arguments even when numeric values are valid.
+  const nums=[x,y,w,h].map(Number);
+  if(!nums.every(Number.isFinite)) return;
+  if(nums[2] <= 0 || nums[3] <= 0) return;
+  const drawStyle=(style==="S"||style==="FD"||style==="DF")?style:"F";
+  doc.rect(nums[0],nums[1],nums[2],nums[3],drawStyle);
 }
 
 function pdfRoundRect(doc,x,y,w,h,r,fill,border=null){
